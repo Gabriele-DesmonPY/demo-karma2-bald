@@ -1,0 +1,48 @@
+/* ═══════════════════════════════════════════════════════════════
+   LINE REVEAL — Per titoli e testi corpo.
+   Niente overflow:hidden che taglia i caratteri.
+   Usa clip-path inset() + opacity + translateY per un ingresso
+   fluido, leggibile, senza artefatti di rendering.
+   Easing: spring-like per quel tocco "vivo".
+   ═══════════════════════════════════════════════════════════════ */
+
+.line-reveal {
+  display: block;
+}
+
+.line-reveal__line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.line-reveal__inner {
+  display: block;
+  will-change: transform, opacity;
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.line-reveal__inner--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger automatico su linee multiple: 80ms tra una linea e l'altra */
+.line-reveal__line:nth-child(1) .line-reveal__inner { transition-delay: var(--line-reveal-delay, 0ms); }
+.line-reveal__line:nth-child(2) .line-reveal__inner { transition-delay: calc(var(--line-reveal-delay, 0ms) + 80ms); }
+.line-reveal__line:nth-child(3) .line-reveal__inner { transition-delay: calc(var(--line-reveal-delay, 0ms) + 160ms); }
+.line-reveal__line:nth-child(4) .line-reveal__inner { transition-delay: calc(var(--line-reveal-delay, 0ms) + 240ms); }
+.line-reveal__line:nth-child(5) .line-reveal__inner { transition-delay: calc(var(--line-reveal-delay, 0ms) + 320ms); }
+
+@media (prefers-reduced-motion: reduce) {
+  .line-reveal__inner {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

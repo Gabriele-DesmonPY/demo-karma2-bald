@@ -1,0 +1,1060 @@
+/* ═══════════════════════════════════════════════════════════════
+   HOME — Elevation 1000×
+   Navy unificato #0a2545, sistema tipografico rigoroso,
+   ritmo sezionale con più aria, concetto del filo/matassa.
+   ═══════════════════════════════════════════════════════════════ */
+
+.karma-home {
+  position: relative;
+  background: var(--kh-navy);
+  color: var(--kh-cream);
+  font-family: var(--font-label);
+  overflow-x: clip;
+}
+
+.karma-home a {
+  color: var(--kh-gold);
+}
+
+.karma-home a:hover {
+  color: var(--kh-gold-bright);
+}
+
+/* ── Progress hairline dorata in alto ── */
+.kh-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 100;
+  pointer-events: none;
+  background: transparent;
+}
+
+.kh-progress__bar {
+  height: 100%;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(to right, var(--kh-gold-deep), var(--kh-gold-bright));
+  box-shadow: 0 0 12px rgba(198, 154, 87, 0.45);
+}
+
+/* ── Tipografia — Instrument Serif display, Manrope body ── */
+.kh-h1,
+.kh-h2,
+.kh-h3 {
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+  margin: 0;
+}
+
+.kh-h1 {
+  font-size: var(--text-display);
+  line-height: 1.05;
+  max-width: 18ch;
+}
+
+.kh-h2 {
+  font-size: var(--text-h1);
+  line-height: 1.08;
+}
+
+.kh-h3 {
+  font-size: var(--text-h2);
+  line-height: 1.1;
+}
+
+/* Titoli più neri sulle sezioni chiare: l'ink standard (#1a2430)
+   leggeva grigio sui titoli grandi — qui scendono quasi al nero. */
+.kh-grad-nc :is(.kh-h1, .kh-h2, .kh-h3),
+.kh-grad-cn :is(.kh-h1, .kh-h2, .kh-h3),
+.kh-flat-cream :is(.kh-h1, .kh-h2, .kh-h3) {
+  color: #0b111a;
+}
+
+.kh-eyebrow {
+  font-family: var(--font-label);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--kh-gold);
+  margin: 0 0 var(--space-3);
+}
+
+.kh-lede {
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-size: var(--text-lede);
+  line-height: 1.45;
+  color: var(--gold-ink, var(--kh-gold-deep));
+  margin: 0;
+}
+
+.kh-lede--onnavy {
+  color: var(--kh-gold);
+}
+
+.kh-body {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.7;
+  margin: 0;
+  max-width: 55ch;
+}
+
+.kh-body--onnavy {
+  color: rgba(250, 248, 244, 0.84);
+}
+
+.kh-body--oncream {
+  color: rgba(26, 36, 48, 0.82);
+}
+
+.kh-motto {
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+  font-size: var(--text-h2);
+  line-height: 1.15;
+}
+
+/* ── Sezioni: gradienti morbidi, mai tagli netti ── */
+.kh-sec {
+  position: relative;
+  padding-block: var(--space-rhythm);
+  overflow: hidden;
+}
+
+.kh-sec-tight {
+  padding-block: var(--space-rhythm-tight);
+}
+
+/* Il navy piatto lo dà il RibbonField fisso sotto: le sezioni "flat"
+   sono trasparenti, così il campo dei nastri è unico e continuo. */
+.kh-flat-navy {
+  background: transparent;
+  color: var(--kh-cream);
+}
+
+.kh-flat-cream {
+  background: var(--kh-cream);
+  color: var(--kh-ink);
+}
+
+.kh-grad-nc {
+  background: linear-gradient(
+    var(--kh-navy) 0%,
+    var(--kh-navy-mid) var(--fade-a, 10%),
+    var(--kh-cream) var(--fade-b, 30%),
+    var(--kh-cream) 100%
+  );
+  color: var(--kh-ink);
+}
+
+.kh-grad-cn {
+  background: linear-gradient(
+    var(--kh-cream) 0%,
+    var(--kh-cream) var(--fade-a, 55%),
+    var(--kh-navy-mid) var(--fade-b, 80%),
+    var(--kh-navy) 100%
+  );
+  color: var(--kh-ink);
+}
+
+/* Confini navy↔cream aperti: dal lato navy il gradiente scende a
+   trasparente così il RibbonField fisso resta visibile e sfuma
+   gradualmente — nessun taglio netto del campo. */
+.kh-grad-nc.kh-grad-open {
+  background: linear-gradient(
+    rgba(10, 37, 69, 0) 0%,
+    var(--kh-navy) var(--fade-a, 12%),
+    var(--kh-cream) var(--fade-b, 38%),
+    var(--kh-cream) 100%
+  );
+}
+
+/* La domanda (segue la sezione "Decidere è tenere insieme", che ora
+   chiude su navy pieno): anche il suo bordo superiore parte da navy
+   PIENO, non trasparente — così al confine navy→navy il campo dei
+   nastri non riappare di colpo e la continuità è perfetta. Scope solo
+   su .kh-question: l'altra kh-grad-open (ingresso dall'hero) resta
+   com'era. */
+.kh-question.kh-grad-nc.kh-grad-open {
+  background: linear-gradient(
+    var(--kh-navy) 0%,
+    var(--kh-navy) var(--fade-a, 12%),
+    var(--kh-cream) var(--fade-b, 38%),
+    var(--kh-cream) 100%
+  );
+}
+
+/* Uscita dal cream verso il navy: la discesa NON sfuma più in trasparente
+   (dietro si vede il campo dei nastri → banda grigia/blu marmorizzata e
+   frase chiara su blu medio). Ora scende con curva ease (lenta-veloce-lenta)
+   attraverso blu intermedi tutti sulla stessa familia (niente grigi al
+   centro) fino a navy PIENO #0a2545 — lo stesso navy piatto del campo
+   (flatBase) e della sezione seguente. Distanze in px dal fondo sezione:
+   - parte sotto l'ultimo testo scuro (~H-260) e vive nell'aria vuota del
+     margine (150px) sotto l'ultimo paragrafo, mai sul testo;
+   - navy pieno da calc(100% - 115px): la frase finale in kh-cream (che
+     sta ~40-115px dal fondo) arriva già su blu scurissimo, contrasto OK. */
+.kh-grad-cn.kh-grad-close {
+  background: linear-gradient(
+    var(--kh-cream) 0%,
+    var(--kh-cream) calc(100% - 310px),
+    #e6e9ee calc(100% - 272px),
+    #bcc8d7 calc(100% - 230px),
+    #7e97b4 calc(100% - 190px),
+    #3d5a83 calc(100% - 152px),
+    #16305a calc(100% - 131px),
+    var(--kh-navy) calc(100% - 115px),
+    var(--kh-navy) 100%
+  );
+}
+
+.kh-grad-spirale-in {
+  background: linear-gradient(
+    var(--kh-cream) 0%,
+    rgba(10, 37, 69, 0) 20%,
+    rgba(10, 37, 69, 0) 100%
+  );
+  color: var(--kh-cream);
+}
+
+.kh-col {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .kh-col {
+    padding-inline: var(--space-5);
+  }
+}
+
+.kh-col--narrow {
+  max-width: 760px;
+}
+
+.kh-col--center {
+  text-align: center;
+}
+
+/* ── Foto bisso — cornice editoriale ── */
+.kh-photo {
+  margin: 0 auto clamp(40px, 6vh, 64px);
+  max-width: min(100%, 480px);
+}
+
+.kh-photo__frame {
+  position: relative;
+  border: 1px solid rgba(198, 154, 87, 0.45);
+  padding: 12px;
+  overflow: hidden;
+  transition: border-color 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-photo__frame:hover {
+  border-color: rgba(198, 154, 87, 0.75);
+}
+
+.kh-photo__frame::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  background: linear-gradient(165deg, rgba(10, 37, 69, 0.35), transparent 60%);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.kh-photo__frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-photo__frame:hover img {
+  transform: scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kh-photo__frame img {
+    transition: none;
+  }
+}
+
+.kh-photo__caption {
+  margin: 16px 4px 0;
+  font-size: clamp(0.78rem, 0.95vw, 0.88rem);
+  letter-spacing: 0.02em;
+  font-style: italic;
+  color: rgba(250, 248, 244, 0.55);
+}
+
+/* ── Griglia a due colonne ── */
+.kh-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(48px, 7vw, 120px);
+  align-items: center;
+}
+
+.kh-split--start {
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .kh-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kh-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kh-stack--tight {
+  gap: 12px;
+}
+
+/* ── Liste con stagger ── */
+.kh-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kh-list__item {
+  font-size: var(--text-body);
+  line-height: 1.7;
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity var(--dur-med) var(--ease-snap),
+    transform var(--dur-med) var(--ease-snap);
+}
+
+.kh-list.reveal--visible .kh-list__item {
+  opacity: 1;
+  transform: none;
+}
+
+.kh-list__item:nth-child(1) { transition-delay: 0ms; }
+.kh-list__item:nth-child(2) { transition-delay: 70ms; }
+.kh-list__item:nth-child(3) { transition-delay: 140ms; }
+.kh-list__item:nth-child(4) { transition-delay: 210ms; }
+.kh-list__item:nth-child(5) { transition-delay: 280ms; }
+.kh-list__item:nth-child(6) { transition-delay: 350ms; }
+.kh-list__item:nth-child(7) { transition-delay: 420ms; }
+.kh-list__item:nth-child(8) { transition-delay: 490ms; }
+
+/* ── Il filo delle voci — struttura a filo verticale ──
+   Un filo doro attraversa le citazioni: ognuna è un nodo appeso al filo,
+   alternata destra/sinistra (recto/verso). Il filo si disegna dall'alto
+   all'ingresso in viewport; i nodi entrano in stagger via .kh-stagger. */
+.kh-thread {
+  position: relative;
+  max-width: 880px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(36px, 6vh, 60px);
+  padding-block: 12px;
+}
+
+/* Il filo: 1px, sfuma alle estremità, si disegna dall'alto */
+.kh-thread::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  --tx: -50%;
+  transform: translateX(var(--tx)) scaleY(0);
+  transform-origin: top;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(198, 154, 87, 0.6) 7%,
+    rgba(198, 154, 87, 0.6) 93%,
+    transparent
+  );
+  transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-thread.kh-stagger--visible::before {
+  transform: translateX(var(--tx)) scaleY(1);
+}
+
+/* Nodo: pallino oro sul filo + citazione in Instrument Serif italic */
+.kh-thread__item {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 32px 1fr;
+  align-items: center;
+}
+
+.kh-thread__dot {
+  grid-column: 2;
+  justify-self: center;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--kh-gold);
+  box-shadow: 0 0 0 4px rgba(198, 154, 87, 0.12);
+}
+
+.kh-thread__text {
+  grid-column: 3;
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-size: clamp(1.1rem, 1.7vw, 1.45rem);
+  line-height: 1.45;
+  color: rgba(26, 36, 48, 0.78);
+  padding-left: clamp(16px, 3vw, 36px);
+}
+
+.kh-thread__item--sx .kh-thread__text {
+  grid-column: 1;
+  text-align: right;
+  padding-left: 0;
+  padding-right: clamp(16px, 3vw, 36px);
+}
+
+/* Micro-nodo pulsante sul filo: solo opacity, composited, zero jank */
+.kh-thread__pulse {
+  position: absolute;
+  left: 50%;
+  top: 32%;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--kh-gold-bright);
+  box-shadow: 0 0 14px rgba(208, 172, 117, 0.7);
+  transform: translateX(-50%);
+  animation: kh-thread-pulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes kh-thread-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+
+@media (max-width: 640px) {
+  .kh-thread::before {
+    left: 5px;
+    --tx: 0;
+  }
+
+  .kh-thread__pulse {
+    left: 5px;
+    transform: translateX(-50%);
+  }
+
+  .kh-thread__item {
+    grid-template-columns: 20px 1fr;
+  }
+
+  .kh-thread__dot {
+    grid-column: 1;
+  }
+
+  .kh-thread__text,
+  .kh-thread__item--sx .kh-thread__text {
+    grid-column: 2;
+    text-align: left;
+    padding: 0 0 0 6px;
+    font-size: clamp(1.05rem, 4.6vw, 1.3rem);
+  }
+}
+
+/* ── Hero ── */
+.kh-hero {
+  position: relative;
+  min-height: 104vh;
+  display: grid;
+  align-items: end;
+  padding: clamp(96px, 16vh, 200px) clamp(20px, 5vw, 64px) clamp(56px, 9vh, 120px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ── Ribbon Field — UN campo di nastri dorati fisso dietro a tutto ──
+   Canvas viewport-sized ridisegnato a ogni frame a risoluzione ridotta:
+   il blur statico (solo filtro composited, mai ricalcolato sul DOM)
+   fonde i nastri e nasconde qualunque differenza di pixel/banding.
+   Tutte le zone blu della pagina sono trasparenti e mostrano QUESTO
+   campo → continuità perfetta tra hero, fasce e sezioni. */
+.kh-ribbon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Il wrapper contiene il canvas: l'overscan di scale(1.12) — serve a
+   nascondere i bordi del blur — viene clippato QUI e non gonfia mai la
+   pagina (niente coda sotto il footer, niente spill orizzontale). */
+.kh-ribbon-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+
+/* Zona di calma in fondo al campo: i nastri sfumano nel navy piatto
+   prima del bordo con l'HomeFooter (anch'esso navy), così il confine
+   campo → footer è invisibile e nessun nastro viene "tagliato". */
+.kh-ribbon-field::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 220px;
+  background: linear-gradient(to bottom, rgba(10, 37, 69, 0), #0a2545 92%);
+}
+
+.kh-backdrop {
+  position: absolute;
+  inset: 0;
+  filter: blur(clamp(16px, 2.6vw, 30px));
+  transform: scale(1.12);
+}
+
+.kh-hero__spiral {
+  position: absolute;
+  inset: -105% 8% -80% -85%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.kh-hero__spiral-spin {
+  width: 100%;
+  height: 100%;
+  animation: kh-spin 260s linear infinite;
+  will-change: transform;
+}
+
+.kh-hero__copy {
+  position: relative;
+  z-index: 2;
+  max-width: min(100%, 640px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3vw, 32px);
+}
+
+.kh-hero__eyebrow {
+  margin-bottom: 0;
+}
+
+.kh-hero__title {
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+  font-size: var(--text-display);
+  line-height: 1.05;
+  max-width: 18ch;
+  color: var(--kh-cream);
+  margin: 0;
+}
+
+.kh-hero__title em {
+  font-style: italic;
+  font-family: inherit;
+  color: var(--kh-gold-bright);
+  border-bottom: 1px solid rgba(208, 172, 117, 0.4);
+  padding-bottom: 0.04em;
+  text-transform: none;
+  background: linear-gradient(
+    100deg,
+    var(--kh-gold-bright) 25%,
+    #ecd7a8 45%,
+    var(--kh-gold-bright) 65%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: filter 0.4s var(--ease-snap, ease);
+}
+
+/* ── La domanda (sezione pinnata) ── */
+.kh-question {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.kh-question__inner {
+  max-width: 900px;
+}
+
+.kh-question__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: clamp(0.9rem, 1.05vw, 1rem);
+  line-height: 1.6;
+  color: rgba(26, 36, 48, 0.6);
+  margin-top: clamp(32px, 6vh, 64px);
+}
+
+/* ── Sguardi / competenze ── */
+.kh-sguardi {
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+}
+
+/* ── Chiusura ── */
+.kh-closing {
+  text-align: center;
+}
+
+.kh-closing__spiral {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translate(-50%, -50%);
+  width: min(120vh, 110vw);
+  height: min(120vh, 110vw);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.kh-closing__link {
+  display: inline-block;
+  font-family: var(--font-display), "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(15px, 1.4vw, 17px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--kh-navy);
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--kh-gold-bright) 0%, var(--kh-gold) 55%, var(--kh-gold-deep) 100%);
+  padding: 20px 44px;
+  border-radius: 999px;
+  box-shadow:
+    0 6px 24px rgba(198, 154, 87, 0.35),
+    0 2px 8px rgba(7, 21, 38, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.35s var(--ease-snap, ease),
+    box-shadow 0.35s var(--ease-snap, ease),
+    filter 0.35s var(--ease-snap, ease);
+  will-change: transform;
+}
+
+.kh-closing__link:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.08);
+  box-shadow:
+    0 14px 36px rgba(198, 154, 87, 0.45),
+    0 4px 12px rgba(7, 21, 38, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.kh-closing__link:focus-visible {
+  outline: 2px solid var(--kh-gold-bright);
+  outline-offset: 4px;
+}
+
+.kh-closing__link:active {
+  transform: translateY(-1px);
+}
+
+.kh-closing__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: clamp(28px, 4vh, 44px) auto 0;
+  max-width: 48ch;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: rgba(220, 226, 223, 0.55);
+}
+
+/* ── Linee decorativo SVG ── */
+.kh-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Animazioni ── */
+@keyframes kh-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kh-drift {
+  0%, 100% { opacity: 0.18; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.45; transform: translateX(-50%) translateY(-8px); }
+}
+
+/* Glow dorato statico sui titoli — l'animazione del text-shadow costava
+   un repaint per frame su testi enormi (jank allo scroll): ora è ferma. */
+.kh-hero .kh-h1,
+.kh-hero .kh-h2,
+.kh-flat-navy .kh-h1,
+.kh-flat-navy .kh-h2 {
+  text-shadow:
+    0 0 40px rgba(198, 154, 87, 0.06),
+    0 0 80px rgba(198, 154, 87, 0.03);
+}
+
+/* ── Luxury hover underline (solo su testo, non CTA con bordo) ── */
+.karma-home a {
+  position: relative;
+  text-decoration: none;
+}
+
+.karma-home a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: var(--kh-gold-bright);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.karma-home a:hover::after {
+  transform: scaleX(1);
+}
+
+.kh-closing__link::after {
+  display: none;
+}
+
+/* La regola generica ".karma-home a { color: gold }" (specificità 0,1,1)
+   batte .kh-closing__link (0,1,0): senza questo override il testo resta
+   oro su pillola oro. */
+.karma-home a.kh-closing__link {
+  color: var(--kh-navy);
+}
+
+.karma-home a.kh-closing__link:hover {
+  color: var(--kh-navy);
+}
+
+/* ── Magnetic button wrapper ── */
+.magnetic-btn {
+  display: inline-block;
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ELEVATION — Spring physics, depth, micro-interactions
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Sezione che entra in viewport: fade + lift elegante */
+.kh-sec-enter {
+  opacity: 0;
+  transform: translateY(40px);
+  transition:
+    opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-sec-enter--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Voci sul filo: il testo si accende al passaggio (solo color) */
+.kh-thread__text {
+  transition: color 0.35s ease;
+}
+
+.kh-thread__item:hover .kh-thread__text {
+  color: rgba(26, 36, 48, 0.96);
+}
+
+/* Foto: profondità 3D al hover */
+.kh-photo {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-photo:hover {
+  transform: perspective(1200px) rotateX(0.8deg) rotateY(-1.2deg) translateY(-4px);
+}
+
+.kh-photo__frame {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 24px 60px -20px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(198, 154, 87, 0.15);
+  transition:
+    border-color 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-photo__frame:hover {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 32px 72px -24px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(198, 154, 87, 0.35),
+    0 0 40px -10px rgba(198, 154, 87, 0.15);
+}
+
+/* Link underline con spring physics */
+.karma-home a::after {
+  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Closing link: trattamento spring */
+.kh-closing__link {
+  transition:
+    color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.kh-closing__link:hover {
+  transform: translateY(-2px);
+}
+
+.kh-closing__link:active {
+  transform: scale(0.97);
+}
+
+/* Divider animato: disegna la linea da sinistra a destra */
+.kh-divider {
+  height: 1px;
+  background: rgba(198, 154, 87, 0.2);
+  max-width: 600px;
+  margin: 0 auto;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-divider--visible {
+  transform: scaleX(1);
+}
+
+/* Stagger utilities per liste interne */
+.kh-stagger > * {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kh-stagger--visible > *:nth-child(1) { transition-delay: 0ms;    opacity: 1; transform: none; }
+.kh-stagger--visible > *:nth-child(2) { transition-delay: 60ms;   opacity: 1; transform: none; }
+.kh-stagger--visible > *:nth-child(3) { transition-delay: 120ms;  opacity: 1; transform: none; }
+.kh-stagger--visible > *:nth-child(4) { transition-delay: 180ms;  opacity: 1; transform: none; }
+.kh-stagger--visible > *:nth-child(5) { transition-delay: 240ms;  opacity: 1; transform: none; }
+.kh-stagger--visible > *:nth-child(6) { transition-delay: 300ms;  opacity: 1; transform: none; }
+.kh-stagger--visible > *:nth-child(7) { transition-delay: 360ms;  opacity: 1; transform: none; }
+.kh-stagger--visible > *:nth-child(8) { transition-delay: 420ms;  opacity: 1; transform: none; }
+
+/* Parallax depth layer per spirali decorative */
+.kh-parallax-slow {
+  will-change: transform;
+}
+
+/* ── Intermezzi aurora — fasce astratte full-bleed tra le sezioni ──
+   Texture pittoriche trattate in duotone brand via AbstractBand.jsx:
+   maschera 2D (verticale × orizzontale) così la fascia si scioglie
+   nel navy circostante senza alcun taglio netto, drift lentissimo
+   (ken-burns) oltre al parallax di scroll, e momento tipografico
+   opzionale (claim) tra due hairline dorate. */
+.kh-abstract-band {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.kh-abstract-band__media {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%),
+    linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%),
+    linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.kh-abstract-band__layer {
+  position: absolute;
+  inset: -8% 0;
+  will-change: transform;
+}
+
+.kh-abstract-band__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Traslucente: dietro c'è il RibbonField fisso animato — la texture
+     è un velo sopra il campo, non un pannello che lo copre. */
+  opacity: 0.42;
+  filter: saturate(0.92) contrast(1.04) brightness(0.96);
+  animation: kh-band-drift 72s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes kh-band-drift {
+  from { transform: scale(1.05) translate3d(-1.2%, 0.8%, 0); }
+  to   { transform: scale(1.14) translate3d(1.4%, -1%, 0); }
+}
+
+/* Duotone brand leggero: solo una velatura, il campo animato passa */
+.kh-abstract-band__tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    rgba(10, 37, 69, 0.3) 0%,
+    rgba(10, 37, 69, 0.08) 34%,
+    rgba(198, 154, 87, 0.1) 60%,
+    rgba(7, 21, 38, 0.32) 100%
+  );
+  mix-blend-mode: soft-light;
+}
+
+/* Sfumatura dolce ai bordi verticali della fascia: alza e abbassa
+   appena la densità verso il campo, senza costruire un box. */
+.kh-abstract-band__glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 50%, transparent 42%, rgba(10, 37, 69, 0.26) 100%),
+    linear-gradient(to bottom, rgba(10, 37, 69, 0.34), transparent 38%, transparent 62%, rgba(10, 37, 69, 0.34));
+}
+
+/* ── Momento tipografico nella fascia ── */
+.kh-abstract-band__claim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 4vw, 44px);
+  padding-inline: var(--space-5);
+  pointer-events: none;
+}
+
+.kh-abstract-band__claim-text {
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-size: clamp(1.5rem, 3.2vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  color: var(--kh-gold-bright);
+  text-shadow: 0 2px 30px rgba(10, 37, 69, 0.8);
+  white-space: nowrap;
+}
+
+.kh-abstract-band__claim-line {
+  height: 1px;
+  flex: 0 1 clamp(60px, 12vw, 180px);
+  background: linear-gradient(to right, transparent, rgba(198, 154, 87, 0.65));
+}
+
+.kh-abstract-band__claim-line:last-child {
+  background: linear-gradient(to left, transparent, rgba(198, 154, 87, 0.65));
+}
+
+@media (max-width: 640px) {
+  .kh-abstract-band {
+    height: 22vh !important;
+  }
+
+  .kh-abstract-band__claim-text {
+    white-space: normal;
+    text-align: center;
+    font-size: clamp(1.2rem, 5.4vw, 1.6rem);
+  }
+
+  .kh-abstract-band__claim-line {
+    flex-basis: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kh-abstract-band__img {
+    animation: none;
+    transform: none !important;
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .kh-hero__spiral {
+    inset: -60% -30% -40% -60%;
+  }
+}
+
+/* ── SpiralStage — SÉ/ME e parole chiave poetiche ── */
+.kh-spiral-seme {
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-size: clamp(2.4rem, 8vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: 0.04em;
+  color: var(--kh-cream);
+}
+
+.kh-spiral-seme__slash {
+  display: block;
+  color: var(--kh-gold);
+  font-size: 0.5em;
+  line-height: 1.2;
+}
+
+.kh-spiral-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-heading), "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+  line-height: 1.6;
+  letter-spacing: 0.12em;
+  color: rgba(250, 248, 244, 0.5);
+  text-transform: lowercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kh-hero__spiral-spin,
+  .kh-flat-navy .kh-h1,
+  .kh-flat-navy .kh-h2 {
+    animation: none;
+    text-shadow: none;
+  }
+}

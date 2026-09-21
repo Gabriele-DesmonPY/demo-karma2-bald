@@ -1,0 +1,35 @@
+.text-reveal-mask {
+  display: block;
+}
+
+.text-reveal-mask--lines {
+  overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.text-reveal-mask__word-wrap {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.text-reveal-mask__unit {
+  display: inline-block;
+  will-change: transform;
+  transform: translateY(115%);
+  transition: transform 800ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.text-reveal-mask__unit--visible {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-reveal-mask__unit {
+    transform: translateY(0);
+    transition: none;
+  }
+}

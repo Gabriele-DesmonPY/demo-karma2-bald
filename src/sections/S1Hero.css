@@ -1,0 +1,223 @@
+/* ═══ SEZIONE 1 — HERO / APERTURA ═══
+   Aggiunte al hero validato (home.css):
+   fascio di luce rotante · parole sparse · filo laterale che scende.
+   Tutto governato dalla spirale, tutto lento, tutto a bassa opacità. */
+
+.sb-hero {
+  /* il fascio nasce da un punto libero della spirale, MAI dietro al
+     blocco di testo (che occupa grosso modo x 0–44%, y 14–78%): qui
+     resta leggibile e visivamente agganciato agli anelli esterni. */
+  --beam-x: 66%;
+  --beam-y: 30%;
+}
+
+/* ── Fascio di luce rotante ──
+   Un cono di luce che parte da un punto e ruota piano, come una
+   lancetta: nessun bordo, dissolvenza totale, ma visibile — è
+   l'elemento che il cliente ha citato per nome nella call. Sotto la
+   spirale, sopra il RibbonField. */
+.sb-hero__beam {
+  position: absolute;
+  left: var(--beam-x);
+  top: var(--beam-y);
+  width: 200vmax;
+  height: 200vmax;
+  margin: -100vmax 0 0 -100vmax;
+  z-index: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(208, 172, 117, 0.1) 3deg,
+    rgba(240, 219, 174, 0.22) 7deg,
+    rgba(208, 172, 117, 0.1) 11deg,
+    transparent 16deg,
+    transparent 360deg
+  );
+  -webkit-mask-image: radial-gradient(circle, black 0%, rgba(0, 0, 0, 0.65) 30%, transparent 58%);
+  mask-image: radial-gradient(circle, black 0%, rgba(0, 0, 0, 0.65) 30%, transparent 58%);
+  animation: sb-beam-turn 64s linear infinite;
+  will-change: transform;
+}
+
+@keyframes sb-beam-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Parole sparse di proposito ──
+   Ogni parola ha le sue coordinate (--wx/--wy), il suo ritardo di
+   comparsa (--wd) e il suo tempo di deriva (--wf): sparse, mai in
+   fila, e ognuna vive nel proprio tempo. */
+.sb-hero__words {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sb-hero__words span {
+  position: absolute;
+  left: var(--wx);
+  top: var(--wy);
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-size: clamp(0.95rem, 1.5vw, 1.35rem);
+  letter-spacing: 0.02em;
+  color: rgba(250, 248, 244, 0.46);
+  text-shadow: 0 0 18px rgba(10, 37, 69, 0.8);
+  opacity: 0;
+  animation: sb-word-in 1.8s var(--ease-out-expo) var(--wd) forwards,
+    sb-word-drift var(--wf) ease-in-out calc(var(--wd) + 1.8s) infinite alternate;
+}
+
+@keyframes sb-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes sb-word-drift {
+  from {
+    transform: translateY(0) translateX(0);
+  }
+  to {
+    transform: translateY(-10px) translateX(6px);
+  }
+}
+
+/* ── Il filo laterale che scende ──
+   Prima apparizione del filo: un tratto doro lungo il margine destro
+   che si disegna dall'alto verso il basso, con una gocciolina di luce
+   che lo percorre in loop lento. */
+.sb-hero__thread {
+  position: absolute;
+  right: clamp(28px, 5vw, 72px);
+  top: 0;
+  height: 92vh;
+  width: 1.5px;
+  z-index: 1;
+  pointer-events: none;
+  transform-origin: top;
+  filter: drop-shadow(0 0 4px rgba(208, 172, 117, 0.4));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(226, 195, 145, 0.75) 12%,
+    rgba(198, 154, 87, 0.5) 70%,
+    transparent 96%
+  );
+  animation: sb-thread-draw 2.6s var(--ease-out-expo) 0.4s backwards;
+}
+
+@keyframes sb-thread-draw {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.sb-hero__thread-pulse {
+  position: absolute;
+  left: -2px;
+  top: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--kh-gold-bright);
+  box-shadow: 0 0 12px 2px rgba(208, 172, 117, 0.45);
+  opacity: 0;
+  animation: sb-thread-fall 9s cubic-bezier(0.45, 0, 0.55, 1) 2.2s infinite;
+}
+
+@keyframes sb-thread-fall {
+  0% {
+    transform: translateY(6vh);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  62% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(78vh);
+    opacity: 0;
+  }
+}
+
+/* ── Respiro alla composizione ──
+   Il titolo a piena scala (validato per l'hero "nudo") qui convive con
+   fascio, parole e filo: leggermente più compatto e con meno gap verso
+   il lede, lascia leggere l'apertura intera senza scroll e apre spazio
+   perché la spirale, il fascio e le parole si vedano davvero. */
+.sb-hero .kh-hero__title {
+  font-size: clamp(2.1rem, 4.8vw, 4.4rem);
+}
+
+.sb-hero .kh-hero__copy {
+  gap: clamp(14px, 2vw, 22px);
+}
+
+/* ── Entrata della spirale: da fuori schermo, piano ──
+   La spirale parte leggermente scalata e traslata verso l'esterno e
+   si assesta: la marea che entra, non un pop-in. */
+.kh-hero__spiral {
+  animation: sb-spiral-enter 3.2s var(--ease-out-expo) both;
+}
+
+@keyframes sb-spiral-enter {
+  from {
+    opacity: 0;
+    transform: scale(1.22) translateY(4vh);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .sb-hero__words span {
+    font-size: 0.85rem;
+  }
+  /* tre parole bastano su mobile: le altre due nascono già sotto */
+  .sb-hero__words span:nth-child(4),
+  .sb-hero__words span:nth-child(5) {
+    display: none;
+  }
+  .sb-hero__thread {
+    right: 14px;
+    height: 74vh;
+  }
+}
+
+/* ── Riduzione motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .sb-hero__beam,
+  .sb-hero__words span,
+  .sb-hero__thread-pulse,
+  .sb-hero__thread {
+    animation: none;
+  }
+  .sb-hero__words span {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .sb-hero__thread {
+    transform: none;
+  }
+}

@@ -1,0 +1,384 @@
+:root {
+  /* ═══════════════════════════════════════════════════════════════
+     KARMA — Design System Unificato
+     Palette: navy #0a2545 + oro #c69a57 + cream #faf8f4
+     Tutte le pagine usano questi token. Zero eccezioni.
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* ── Brand ── */
+  --navy: #0a2545;
+  --navy-soft: #0f3869;
+  --navy-deep: #071526;
+  --gold: #c69a57;
+  --gold-bright: #d0ac75;
+  --gold-deep: #af813b;
+  --gold-ink: #8a6327;
+  --muted: #5e6b78;
+  --muted-on-dark: rgba(250, 248, 244, 0.72);
+  --light: #f4f6f8;
+  --cream: #faf8f4;
+  --white: #ffffff;
+  --ink: #1a2430;
+
+  /* Alias per compatibilità Home (legacy) */
+  --kh-navy: var(--navy);
+  --kh-navy-mid: var(--navy-soft);
+  --kh-navy-deep: var(--navy-deep);
+  --kh-cream: var(--cream);
+  --kh-ink: var(--ink);
+  --kh-gold: var(--gold);
+  --kh-gold-bright: var(--gold-bright);
+  --kh-gold-deep: var(--gold-deep);
+  --kh-line: rgba(198, 154, 87, 0.25);
+
+  /* ── Typography ── */
+  --font-display: "Plus Jakarta Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-heading: var(--font-display);
+  --font-body: "Manrope", -apple-system, "Segoe UI", sans-serif;
+  --font-label: "Manrope", -apple-system, "Segoe UI", sans-serif;
+  --font-accent: "Instrument Serif", Georgia, serif;
+
+  /* ── Type Scale (4 livelli + label) ── */
+  --text-display: clamp(2.4rem, 6vw, 5.8rem);
+  --text-h1: clamp(2rem, 4.5vw, 4.2rem);
+  --text-h2: clamp(1.6rem, 3vw, 2.8rem);
+  --text-h3: clamp(1.3rem, 2vw, 1.8rem);
+  --text-body: clamp(0.95rem, 1.05vw, 1.05rem);
+  --text-lede: clamp(1.1rem, 1.6vw, 1.4rem);
+  --text-label: 12px;
+
+  /* ── Tracking ── */
+  --tracking-display: 0.01em;
+  --tracking-h2: -0.01em;
+  --tracking-body: 0;
+  --tracking-label: 0.14em;
+
+  /* ── Spacing Scale ── */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 64px;
+  --space-6: 112px;
+  --space-7: 148px;
+  --space-rhythm: clamp(100px, 14vh, 180px);
+  --space-rhythm-tight: clamp(60px, 8vh, 100px);
+
+  /* ── Animation ── */
+  --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --dur-fast: 180ms;
+  --dur-med: 420ms;
+  --dur-slow: 800ms;
+  --dur-reveal: 800ms;
+  --stagger-word: 0.07s;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Nessuno scroll orizzontale a livello documento: ogni elemento più
+   largo del viewport (decorazioni assolute, spirali grandi) viene
+   clipppato senza creare scrollbar. */
+html,
+body {
+  overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, svg {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+/* ── Layout ── */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-inline: var(--space-5);
+  }
+}
+
+/* ── Eyebrow ── */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-label);
+  font-weight: 800;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Buttons ── */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-label);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 18px 34px;
+  border: 2px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform var(--dur-fast) var(--ease-snap),
+    background-color var(--dur-fast) var(--ease-snap),
+    color var(--dur-fast) var(--ease-snap),
+    border-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap);
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+/* Shimmer sweep: un bagliore attraversa il bottone al passaggio */
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -80%;
+  width: 55%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.7s var(--ease-snap);
+  pointer-events: none;
+}
+
+.btn:hover::after {
+  left: 130%;
+}
+
+.btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--navy);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 10px 24px -12px rgba(10, 37, 69, 0.7);
+}
+
+.btn-gold:hover {
+  background: var(--gold-bright);
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 16px 30px -14px rgba(10, 37, 69, 0.8);
+}
+
+.btn-outline-white {
+  background: transparent;
+  border-color: var(--white);
+  color: var(--white);
+}
+
+.btn-outline-white:hover {
+  background: var(--white);
+  color: var(--navy);
+  transform: translateY(-2px);
+}
+
+.btn-outline-navy {
+  background: transparent;
+  border-color: var(--navy);
+  color: var(--navy);
+}
+
+.btn-outline-navy:hover {
+  background: var(--navy);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
+/* ── Card ── */
+.card {
+  padding: var(--space-4);
+  border-top: 2px solid var(--gold);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: border-color var(--dur-med) var(--ease-snap);
+}
+
+.card:hover {
+  border-top-color: var(--gold-deep);
+}
+
+.card__index {
+  display: block;
+  font-family: var(--font-label);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: var(--tracking-label);
+  color: var(--gold-deep);
+}
+
+.card__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-h3);
+  line-height: 1.2;
+  color: var(--navy);
+  margin: 0;
+}
+
+.card__text {
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0;
+}
+
+.card--surface {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.card--surface .card__title {
+  color: var(--white);
+}
+
+.card--surface .card__text {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.card--surface:hover {
+  border-top-color: var(--gold-bright);
+}
+
+/* ── Reveal (scroll-triggered) ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity var(--dur-slow) var(--ease-snap),
+    transform var(--dur-slow) var(--ease-snap);
+}
+
+.reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Brand Spiral (watermark) ── */
+.brand-spiral {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.brand-spiral img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(120vh, 120vw);
+  height: max(120vh, 120vw);
+  max-width: none;
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: brand-spiral-spin 300s linear infinite;
+  will-change: transform;
+}
+
+@keyframes brand-spiral-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-spiral {
+    display: none;
+  }
+}
+
+/* ── Screen Reader Only ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
