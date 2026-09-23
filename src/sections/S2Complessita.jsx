@@ -4,12 +4,43 @@ import Reveal from "../components/Reveal";
 import LineReveal from "../components/LineReveal";
 import "./S2Complessita.css";
 
-// ═══ SEZIONE 2 — LA REALTÀ NON È FRAMMENTATA ═══
+// ═══ SEZIONI 2 E 3 — ORIGINE E CONTESTO / LA REALTÀ NON È FRAMMENTATA ═══
+// Due TAPPE separate, ognuna una slide del deck (stesso swipe cinematografico
+// dell'hero): la navigazione avviene via rotella/touch/frecce, non con
+// scroll interno continuo.
+//
 // Principi chiave:
 // 1. "Ordinato nell'architettura, disordinato nella materia" — niente card, niente tabelle
 // 2. Alto contrasto tipografico (#071526 navy inchiostro profondo, zero scritte sbiadite)
 // 3. Filo dorato continuo vivo e vibrante che unisce le voci sparse
 // 4. Animazione ordine come trama di connessioni organiche
+
+// Osserva la sezione: accende --visible (disegno del filo, entrate) alla prima vista.
+function useSectionInView(sectionRef) {
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const node = sectionRef.current;
+    if (!node) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [sectionRef]);
+
+  return inView;
+}
 
 const VOICES = [
   {
@@ -84,68 +115,30 @@ const ORDER_RELATIONS = [
   },
 ];
 
-export default function S2Complessita() {
+// I sei nodi-concetto della tappa 02: piccoli tag dorati appesi al
+// filo, si illuminano uno dopo l'altro all'ingresso nella sezione.
+const CONCEPT_NODES = [
+  "Persone",
+  "Processi",
+  "Abitudini",
+  "Relazioni",
+  "Strumenti",
+  "Responsabilità",
+];
+
+// ═══ TAPPA 02 — UNA SCELTA INCONTRA SEMPRE UNA STORIA ═══
+// Slide isolata del deck, layout a 2 colonne:
+// - sinistra: filo dorato ondulato + copy + i 6 nodi-concetto
+// - destra: la scultura di bisso, che galleggia in parallasse
+// In fondo, il filo curva verso il centro: prepara lo stacco verso la tappa 03.
+export function S2Origine() {
   const sectionRef = useRef(null);
-  const originRef = useRef(null); // Atto 01 — si dissolve uscendo verso la tappa 03
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const node = sectionRef.current;
-    if (!node) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      setInView(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  // ── Stacco d'ingresso alla tappa 03 ──
-  // Mentre l'Atto 01 esce dal bordo alto dello scroll interno, si
-  // dissolve (fade + risalita + blur). Scriviamo direttamente la
-  // variabile CSS --origin-fade (0 = intero, 1 = dissolto) senza
-  // re-render: lo scroll resta fluido.
-  useEffect(() => {
-    const scroller = sectionRef.current?.closest(".sandbox-slide");
-    const origin = originRef.current;
-    if (!scroller || !origin) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const vh = window.innerHeight;
-      const top = origin.getBoundingClientRect().top;
-      // progresso: 0 mentre il blocco è intero in vista, 1 quando è
-      // uscito per un terzo della viewport → stacco netto ma morbido
-      const p = Math.min(1, Math.max(0, -top / (vh * 0.3)));
-      origin.style.setProperty("--origin-fade", p.toFixed(3));
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
-    scroller.addEventListener("scroll", onScroll, { passive: true });
-    update();
-    return () => {
-      scroller.removeEventListener("scroll", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
+  const inView = useSectionInView(sectionRef);
 
   return (
     <section
       ref={sectionRef}
-      className={`kh-sec s2-sec ${inView ? "s2-sec--visible" : ""}`}
+      className={`kh-sec s2-sec s2-sec--origine ${inView ? "s2-sec--visible" : ""}`}
       id="complessita"
       data-n="2"
     >
@@ -153,39 +146,112 @@ export default function S2Complessita() {
       <SilkWash a={0} b={10} c={90} d={100} />
 
       <div className="kh-col s2-container">
-        {/* ── ATTO 1: Una scelta incontra sempre una storia ──
-            Tappa 02: piena viewport, scroll-snap, dissolve allo stacco */}
-        <div ref={originRef} className="s2-origin">
-          <Reveal as="div" className="s2-label">
-            02 · Origine e Contesto
-          </Reveal>
-          <LineReveal as="h2" className="s2-title-large" delay={80}>
-            Una scelta incontra sempre una storia
-          </LineReveal>
-          <Reveal as="p" className="s2-lead-origin" delay={120}>
-            Per questo, ogni evoluzione parte sempre da ciò che esiste.
-          </Reveal>
+        <div className="s2-origin">
+          {/* ── Colonna di sinistra: filo + testo ── */}
+          <div className="s2-origin__left">
+            {/* Filo dorato ondulato: scende lungo il margine del testo e,
+                in fondo, curva verso il centro per preparare la tappa 03.
+                Il puntino di luce percorre il filo in loop. */}
+            <svg
+              className="s2-origin__thread"
+              viewBox="0 0 240 1000"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              {/* Il percorso vive in defs: si disegna solo via <use>,
+                  altrimenti il path nudo comparirebbe pieno di nero */}
+              <defs>
+                <path
+                  id="s2-origin-thread-path"
+                  d="M56,0 C18,130 98,290 52,460 C14,610 90,750 148,870 C186,945 230,980 236,1000"
+                  pathLength="1"
+                />
+              </defs>
+              <use href="#s2-origin-thread-path" className="s2-origin__thread-glow" />
+              <use href="#s2-origin-thread-path" className="s2-origin__thread-stroke" />
+              {/* Goccia di luce che percorre il filo */}
+              <circle r="3.5" className="s2-origin__thread-drop">
+                <animateMotion dur="8s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#s2-origin-thread-path" />
+                </animateMotion>
+              </circle>
+            </svg>
 
-          <div className="s2-origin__prose">
-            <Reveal as="p" className="s2-origin__statement" delay={160}>
-              Persone, processi, abitudini, relazioni, strumenti, responsabilità.
-            </Reveal>
-            <Reveal as="p" className="s2-origin__desc" delay={200}>
-              Ci sono cose che funzionano, cose che si sono stratificate, altre che chiedono di
-              essere ripensate. Significa osservare ciò che c’è, riconoscere ciò che ha ancora
-              valore, sciogliere ciò che crea attrito e lasciare spazio a ciò che serve davvero.
-            </Reveal>
-            <Reveal as="p" className="s2-origin__axiom" delay={240}>
-              Prima di cambiare qualcosa, bisogna capire che cosa merita di continuare.
-            </Reveal>
+            <div className="s2-origin__body">
+              <Reveal as="div" className="s2-label">
+                02 · Origine e Contesto
+              </Reveal>
+              <LineReveal as="h2" className="s2-title-large" delay={80}>
+                Una scelta incontra sempre una storia
+              </LineReveal>
+              <Reveal as="p" className="s2-lead-origin" delay={120}>
+                Per questo, ogni evoluzione parte sempre da ciò che esiste.
+              </Reveal>
+
+              {/* I sei nodi-concetto: tag dorati appesi al filo, si
+                  illuminano in sequenza all'ingresso della sezione */}
+              <div className="s2-origin__nodes" aria-label="Persone, processi, abitudini, relazioni, strumenti, responsabilità">
+                {CONCEPT_NODES.map((node, i) => (
+                  <span className="s2-node" style={{ "--nd": `${0.7 + i * 0.22}s` }} key={node}>
+                    <i className="s2-node__dot" aria-hidden="true" />
+                    {node}
+                  </span>
+                ))}
+              </div>
+
+              <Reveal as="p" className="s2-origin__desc" delay={220}>
+                Ci sono cose che funzionano, cose che si sono stratificate, altre che chiedono di
+                essere ripensate. Significa osservare ciò che c’è, riconoscere ciò che ha ancora
+                valore, sciogliere ciò che crea attrito e lasciare spazio a ciò che serve davvero.
+              </Reveal>
+              <Reveal as="p" className="s2-origin__axiom" delay={280}>
+                Prima di cambiare qualcosa, bisogna capire che cosa merita di continuare.
+              </Reveal>
+            </div>
+          </div>
+
+          {/* ── Colonna di destra: la scultura di bisso ──
+              Gala in parallasse (deriva lenta) dentro un alone navy
+              che fonde lo sfondo dell'immagine con la sezione. */}
+          <div className="s2-origin__right" aria-hidden="true">
+            <div className="s2-sculpture">
+              <div className="s2-sculpture__glow" />
+              <img
+                src="/scultura-sezione2.png"
+                alt=""
+                className="s2-sculpture__img"
+              />
+            </div>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
 
-        {/* ── ATTO 2: La realtà non è frammentata (Le 6 voci + Il filo d'oro) ── */}
+// ═══ TAPPA 03 — LA REALTÀ NON È FRAMMENTATA ═══
+// Le 6 voci appese al filo + la trama d'ordine. Contenuto più alto
+// della viewport: scorre dentro la sua slide e lo swipe a deck riprende
+// solo ai bordi (in cima si torna alla tappa 02).
+export function S2Frammentazione() {
+  const sectionRef = useRef(null);
+  const inView = useSectionInView(sectionRef);
+
+  return (
+    <section
+      ref={sectionRef}
+      className={`kh-sec s2-sec ${inView ? "s2-sec--visible" : ""}`}
+      id="frammentazione"
+      data-n="3"
+    >
+      <SilkWash a={0} b={10} c={90} d={100} />
+
+      <div className="kh-col s2-container">
+        {/* ── Il campo delle voci + Il filo d'oro ── */}
         <div className="s2-fragmentation">
           <div className="s2-fragmentation__header">
             <Reveal as="div" className="s2-label">
-              La complessità · Il punto di incontro
+              03 · La complessità · Il punto di incontro
             </Reveal>
             <LineReveal as="h3" className="s2-title-main" delay={100}>
               La realtà non è frammentata
@@ -248,7 +314,7 @@ export default function S2Complessita() {
           </div>
         </div>
 
-        {/* ── ATTO 3: Trama d'Ordine (Le connessioni senza gabbie) ── */}
+        {/* ── Trama d'Ordine (Le connessioni senza gabbie) ── */}
         <div className="s2-weave">
           <div className="s2-weave__header">
             <Reveal as="div" className="s2-label">

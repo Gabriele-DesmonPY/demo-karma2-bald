@@ -2,50 +2,35 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import "./sandbox.css";
 import "./sections/home.css"; // stili di base validati del progetto (kh-*)
 import S1Hero from "./sections/S1Hero";
-import S2Complessita from "./sections/S2Complessita";
+import { S2Origine, S2Frammentazione } from "./sections/S2Complessita";
 
 // Sandbox Karma 2 — navigazione a swipe cinematografico a pieno schermo.
-// Ogni sezione occupa 100vh: il passaggio avviene con swipe fluido su
-// rotella, touch, frecce da tastiera o clic sull'indice laterale.
+// Ogni sezione è una slide del deck: il passaggio avviene con swipe
+// fluido su rotella, touch, frecce da tastiera o clic sull'indice laterale.
+// Le slide con contenuto più alto della viewport (es. la tappa 03)
+// scorrono al loro interno: il passaggio a deck avviene solo ai bordi.
 
 const SECTIONS = [
   { n: 1, id: "hero", nome: "Hero / Apertura", alta: true, fatto: true },
-  { n: 2, id: "complessita", nome: "La realtà non è frammentata", alta: false, fatto: true },
-  { n: 3, id: "tenere-insieme", nome: "Decidere è tenere insieme", alta: false },
-  { n: 4, id: "domanda", nome: "La domanda", alta: false },
-  { n: 5, id: "spirale-tappe", nome: "Entrare nella spirale", alta: true },
-  { n: 6, id: "ecologia", nome: "Ecologia della decisione", alta: false },
-  { n: 7, id: "seme", nome: "Il centro / Il seme", alta: true },
-  { n: 8, id: "bisso", nome: "Il filo / Il bisso", alta: true },
-  { n: 9, id: "crescere", nome: "Crescere insieme", alta: false },
-  { n: 10, id: "mappa-cta", nome: "Mappa Karma + CTA", alta: true },
+  { n: 2, id: "complessita", nome: "Origine e contesto", alta: true, fatto: true },
+  { n: 3, id: "frammentazione", nome: "La realtà non è frammentata", alta: false, fatto: true },
+  { n: 4, id: "tenere-insieme", nome: "Decidere è tenere insieme", alta: false },
+  { n: 5, id: "domanda", nome: "La domanda", alta: false },
+  { n: 6, id: "spirale-tappe", nome: "Entrare nella spirale", alta: true },
+  { n: 7, id: "ecologia", nome: "Ecologia della decisione", alta: false },
+  { n: 8, id: "seme", nome: "Il centro / Il seme", alta: true },
+  { n: 9, id: "bisso", nome: "Il filo / Il bisso", alta: true },
+  { n: 10, id: "crescere", nome: "Crescere insieme", alta: false },
+  { n: 11, id: "mappa-cta", nome: "Mappa Karma + CTA", alta: true },
 ];
 
-const AVAILABLE_COUNT = 2; // Attualmente sezioni 1 e 2 pronte
+const AVAILABLE_COUNT = 3; // Attualmente sezioni 1, 2 e 3 pronte
 
 export default function App() {
   const [activeIndex, setActiveIndex] = useState(0);
-  // La Sezione 2 contiene due "tappe" (02 Origine → 03 La realtà non è
-  // frammentata): quando lo scroll interno supera la metà della viewport
-  // l'indicatore laterale passa da 02 a 03.
-  const [slide1Deep, setSlide1Deep] = useState(false);
   const isTransitioningRef = useRef(false);
-  const slide1Ref = useRef(null);
+  const slideRefs = useRef([]);
   const touchStartYRef = useRef(0);
-
-  // Indicatore laterale: in slide 1 segue lo scroll interno (02 ↔ 03)
-  const activeSection = activeIndex === 1 && slide1Deep ? 3 : activeIndex + 1;
-
-  // Scroll interno della slide 2: guida il passaggio D2 → D3
-  useEffect(() => {
-    const node = slide1Ref.current;
-    if (!node) return;
-    const handleScroll = () => {
-      setSlide1Deep(node.scrollTop > window.innerHeight * 0.45);
-    };
-    node.addEventListener("scroll", handleScroll, { passive: true });
-    return () => node.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const goToSlide = useCallback((targetIndex) => {
     if (targetIndex < 0 || targetIndex >= AVAILABLE_COUNT) return;
@@ -54,46 +39,47 @@ export default function App() {
     isTransitioningRef.current = true;
     setActiveIndex(targetIndex);
 
-    // Se si torna alla sezione 2, reset dello scroll interno
-    // (e l'indicatore torna a 02)
-    if (targetIndex === 1 && slide1Ref.current) {
-      slide1Ref.current.scrollTop = 0;
-      setSlide1Deep(false);
-    }
+    // La slide di destinazione riparte sempre dal suo inizio
+    const target = slideRefs.current[targetIndex];
+    if (target) target.scrollTop = 0;
 
     setTimeout(() => {
       isTransitioningRef.current = false;
     }, 800);
   }, []);
 
+  // ── Passo avanti/indietro consapevole dello scroll interno ──
+  // Le slide più alte della viewport scorrono al loro interno: lo
+  // swipe avanti avanza solo quando si è in fondo, quello indietro
+  // torna solo dalla cima — come tra la Sezione 1 e la Sezione 2.
+  const stepSlide = useCallback(
+    (dir) => {
+      if (isTransitioningRef.current) return;
+      const scroller = document.querySelector(`.sandbox-slide[data-slide="${activeIndex}"]`);
+      const scrollable = scroller && scroller.scrollHeight - scroller.clientHeight > 10;
+
+      if (dir > 0) {
+        const atBottom =
+          !scrollable ||
+          scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 10;
+        if (atBottom && activeIndex < AVAILABLE_COUNT - 1) goToSlide(activeIndex + 1);
+      } else {
+        const atTop = !scroller || scroller.scrollTop <= 10;
+        if (atTop && activeIndex > 0) goToSlide(activeIndex - 1);
+      }
+    },
+    [activeIndex, goToSlide]
+  );
+
   // Gestione Wheel (rotella del mouse / touchpad)
   useEffect(() => {
     const handleWheel = (e) => {
-      if (isTransitioningRef.current) return;
-
-      const delta = e.deltaY;
-      if (Math.abs(delta) < 25) return;
-
-      if (delta > 0) {
-        // Scroll verso il basso
-        if (activeIndex === 0) {
-          goToSlide(1);
-        }
-      } else {
-        // Scroll verso l'alto
-        if (activeIndex === 1) {
-          // Torna su solo se il contenuto interno della sezione 2 è in cima
-          const scrollTop = slide1Ref.current ? slide1Ref.current.scrollTop : 0;
-          if (scrollTop <= 10) {
-            goToSlide(0);
-          }
-        }
-      }
+      if (Math.abs(e.deltaY) < 25) return;
+      stepSlide(e.deltaY > 0 ? 1 : -1);
     };
-
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [activeIndex, goToSlide]);
+  }, [stepSlide]);
 
   // Gestione Touch (swipe su mobile)
   useEffect(() => {
@@ -102,21 +88,9 @@ export default function App() {
     };
 
     const handleTouchEnd = (e) => {
-      if (isTransitioningRef.current) return;
-      const touchEndY = e.changedTouches[0].clientY;
-      const diffY = touchStartYRef.current - touchEndY;
-
+      const diffY = touchStartYRef.current - e.changedTouches[0].clientY;
       if (Math.abs(diffY) > 45) {
-        if (diffY > 0) {
-          // Swipe verso l'alto (vai avanti)
-          if (activeIndex === 0) goToSlide(1);
-        } else {
-          // Swipe verso il basso (torna indietro)
-          if (activeIndex === 1) {
-            const scrollTop = slide1Ref.current ? slide1Ref.current.scrollTop : 0;
-            if (scrollTop <= 10) goToSlide(0);
-          }
-        }
+        stepSlide(diffY > 0 ? 1 : -1);
       }
     };
 
@@ -127,34 +101,29 @@ export default function App() {
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [activeIndex, goToSlide]);
+  }, [stepSlide]);
 
   // Gestione Tastiera (Frecce giù/su, PageDown/PageUp)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (isTransitioningRef.current) return;
       if (e.key === "ArrowDown" || e.key === "PageDown") {
         e.preventDefault();
-        if (activeIndex === 0) goToSlide(1);
+        stepSlide(1);
       } else if (e.key === "ArrowUp" || e.key === "PageUp") {
         e.preventDefault();
-        if (activeIndex === 1) {
-          const scrollTop = slide1Ref.current ? slide1Ref.current.scrollTop : 0;
-          if (scrollTop <= 10) goToSlide(0);
-        }
+        stepSlide(-1);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIndex, goToSlide]);
+  }, [stepSlide]);
 
   return (
     <div className="sandbox-viewport">
       {/* Indice laterale fisso interattivo */}
       <nav className="sandbox-index" aria-label="Indice sezioni">
         {SECTIONS.map((s) => {
-          const isActive = activeSection === s.n;
+          const isActive = activeIndex + 1 === s.n;
           return (
             <button
               key={s.n}
@@ -182,13 +151,30 @@ export default function App() {
         }}
       >
         {/* Slide 0: Sezione 1 — Hero */}
-        <div className="sandbox-slide" data-slide="0">
+        <div
+          className="sandbox-slide"
+          ref={(el) => (slideRefs.current[0] = el)}
+          data-slide="0"
+        >
           <S1Hero />
         </div>
 
-        {/* Slide 1: Sezione 2 — La realtà non è frammentata */}
-        <div className="sandbox-slide" ref={slide1Ref} data-slide="1">
-          <S2Complessita />
+        {/* Slide 1: Sezione 2 — Origine e contesto (piena viewport, isolata) */}
+        <div
+          className="sandbox-slide"
+          ref={(el) => (slideRefs.current[1] = el)}
+          data-slide="1"
+        >
+          <S2Origine />
+        </div>
+
+        {/* Slide 2: Sezione 3 — La realtà non è frammentata (scrollabile) */}
+        <div
+          className="sandbox-slide"
+          ref={(el) => (slideRefs.current[2] = el)}
+          data-slide="2"
+        >
+          <S2Frammentazione />
         </div>
       </div>
 
@@ -204,19 +190,31 @@ export default function App() {
             ↓
           </span>
         </button>
+      ) : activeIndex === 1 ? (
+        <button
+          type="button"
+          className="sandbox-swipe-hint"
+          onClick={() => goToSlide(2)}
+        >
+          <span>Swipe Sezione 03</span>
+          <span className="sandbox-swipe-hint__arrow" aria-hidden="true">
+            ↓
+          </span>
+        </button>
       ) : (
         <button
           type="button"
           className="sandbox-swipe-hint"
-          onClick={() => goToSlide(0)}
+          onClick={() => goToSlide(1)}
         >
-          <span>↑ Torna a Hero 01</span>
+          <span>↑ Torna a Sezione 02</span>
         </button>
       )}
 
       {/* Badge informativo di stato in basso a sinistra */}
       <div className="sandbox-badge">
-        Karma 2 Sandbox · Sezione <strong>{String(activeSection).padStart(2, "0")}</strong> di 10
+        Karma 2 Sandbox · Sezione <strong>{String(activeIndex + 1).padStart(2, "0")}</strong> di{" "}
+        {SECTIONS.length}
       </div>
     </div>
   );

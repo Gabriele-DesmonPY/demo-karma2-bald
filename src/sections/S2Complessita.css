@@ -31,87 +31,258 @@
   margin-bottom: 16px;
 }
 
-/* ── ATTO 1: Una scelta incontra sempre una storia ──
-   BLOCCO MONUMENTALE: occupa da solo tutta la viewport. Il contenuto
-   vive centrato verticalmente e respira: il resto della sezione
-   continua sotto, dopo questo "atto d'apertura" a pieno schermo.
-   --origin-fade (0→1, guidato dallo scroll in JS) dissolve il blocco
-   mentre l'utente scende verso la tappa 03: le due tappe non si
-   toccano mai visivamente. */
-.s2-origin {
-  max-width: 1000px;
-  /* tutta la viewport, meno il padding-top della sezione: il blocco
-     si presenta intero, come una slide dentro la slide */
-  min-height: calc(100svh - clamp(80px, 11vh, 130px));
+/* ── TAPPA 02: Una scelta incontra sempre una storia ──
+   SLIDE ISOLATA del deck: esattamente 100svh (padding incluso), non
+   scrollabile — lo swipe a deck la raggiunge e la lascia come l'hero.
+   Il contenuto vive centrato verticalmente e respira. */
+.s2-sec--origine {
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding-block: clamp(72px, 10vh, 120px) clamp(40px, 6vh, 80px);
+}
+
+.s2-sec--origine .s2-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-bottom: clamp(72px, 10vh, 120px);
-  padding-block: clamp(24px, 4vh, 48px);
-  scroll-snap-align: start;
-  opacity: calc(1 - var(--origin-fade, 0));
-  transform: translateY(calc(var(--origin-fade, 0) * -30px));
-  filter: blur(calc(var(--origin-fade, 0) * 10px));
-  will-change: opacity, transform, filter;
+}
+
+/* ── TAPPA 02: layout a 2 colonne ──
+   Sinistra: filo ondulato + copy + nodi-concetto. Destra: la scultura
+   di bisso in deriva (parallasse) dentro un alone navy che fonde lo
+   sfondo dell'immagine con la sezione chiara. */
+.s2-origin {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 58fr) minmax(0, 38fr);
+  align-items: center;
+  column-gap: clamp(32px, 5vw, 80px);
+  padding-block: clamp(16px, 3vh, 36px);
+}
+
+/* ── Colonna di sinistra ── */
+.s2-origin__left {
+  position: relative;
+  padding-left: clamp(48px, 5.5vw, 88px);
+  max-width: 640px;
+}
+
+/* Il filo dorato ondulato: scende lungo il margine del testo e in
+   fondo curva verso il centro (raccordo verso la tappa 03). Si
+   disegna all'ingresso; una goccia di luce lo percorre in loop. */
+.s2-origin__thread {
+  position: absolute;
+  left: 0;
+  top: 1%;
+  height: 98%;
+  width: clamp(80px, 9vw, 140px);
+  overflow: visible;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.s2-origin__thread use {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 2.6s var(--ease-out-expo) 0.3s;
+}
+
+.s2-sec--visible .s2-origin__thread use {
+  stroke-dashoffset: 0;
+}
+
+.s2-origin__thread-glow {
+  stroke: rgba(208, 172, 117, 0.38);
+  stroke-width: 6;
+  filter: blur(5px);
+  vector-effect: non-scaling-stroke;
+}
+
+.s2-origin__thread-stroke {
+  stroke: #b58a3f;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 3px rgba(198, 154, 87, 0.45));
+}
+
+.s2-origin__thread-drop {
+  fill: #ecd7a8;
+  filter: drop-shadow(0 0 6px rgba(208, 172, 117, 0.85));
+  opacity: 0;
+  transition: opacity 1.2s ease 2.6s;
+}
+
+.s2-sec--visible .s2-origin__thread-drop {
+  opacity: 0.9;
+}
+
+.s2-origin__body {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── I sei nodi-concetto ──
+   Tag dorati appesi al filo: partono sfocati e si illuminano in
+   sequenza (--nd inline), poi restano con un respiro di luce. */
+.s2-origin__nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 clamp(24px, 4vh, 38px);
+  max-width: 460px;
+}
+
+.s2-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  border: 1px solid rgba(198, 154, 87, 0.45);
+  border-radius: 999px;
+  background: rgba(250, 248, 244, 0.72);
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a6327;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(10px);
+}
+
+.s2-sec--visible .s2-node {
+  animation:
+    s2-node-in 1s var(--ease-out-expo) var(--nd) forwards,
+    s2-node-breathe 4.5s ease-in-out calc(var(--nd) + 1.2s) infinite alternate;
+}
+
+@keyframes s2-node-in {
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+    box-shadow: 0 4px 18px rgba(198, 154, 87, 0.18);
+  }
+}
+
+@keyframes s2-node-breathe {
+  from {
+    box-shadow: 0 4px 18px rgba(198, 154, 87, 0.14);
+  }
+  to {
+    box-shadow: 0 4px 26px rgba(198, 154, 87, 0.38);
+  }
+}
+
+.s2-node__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c69a57;
+  box-shadow: 0 0 0 3px rgba(198, 154, 87, 0.2), 0 0 8px rgba(198, 154, 87, 0.5);
+}
+
+/* ── Colonna di destra: la scultura ──
+   L'immagine (sfondo navy) galleggia dentro un alone navy sfumato:
+   i bordi dell'immagine si dissolvono nella luce della sezione. */
+.s2-origin__right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.s2-sculpture {
+  position: relative;
+  width: min(100%, 470px);
+  aspect-ratio: 512 / 540;
+  animation: s2-sculpture-float 13s ease-in-out 2s infinite alternate;
+  will-change: transform;
+}
+
+@keyframes s2-sculpture-float {
+  from {
+    transform: translateY(0) rotate(0deg);
+  }
+  to {
+    transform: translateY(-20px) rotate(1.3deg);
+  }
+}
+
+.s2-sculpture__glow {
+  position: absolute;
+  inset: -14%;
+  background: radial-gradient(
+    closest-side,
+    rgba(16, 29, 50, 0.72) 0%,
+    rgba(16, 29, 50, 0.42) 46%,
+    rgba(16, 29, 50, 0) 74%
+  );
+}
+
+.s2-sculpture__img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* i bordi navy dell'immagine si dissolvono: nessun rettangolo visibile */
+  -webkit-mask-image: radial-gradient(closest-side, black 56%, transparent 88%);
+  mask-image: radial-gradient(closest-side, black 56%, transparent 88%);
+  opacity: 0;
+  transform: translateY(34px) scale(0.97);
+  transition:
+    opacity 1.7s var(--ease-out-expo) 0.35s,
+    transform 1.7s var(--ease-out-expo) 0.35s;
+}
+
+.s2-sec--visible .s2-sculpture__img {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .s2-title-large {
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
-  font-size: clamp(2.5rem, 5.2vw, 4.6rem);
+  font-size: clamp(2.3rem, 4.2vw, 3.9rem);
   font-weight: 400;
   line-height: 1.08;
   letter-spacing: 0.01em;
   color: #071526; /* Navy profondo solido */
-  max-width: 16ch;
-  margin: 0 0 clamp(20px, 3vh, 30px);
+  max-width: 15ch;
+  margin: 0 0 clamp(18px, 2.6vh, 26px);
 }
 
 .s2-lead-origin {
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
   font-style: italic;
-  font-size: clamp(1.3rem, 2.3vw, 1.95rem);
+  font-size: clamp(1.2rem, 1.9vw, 1.6rem);
   line-height: 1.4;
   color: #8a6327;
-  margin: 0 0 clamp(40px, 6vh, 64px);
+  margin: 0 0 clamp(28px, 4.5vh, 48px);
 }
 
 /* Riquadro con bordo dorato: più ampio e arioso, da manifesto */
-.s2-origin__prose {
-  border-left: 3px solid #c69a57;
-  padding-left: clamp(24px, 3.5vw, 52px);
-  padding-block: clamp(8px, 1.5vh, 18px);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(20px, 3vh, 30px);
-  max-width: 880px;
-}
-
-.s2-origin__statement {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: clamp(1.25rem, 1.9vw, 1.65rem);
-  line-height: 1.45;
-  color: #071526;
-  margin: 0;
-}
-
 .s2-origin__desc {
   font-family: var(--font-body);
-  font-size: clamp(1.05rem, 1.4vw, 1.3rem);
-  line-height: 1.78;
+  font-size: clamp(1.02rem, 1.3vw, 1.22rem);
+  line-height: 1.75;
   color: #1a2736;
-  max-width: 58ch;
-  margin: 0;
+  max-width: 56ch;
+  margin: 0 0 clamp(18px, 3vh, 28px);
 }
 
 .s2-origin__axiom {
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
   font-style: italic;
-  font-size: clamp(1.3rem, 2.1vw, 1.75rem);
+  font-size: clamp(1.25rem, 1.9vw, 1.6rem);
   line-height: 1.45;
   color: #071526;
   font-weight: 600;
-  margin: clamp(6px, 1.5vh, 14px) 0 0;
+  margin: 0;
 }
 
 /* ── Tipografia viva: reveal dal blur al nitido, solo sull'Atto 1 ──
@@ -129,13 +300,9 @@
   filter: blur(0);
 }
 
-/* ── ATTO 2: La realtà non è frammentata ──
-   Tappa 03: punto di aggancio dello scroll-snap — lo scroller si
-   ferma qui quando ci si avvicina, il passaggio da 02 è netto. */
+/* ── TAPPA 03: La realtà non è frammentata ── */
 .s2-fragmentation {
   margin-bottom: clamp(70px, 10vh, 120px);
-  scroll-snap-align: start;
-  scroll-margin-top: clamp(40px, 6vh, 80px);
 }
 
 .s2-fragmentation__header {
@@ -444,13 +611,66 @@
   .s2-origin .reveal {
     filter: none;
   }
+
+  /* filo disegnato, nodi accesi, scultura ferma: nessun loop */
+  .s2-origin__thread use {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+
+  .s2-origin__thread-drop {
+    display: none;
+  }
+
+  .s2-node {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    animation: none;
+  }
+
+  .s2-sculpture {
+    animation: none;
+  }
+
+  .s2-sculpture__img {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
-/* ── Mobile: il blocco monumentale respira, ma non gonfia ── */
-@media (max-width: 800px) {
+/* ── Responsive ── */
+/* Sotto 1024px: colonna singola, la scultura scende sotto il testo
+   e la slide torna scrollabile (il deck passa oltre ai suoi bordi). */
+@media (max-width: 1023px) {
+  .s2-sec--origine {
+    height: auto;
+    min-height: 100svh;
+  }
+
   .s2-origin {
-    min-height: calc(100svh - 80px);
-    padding-block: 32px 16px;
+    grid-template-columns: 1fr;
+    row-gap: clamp(28px, 5vh, 48px);
+  }
+
+  .s2-origin__right {
+    order: 2;
+  }
+
+  .s2-sculpture {
+    width: min(78%, 380px);
+  }
+}
+
+/* ── Mobile: la tappa 02 respira, ma non gonfia ── */
+@media (max-width: 800px) {
+  .s2-sec--origine {
+    padding-block: 56px 40px;
+  }
+
+  .s2-origin {
+    padding-block: 16px 8px;
   }
 
   .s2-title-large {
@@ -459,5 +679,9 @@
 
   .s2-lead-origin {
     margin-bottom: 36px;
+  }
+
+  .s2-sculpture {
+    width: min(88%, 320px);
   }
 }

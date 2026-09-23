@@ -26,15 +26,6 @@
   scrollbar-width: none;
 }
 
-/* ── Scroll snap nella Sezione 2 (slide 1) ──
-   Proximity: vicino a un punto di aggancio (inizio Atto 01 / inizio
-   Atto 02) lo scroll "atterra" pulito; dentro il contenuto lungo
-   della tappa 03 lo scroll resta libero. Solo su questa slide:
-   l'hero non ha punti di snap. */
-.sandbox-slide[data-slide="1"] {
-  scroll-snap-type: y proximity;
-}
-
 .sandbox-slide::-webkit-scrollbar {
   display: none;
 }
