@@ -9,7 +9,7 @@ import "./GomitoloConductor.css";
 //
 // Performance estrema (60fps garantiti):
 // - Aggiornamenti via requestAnimationFrame diretto su DOM ref (nessun re-render React)
-// - Hardware-accelerated translate3d + rotate
+// - Hardware-accelerated translate3d + rotate (anche la scia: scaleY, mai height)
 // - Disattivazione con prefers-reduced-motion
 
 export default function GomitoloConductor() {
@@ -39,9 +39,11 @@ export default function GomitoloConductor() {
 
     gomitolo.style.transform = `translate3d(-50%, ${currentY}px, 0) rotate(${rotation}deg)`;
 
-    // Il filo dorato traccia la scia fino alla posizione esatta del gomitolo
+    // Il filo dorato traccia la scia fino alla posizione esatta del gomitolo.
+    // scaleY su un filo alto 100vh (prima: style.height → layout a ogni frame)
     if (trail) {
-      trail.style.height = `${currentY}px`;
+      const scale = currentY / Math.max(1, window.innerHeight);
+      trail.style.transform = `translate3d(-50%, 0, 0) scaleY(${scale})`;
     }
 
     if (glow) {

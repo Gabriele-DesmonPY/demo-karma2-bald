@@ -15,8 +15,18 @@
   height: 100%;
   transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
+  backface-visibility: hidden;
 }
 
+/* Ogni slide scorre al suo interno:
+   - overscroll-behavior: contain → lo scroll interno non "rimbalza" sul
+     documento (niente scroll chaining né pull-to-refresh durante lo swipe);
+   - -webkit-overflow-scrolling: touch → scroll inerziale su iOS datati;
+   - touch-action: pan-y → il browser sa in anticipo che qui si scorre solo
+     in verticale: niente attesa del gesto, scroll subito sul compositor
+     (pinch-zoom resta consentito per accessibilità);
+   - contain: layout paint → layout e pittura isolati per slide: un
+     cambiamento dentro una slide non invalida le altre. */
 .sandbox-slide {
   width: 100vw;
   height: 100vh;
@@ -24,6 +34,19 @@
   overflow-x: hidden;
   position: relative;
   scrollbar-width: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
+  contain: layout paint;
+}
+
+/* Le animazioni infinite (deriva, respiro, sway, fascio, spirale…)
+   girano solo nella slide attiva: fuori schermo restano in pausa e
+   non consumano frame del compositor. */
+.sandbox-slide:not(.is-active) *,
+.sandbox-slide:not(.is-active) *::before,
+.sandbox-slide:not(.is-active) *::after {
+  animation-play-state: paused !important;
 }
 
 .sandbox-slide::-webkit-scrollbar {
@@ -54,7 +77,8 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color 300ms var(--ease-snap), background 300ms var(--ease-snap);
+  /* niente transizione di color/background: al hover il cambio è
+     istantaneo (solo transform/opacity vengono animati nel progetto) */
 }
 
 .sandbox-index__item--todo {
@@ -82,9 +106,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(7, 21, 38, 0.82);
+  /* sfondo pieno: niente backdrop-filter (blur live di ciò che scorre sotto) */
+  background: rgba(7, 21, 38, 0.92);
   border: 1px solid rgba(198, 154, 87, 0.4);
-  backdrop-filter: blur(10px);
   padding: 9px 20px;
   border-radius: 999px;
   color: #faf8f4;
@@ -94,29 +118,49 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 300ms ease;
+  /* solo transform/opacity (prima: transition: all) */
+  transition: transform 300ms ease;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  isolation: isolate;
+}
+
+/* Il fondo del hover è un velo sovrapposto che entra in opacità:
+   stesso effetto del vecchio cambio di background, ma composited. */
+.sandbox-swipe-hint::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(10, 37, 69, 0.96);
+  opacity: 0;
+  transition: opacity 300ms ease;
 }
 
 .sandbox-swipe-hint:hover {
-  background: rgba(10, 37, 69, 0.96);
   border-color: var(--gold-bright);
   color: var(--gold-bright);
   transform: translateX(-50%) translateY(-2px);
 }
 
+.sandbox-swipe-hint:hover::before {
+  opacity: 1;
+}
+
 .sandbox-swipe-hint__arrow {
   color: var(--gold-bright);
   font-size: 13px;
+  display: inline-block;
   animation: sb-hint-bob 2s ease-in-out infinite;
+  will-change: transform;
 }
 
 @keyframes sb-hint-bob {
   0%, 100% {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
   50% {
-    transform: translateY(3px);
+    transform: translate3d(0, 3px, 0);
   }
 }
 
@@ -129,8 +173,8 @@
   font-size: 11px;
   letter-spacing: 0.06em;
   color: rgba(250, 248, 244, 0.65);
-  background: rgba(7, 21, 38, 0.72);
-  backdrop-filter: blur(8px);
+  /* sfondo pieno, niente backdrop-filter */
+  background: rgba(7, 21, 38, 0.9);
   padding: 6px 14px;
   border-radius: 4px;
   border: 1px solid rgba(198, 154, 87, 0.25);
@@ -158,4 +202,14 @@
   .sandbox-badge {
     display: none;
   }
+}
+/* ── Slide chiare (Sezione 2 avorio): indice in inchiostro per restare leggibile ── */
+.sandbox-viewport[data-tone="light"] .sandbox-index__item {
+  color: rgba(13, 24, 38, 0.5);
+}
+
+.sandbox-viewport[data-tone="light"] .sandbox-index__item--on {
+  color: #86602a;
+  background: rgba(134, 96, 42, 0.1);
+  box-shadow: 0 0 0 1px rgba(134, 96, 42, 0.35);
 }

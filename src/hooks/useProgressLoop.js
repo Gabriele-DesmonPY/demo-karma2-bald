@@ -1,13 +1,23 @@
 import { useEffect, useRef } from "react";
 
-// useProgressLoop — Loop rAF persistente per animazioni legate allo scroll.
-// Applica le trasformazioni direttamente al DOM senza re-render React.
+// useProgressLoop — aggiornamenti legati allo scroll, applicati direttamente
+// al DOM senza re-render React.
+//
+// Performance: prima girava un rAF perpetuo (60 chiamate al secondo anche
+// a pagina ferma, con letture di layout a ogni frame). Ora il frame si
+// richiede SOLO quando arriva uno scroll (anche lo scroll interno delle
+// slide: listener in capture su window) o una resize — un frame per evento,
+// al massimo uno per refresh.
 // Gating con IntersectionObserver + gestione automatica di prefers-reduced-motion.
 export default function useProgressLoop(getProgress, onFrame, enabled = true, observeRef = null) {
   const getProgressRef = useRef(getProgress);
   const onFrameRef = useRef(onFrame);
-  getProgressRef.current = getProgress;
-  onFrameRef.current = onFrame;
+
+  // Le callback più recenti, aggiornate dopo ogni render (mai durante)
+  useEffect(() => {
+    getProgressRef.current = getProgress;
+    onFrameRef.current = onFrame;
+  });
 
   useEffect(() => {
     if (!enabled) {
@@ -20,35 +30,37 @@ export default function useProgressLoop(getProgress, onFrame, enabled = true, ob
     let inView = true;
     let last = undefined;
 
-    const tick = () => {
+    const frame = () => {
+      raf = null;
       const p = getProgressRef.current();
       if (p !== last) {
         last = p;
         onFrameRef.current(p);
       }
-      raf = requestAnimationFrame(tick);
     };
-    const start = () => {
-      if (raf === null) raf = requestAnimationFrame(tick);
+    const request = () => {
+      if (raf === null && inView && !mq.matches) raf = requestAnimationFrame(frame);
     };
-    const stop = () => {
+    const cancel = () => {
       if (raf !== null) cancelAnimationFrame(raf);
       raf = null;
     };
 
     const sync = () => {
       if (mq.matches) {
-        stop();
+        cancel();
         onFrameRef.current(1);
       } else if (inView) {
-        start();
+        request();
       } else {
-        stop();
+        cancel();
       }
     };
 
     sync();
     mq.addEventListener("change", sync);
+    window.addEventListener("scroll", request, { passive: true, capture: true });
+    window.addEventListener("resize", request, { passive: true });
 
     let io = null;
     const node = observeRef?.current;
@@ -64,8 +76,10 @@ export default function useProgressLoop(getProgress, onFrame, enabled = true, ob
     }
 
     return () => {
-      stop();
+      cancel();
       mq.removeEventListener("change", sync);
+      window.removeEventListener("scroll", request, { capture: true });
+      window.removeEventListener("resize", request);
       io?.disconnect();
     };
   }, [enabled, observeRef]);

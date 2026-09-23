@@ -115,122 +115,6 @@ const ORDER_RELATIONS = [
   },
 ];
 
-// I sei nodi-concetto della tappa 02: piccoli tag dorati appesi al
-// filo, si illuminano uno dopo l'altro all'ingresso nella sezione.
-const CONCEPT_NODES = [
-  "Persone",
-  "Processi",
-  "Abitudini",
-  "Relazioni",
-  "Strumenti",
-  "Responsabilità",
-];
-
-// ═══ TAPPA 02 — UNA SCELTA INCONTRA SEMPRE UNA STORIA ═══
-// Slide isolata del deck, layout a 2 colonne:
-// - sinistra: filo dorato ondulato + copy + i 6 nodi-concetto
-// - destra: la scultura di bisso, che galleggia in parallasse
-// In fondo, il filo curva verso il centro: prepara lo stacco verso la tappa 03.
-export function S2Origine() {
-  const sectionRef = useRef(null);
-  const inView = useSectionInView(sectionRef);
-
-  return (
-    <section
-      ref={sectionRef}
-      className={`kh-sec s2-sec s2-sec--origine ${inView ? "s2-sec--visible" : ""}`}
-      id="complessita"
-      data-n="2"
-    >
-      {/* Sfondo SilkWash pastello e fili d'oro a opacità calibrata per massimo contrasto */}
-      <SilkWash a={0} b={10} c={90} d={100} />
-
-      <div className="kh-col s2-container">
-        <div className="s2-origin">
-          {/* ── Colonna di sinistra: filo + testo ── */}
-          <div className="s2-origin__left">
-            {/* Filo dorato ondulato: scende lungo il margine del testo e,
-                in fondo, curva verso il centro per preparare la tappa 03.
-                Il puntino di luce percorre il filo in loop. */}
-            <svg
-              className="s2-origin__thread"
-              viewBox="0 0 240 1000"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              {/* Il percorso vive in defs: si disegna solo via <use>,
-                  altrimenti il path nudo comparirebbe pieno di nero */}
-              <defs>
-                <path
-                  id="s2-origin-thread-path"
-                  d="M56,0 C18,130 98,290 52,460 C14,610 90,750 148,870 C186,945 230,980 236,1000"
-                  pathLength="1"
-                />
-              </defs>
-              <use href="#s2-origin-thread-path" className="s2-origin__thread-glow" />
-              <use href="#s2-origin-thread-path" className="s2-origin__thread-stroke" />
-              {/* Goccia di luce che percorre il filo */}
-              <circle r="3.5" className="s2-origin__thread-drop">
-                <animateMotion dur="8s" repeatCount="indefinite" rotate="auto">
-                  <mpath href="#s2-origin-thread-path" />
-                </animateMotion>
-              </circle>
-            </svg>
-
-            <div className="s2-origin__body">
-              <Reveal as="div" className="s2-label">
-                02 · Origine e Contesto
-              </Reveal>
-              <LineReveal as="h2" className="s2-title-large" delay={80}>
-                Una scelta incontra sempre una storia
-              </LineReveal>
-              <Reveal as="p" className="s2-lead-origin" delay={120}>
-                Per questo, ogni evoluzione parte sempre da ciò che esiste.
-              </Reveal>
-
-              {/* Blocco centrale: i sei nodi-concetto (pillole traslucide
-                  che si accendono in sequenza) e il paragrafo descrittivo */}
-              <div className="s2-origin__middle">
-                <div className="s2-origin__nodes" aria-label="Persone, processi, abitudini, relazioni, strumenti, responsabilità">
-                  {CONCEPT_NODES.map((node, i) => (
-                    <span className="s2-node" style={{ "--nd": `${0.7 + i * 0.22}s` }} key={node}>
-                      <i className="s2-node__dot" aria-hidden="true" />
-                      {node}
-                    </span>
-                  ))}
-                </div>
-
-                <Reveal as="p" className="s2-origin__desc" delay={220}>
-                  Ci sono cose che funzionano, cose che si sono stratificate, altre che chiedono di
-                  essere ripensate. Significa osservare ciò che c’è, riconoscere ciò che ha ancora
-                  valore, sciogliere ciò che crea attrito e lasciare spazio a ciò che serve davvero.
-                </Reveal>
-              </div>
-
-              <Reveal as="p" className="s2-origin__axiom" delay={280}>
-                Prima di cambiare qualcosa, bisogna capire che cosa merita di continuare.
-              </Reveal>
-            </div>
-          </div>
-
-          {/* ── Colonna di destra: la scultura di bisso ──
-              Gala in parallasse (deriva lenta) su sfondo trasparente:
-              solo seta e filamenti dorati, nessun alone. */}
-          <div className="s2-origin__right" aria-hidden="true">
-            <div className="s2-sculpture">
-              <img
-                src="/scultura-sezione2.png"
-                alt=""
-                className="s2-sculpture__img"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ═══ TAPPA 03 — LA REALTÀ NON È FRAMMENTATA ═══
 // Le 6 voci appese al filo + la trama d'ordine. Contenuto più alto
 // della viewport: scorre dentro la sua slide e lo swipe a deck riprende
@@ -242,7 +126,7 @@ export function S2Frammentazione() {
   return (
     <section
       ref={sectionRef}
-      className={`kh-sec s2-sec ${inView ? "s2-sec--visible" : ""}`}
+      className={`kh-sec s2-sec s2-sec--frammentazione ${inView ? "s2-sec--visible" : ""}`}
       id="frammentazione"
       data-n="3"
     >
@@ -297,8 +181,12 @@ export function S2Frammentazione() {
                   "--fdelay": v.delay,
                 }}
               >
-                <span className="s2-fragment__anchor" aria-hidden="true" />
-                <span className="s2-fragment__content">{v.text}</span>
+                {/* Il sway vive su un wrapper interno: una sola animazione di
+                    transform per elemento → entrambe restano sul compositor */}
+                <span className="s2-fragment__sway">
+                  <span className="s2-fragment__anchor" aria-hidden="true" />
+                  <span className="s2-fragment__content">{v.text}</span>
+                </span>
               </div>
             ))}
           </div>

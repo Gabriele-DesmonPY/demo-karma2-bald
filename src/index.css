@@ -192,19 +192,18 @@ button {
   cursor: pointer;
   overflow: hidden;
   isolation: isolate;
-  transition:
-    transform var(--dur-fast) var(--ease-snap),
-    background-color var(--dur-fast) var(--ease-snap),
-    color var(--dur-fast) var(--ease-snap),
-    border-color var(--dur-fast) var(--ease-snap),
-    box-shadow var(--dur-fast) var(--ease-snap);
+  /* solo transform: colori e ombre cambiano al hover senza transizione
+     (niente repaint per frame) */
+  transition: transform var(--dur-fast) var(--ease-snap);
 }
 
 .btn:active {
   transform: scale(0.96);
 }
 
-/* Shimmer sweep: un bagliore attraversa il bottone al passaggio */
+/* Shimmer sweep: un bagliore attraversa il bottone al passaggio.
+   Si muove con translate3d (prima animava "left" → layout per frame):
+   -80% → 130% della larghezza del bottone = 210% / 55% ≈ 382% della sua. */
 .btn::after {
   content: "";
   position: absolute;
@@ -213,13 +212,13 @@ button {
   left: -80%;
   width: 55%;
   background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.38), transparent);
-  transform: skewX(-18deg);
-  transition: left 0.7s var(--ease-snap);
+  transform: translate3d(0, 0, 0) skewX(-18deg);
+  transition: transform 0.7s var(--ease-snap);
   pointer-events: none;
 }
 
 .btn:hover::after {
-  left: 130%;
+  transform: translate3d(382%, 0, 0) skewX(-18deg);
 }
 
 .btn > * {
@@ -326,7 +325,7 @@ button {
 /* ── Reveal (scroll-triggered) ── */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translate3d(0, 30px, 0);
   transition:
     opacity var(--dur-slow) var(--ease-snap),
     transform var(--dur-slow) var(--ease-snap);
@@ -334,7 +333,7 @@ button {
 
 .reveal--visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
 /* ── Brand Spiral (watermark) ── */

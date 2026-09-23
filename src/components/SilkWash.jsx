@@ -3,27 +3,29 @@ import "./SilkWash.css";
 
 // SilkWash — dinamismo leggero per le zone chiare della Home.
 //
-// Due cose nello stesso canvas (un solo layer GPU, un solo loop):
+// Due cose nello stesso layer:
 //
 // 1. La "Dreamy Pastel Wash" di 21st.dev (Silk Blend) rimappata e
-//    alleggerita: gradiente setoso a 150° (haze → sky → rose → cream)
-//    disegnato a bassissima opacità sul cream, con un'oscillazione
-//    d'angolo lenta e due bande setose che respirano — dinamismo
-//    percepibile ma leggero, come chiesto.
+//    alleggerita: gradiente setoso (haze → sky → rose → cream) a
+//    bassissima opacità sul cream, con due bande setose appena accennate.
 //
-// 2. Tre fili d'oro che scendono: sinusoidi verticali con fase in
-//    movimento (l'onda viaggia verso il basso) e una luce che percorre
-//    ogni filo dall'alto in basso.
+// 2. Tre fili d'oro che scendono: sinusoidi verticali con l'onda che
+//    viaggia verso il basso e una luce che percorre ogni filo.
 //
-// Performance: stesso schema di RibbonField — canvas a risoluzione
-// ridotta, loop solo in viewport, reduced-motion = un frame fermo.
-
-const PASTEL = [
-  [220, 235, 247], // haze
-  [185, 212, 236], // sky
-  [243, 217, 228], // rose
-  [247, 239, 227], // cream
-];
+// Performance (riscrittura "solo GPU"):
+// prima era un canvas grande quanto l'intera sezione ridisegnato a ogni
+// frame (sulla tappa 03, alta ~3 viewport, erano milioni di pixel per
+// frame). Ora:
+// - il velo pastello è un gradiente CSS statico: zero lavoro per frame;
+// - ogni filo è un SVG disegnato UNA volta sola (alla resize), più alto
+//   di una lunghezza d'onda: traslarlo di esattamente λ in loop equivale
+//   all'onda che scorre → animazione solo transform, sul compositor;
+// - la luce che percorre il filo è un div con keyframe di transform
+//   (x,y campionati lungo il filo) via Web Animations API: anch'essa
+//   composited, nessun rAF, nessun repaint;
+// - le animazioni si mettono in pausa fuori viewport (IntersectionObserver:
+//   copre anche la slide non attiva, che sta fuori schermo nel deck);
+// - prefers-reduced-motion: fili fermi, nessuna luce.
 
 const THREADS = [
   { x: 0.28, amp: 26, freq: 2.2, phase: 0.0, dotSpeed: 46, dotOff: 0.0 },
@@ -31,161 +33,156 @@ const THREADS = [
   { x: 0.84, amp: 18, freq: 2.7, phase: 4.4, dotSpeed: 38, dotOff: 0.75 },
 ];
 
+const PAD = 6; // margine laterale dell'SVG del filo (px) oltre l'ampiezza
+
+// Path della sinusoide x = amp·sin(k·y + phase) per y ∈ [y0, y1],
+// in coordinate locali dell'SVG (x centrata su amp + PAD).
+function sinePath(amp, k, phase, y0, y1) {
+  const cx = amp + PAD;
+  const step = 12; // px: più che sufficiente per curve così ampie
+  let d = "";
+  for (let y = y0; y <= y1 + step; y += step) {
+    const yy = Math.min(y, y1);
+    const x = cx + amp * Math.sin(k * yy + phase);
+    d += (d ? "L" : "M") + x.toFixed(1) + " " + yy.toFixed(1) + " ";
+    if (yy === y1) break;
+  }
+  return d;
+}
+
 export default function SilkWash({ a = 0, b = 10, c = 90, d = 100 }) {
-  const canvasRef = useRef(null);
   const wrapRef = useRef(null);
+  const svgRefs = useRef([]);
+  const pathRefs = useRef([]);
+  const dotRefs = useRef([]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const parent = wrapRef.current;
+    const wrap = wrapRef.current;
+    if (!wrap) return undefined;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const canAnimate = typeof Element !== "undefined" && "animate" in Element.prototype;
 
-    const DPR = Math.min(window.devicePixelRatio || 1, 1.5) * 0.75;
-    let W = 0;
-    let H = 0;
-    let raf = 0;
-    let running = false;
-    let inView = true;
+    let anims = [];
+    let inView = false;
+    let lastW = 0;
+    let lastH = 0;
+    let rebuildRaf = 0;
 
-    const resize = () => {
-      const r = parent.getBoundingClientRect();
-      W = Math.max(2, Math.round(r.width * DPR));
-      H = Math.max(2, Math.round(r.height * DPR));
-      if (canvas.width !== W || canvas.height !== H) {
-        canvas.width = W;
-        canvas.height = H;
-      }
-      if (!running) draw(0);
+    const clearAnims = () => {
+      anims.forEach((an) => an.cancel());
+      anims = [];
     };
 
-    const draw = (t) => {
-      if (!W || !H) return;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const syncPlayState = () => {
+      anims.forEach((an) => (inView && !document.hidden ? an.play() : an.pause()));
+    };
 
-      // ── Base cream: identica al fondo delle sezioni chiare ──
-      ctx.fillStyle = "#faf8f4";
-      ctx.fillRect(0, 0, W, H);
+    const build = () => {
+      rebuildRaf = 0;
+      const W = wrap.clientWidth;
+      const H = wrap.clientHeight;
+      if (!W || !H || (W === lastW && H === lastH)) return;
+      lastW = W;
+      lastH = H;
+      clearAnims();
 
-      // ── Seta pastello: gradiente a 150° con oscillazione lenta ──
-      const angle = (150 + Math.sin(t * 0.12) * 2.4) * (Math.PI / 180);
-      const diag = Math.hypot(W, H);
-      ctx.save();
-      ctx.translate(W / 2, H / 2);
-      ctx.rotate(Math.PI - angle); // 150° CSS → frame ruotato
-      const wash = ctx.createLinearGradient(-diag / 2, 0, diag / 2, 0);
-      PASTEL.forEach(([r, g, b], i) => {
-        wash.addColorStop(i / (PASTEL.length - 1), `rgba(${r},${g},${b},0.5)`);
+      const t0 = document.timeline ? document.timeline.currentTime : null;
+
+      THREADS.forEach((th, i) => {
+        const svg = svgRefs.current[i];
+        const path = pathRefs.current[i];
+        const dot = dotRefs.current[i];
+        if (!svg || !path) return;
+
+        const lambda = H / th.freq; // lunghezza d'onda in px
+        const k = (2 * Math.PI) / lambda;
+        const w = 2 * (th.amp + PAD);
+
+        // L'SVG copre [−λ, H]: traslato di 0…λ copre sempre [0, H]
+        svg.setAttribute("viewBox", `0 ${-lambda} ${w} ${H + lambda}`);
+        svg.style.width = `${w}px`;
+        svg.style.height = `${H + lambda}px`;
+        svg.style.top = `${-lambda}px`;
+        svg.style.left = `calc(${th.x * 100}% - ${w / 2}px)`;
+        path.setAttribute("d", sinePath(th.amp, k, th.phase, -lambda, H));
+
+        if (reduced || !canAnimate) {
+          if (dot) dot.style.display = "none";
+          return;
+        }
+
+        // Velocità angolare dell'onda (stessa formula del canvas originale)
+        const omega = th.dotSpeed * 0.022; // rad/s
+        const waveMs = ((2 * Math.PI) / omega) * 1000;
+
+        const wave = svg.animate(
+          [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(0,${lambda}px,0)` }],
+          { duration: waveMs, iterations: Infinity, easing: "linear" }
+        );
+        anims.push(wave);
+
+        if (!dot) return;
+        dot.style.display = "";
+        dot.style.left = `calc(${th.x * 100}% - 9px)`;
+
+        // La luce percorre il filo dall'alto in basso. Il ciclo della luce
+        // viene arrotondato a un multiplo intero del periodo dell'onda:
+        // così un solo set di keyframe resta agganciato al filo per sempre.
+        const span = H + 160;
+        const rawCycle = span / th.dotSpeed; // s
+        const m = Math.max(1, Math.round((omega * rawCycle) / (2 * Math.PI)));
+        const cycleS = (2 * Math.PI * m) / omega;
+        const net = Math.abs(span / lambda - m);
+        const N = Math.min(240, Math.max(24, Math.ceil(net * 14) + 16));
+        const frames = [];
+        for (let s = 0; s <= N; s++) {
+          const u = s / N;
+          const y = u * span - 80;
+          const x = th.amp * Math.sin(k * y - 2 * Math.PI * m * (u - th.dotOff) + th.phase);
+          frames.push({ transform: `translate3d(${x.toFixed(2)}px,${y.toFixed(1)}px,0)` });
+        }
+        const drop = dot.animate(frames, {
+          duration: cycleS * 1000,
+          iterations: Infinity,
+          iterationStart: th.dotOff,
+          easing: "linear",
+        });
+        anims.push(drop);
       });
-      ctx.fillStyle = wash;
-      ctx.fillRect(-diag / 2, -diag / 2, diag, diag);
 
-      // Due bande setose finissime che respirano (wave leggera)
-      const clock = t * 0.35;
-      for (let k = 0; k < 2; k++) {
-        const bandW = diag * (0.34 + k * 0.1);
-        const center = ((k === 0 ? -0.16 : 0.2) + Math.sin(t * 0.09 + k * 1.7) * 0.03) * diag;
-        const band = ctx.createLinearGradient(center - bandW / 2, 0, center + bandW / 2, 0);
-        const c = k === 0 ? "243,217,228" : "185,212,236";
-        band.addColorStop(0, `rgba(${c},0)`);
-        band.addColorStop(0.5, `rgba(${c},0.14)`);
-        band.addColorStop(1, `rgba(${c},0)`);
-        ctx.fillStyle = band;
-        // bordo piegato dall'onda: sin sull'asse trasversale, lentissimo
-        ctx.beginPath();
-        const SAMPLES = 24;
-        for (let i = 0; i <= SAMPLES; i++) {
-          const y = -diag / 2 + (diag * i) / SAMPLES;
-          const off = diag * 0.035 * Math.sin((y / diag) * 2 * Math.PI + clock + k * 2.4);
-          i === 0 ? ctx.moveTo(center - bandW / 2 + off, y) : ctx.lineTo(center - bandW / 2 + off, y);
-        }
-        for (let i = SAMPLES; i >= 0; i--) {
-          const y = -diag / 2 + (diag * i) / SAMPLES;
-          const off = diag * 0.035 * Math.sin((y / diag) * 2 * Math.PI + clock + k * 2.4);
-          ctx.lineTo(center + bandW / 2 + off, y);
-        }
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.restore();
-
-      // ── I fili d'oro che scendono ──
-      for (const th of THREADS) {
-        const baseX = th.x * W;
-        const grad = ctx.createLinearGradient(0, 0, 0, H);
-        grad.addColorStop(0, "rgba(175,129,59,0)");
-        grad.addColorStop(0.12, "rgba(175,129,59,0.28)");
-        grad.addColorStop(0.88, "rgba(175,129,59,0.28)");
-        grad.addColorStop(1, "rgba(175,129,59,0)");
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        const STEPS = 48;
-        for (let i = 0; i <= STEPS; i++) {
-          const y = (H * i) / STEPS;
-          const x = baseX + th.amp * DPR * Math.sin((y / H) * th.freq * 2 * Math.PI - t * th.dotSpeed * 0.022 + th.phase);
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-
-        // La luce che percorre il filo dall'alto in basso
-        const span = H + 160 * DPR;
-        const yDot = ((t * th.dotSpeed * DPR + th.dotOff * span) % span) - 80 * DPR;
-        const xDot = baseX + th.amp * DPR * Math.sin((yDot / H) * th.freq * 2 * Math.PI - t * th.dotSpeed * 0.022 + th.phase);
-        if (yDot > -20 * DPR && yDot < H + 20 * DPR) {
-          const glow = ctx.createRadialGradient(xDot, yDot, 0, xDot, yDot, 9 * DPR);
-          glow.addColorStop(0, "rgba(236,215,168,0.85)");
-          glow.addColorStop(1, "rgba(236,215,168,0)");
-          ctx.fillStyle = glow;
-          ctx.beginPath();
-          ctx.arc(xDot, yDot, 9 * DPR, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+      // Stesso istante di partenza per onde e luci: restano in fase
+      if (t0 !== null) anims.forEach((an) => (an.startTime = t0));
+      syncPlayState();
     };
 
-    const loop = (now) => {
-      draw(now / 1000);
-      raf = running ? requestAnimationFrame(loop) : 0;
-    };
-
-    const start = () => {
-      if (!running && inView && !document.hidden) {
-        running = true;
-        raf = requestAnimationFrame(loop);
-      }
-    };
-
-    const stop = () => {
-      running = false;
-      if (raf) cancelAnimationFrame(raf);
-      raf = 0;
+    const scheduleBuild = () => {
+      if (!rebuildRaf) rebuildRaf = requestAnimationFrame(build);
     };
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        inView = entry.isIntersecting;
-        inView ? start() : stop();
+        // Soglia minima 0.001 (non > 0): una slide solo "adiacente" al
+        // viewport (nel deck la vicina tocca il bordo) o con un residuo
+        // sub-pixel a fine transizione conta come fuori schermo. Con la
+        // soglia nell'elenco, l'uscita sotto 0.001 genera sempre un callback.
+        inView = entry.isIntersecting && entry.intersectionRatio >= 0.001;
+        syncPlayState();
       },
-      { threshold: 0.02 }
+      { threshold: [0, 0.001] }
     );
-    io.observe(parent);
+    io.observe(wrap);
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(parent);
-    resize();
-
-    if (reduced) {
-      draw(0);
-    } else {
-      start();
-    }
+    const ro = new ResizeObserver(scheduleBuild);
+    ro.observe(wrap);
+    document.addEventListener("visibilitychange", syncPlayState);
+    build();
 
     return () => {
-      stop();
+      if (rebuildRaf) cancelAnimationFrame(rebuildRaf);
+      clearAnims();
       io.disconnect();
       ro.disconnect();
+      document.removeEventListener("visibilitychange", syncPlayState);
     };
   }, []);
 
@@ -197,7 +194,21 @@ export default function SilkWash({ a = 0, b = 10, c = 90, d = 100 }) {
 
   return (
     <div ref={wrapRef} className="silk-wash" style={mask} aria-hidden="true">
-      <canvas ref={canvasRef} className="silk-wash__canvas" />
+      <div className="silk-wash__threads">
+        {THREADS.map((th, i) => (
+          <svg
+            key={i}
+            ref={(el) => (svgRefs.current[i] = el)}
+            className="silk-wash__thread"
+            preserveAspectRatio="none"
+          >
+            <path ref={(el) => (pathRefs.current[i] = el)} className="silk-wash__thread-path" />
+          </svg>
+        ))}
+        {THREADS.map((th, i) => (
+          <span key={i} ref={(el) => (dotRefs.current[i] = el)} className="silk-wash__drop" />
+        ))}
+      </div>
     </div>
   );
 }

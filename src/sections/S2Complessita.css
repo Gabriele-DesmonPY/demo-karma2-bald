@@ -31,281 +31,13 @@
   margin-bottom: 16px;
 }
 
-/* ── TAPPA 02: Una scelta incontra sempre una storia ──
-   SLIDE ISOLATA del deck: esattamente 100svh (padding incluso), non
-   scrollabile — lo swipe a deck la raggiunge e la lascia come l'hero.
-   Il contenuto vive centrato verticalmente e respira. */
-.s2-sec--origine {
-  height: 100svh;
-  display: flex;
-  flex-direction: column;
-  padding-block: clamp(72px, 10vh, 120px) clamp(40px, 6vh, 80px);
-}
-
-/* container più largo solo qui: due colonne + il filo hanno bisogno
-   di più strada del layout a colonna singola delle altre tappe */
-.s2-sec--origine .s2-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  max-width: 1280px;
-}
-
-/* ── TAPPA 02: layout a 2 colonne ──
-   Sinistra: filo ondulato + copy distribuito su tutta l'altezza
-   (testa in alto, nodi al centro, manifesto in basso). Destra: la
-   scultura di bisso in deriva (parallasse), trasparente. */
-.s2-origin {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 58fr) minmax(0, 38fr);
-  align-items: stretch;
-  column-gap: clamp(32px, 5vw, 80px);
-  padding-block: clamp(16px, 3vh, 36px);
-}
-
-/* ── Colonna di sinistra ──
-   Il padding-left tiene il testo a distanza di respiro dal filo
-   (~3rem oltre la sua ampiezza massima): le onde non sfociano nel copy. */
-.s2-origin__left {
-  position: relative;
-  padding-left: clamp(150px, 12vw, 184px);
-  max-width: 700px;
-}
-
-/* Il filo dorato ondulato: scende lungo il margine del testo e in
-   fondo curva verso il centro (raccordo verso la tappa 03). Si
-   disegna all'ingresso; una goccia di luce lo percorre in loop. */
-.s2-origin__thread {
-  position: absolute;
-  left: 0;
-  top: 1%;
-  height: 98%;
-  width: clamp(80px, 9vw, 140px);
-  overflow: visible;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.s2-origin__thread use {
-  fill: none;
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 2.6s var(--ease-out-expo) 0.3s;
-}
-
-.s2-sec--visible .s2-origin__thread use {
-  stroke-dashoffset: 0;
-}
-
-.s2-origin__thread-glow {
-  stroke: rgba(208, 172, 117, 0.38);
-  stroke-width: 6;
-  filter: blur(5px);
-  vector-effect: non-scaling-stroke;
-}
-
-.s2-origin__thread-stroke {
-  stroke: #b58a3f;
-  stroke-width: 2.4;
-  vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 3px rgba(198, 154, 87, 0.45));
-}
-
-.s2-origin__thread-drop {
-  fill: #ecd7a8;
-  filter: drop-shadow(0 0 6px rgba(208, 172, 117, 0.85));
-  opacity: 0;
-  transition: opacity 1.2s ease 2.6s;
-}
-
-.s2-sec--visible .s2-origin__thread-drop {
-  opacity: 0.9;
-}
-
-/* Il copy vive distribuito su tutta l'altezza della slide:
-   testa (tag+titolo+lede) in alto, nodi+descrizione al centro,
-   frase manifesto in basso — niente ammucchiamento centrale. */
-.s2-origin__body {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding-bottom: clamp(8px, 2vh, 24px);
-}
-
-/* Blocco centrale (nodi + paragrafo): tiene unita la coppia che
-   respira insieme al centro della colonna. */
-.s2-origin__middle {
-  margin-block: clamp(14px, 2.5vh, 28px);
-}
-
-/* ── I sei nodi-concetto ──
-   Pillole traslucide, discrete: quasi solo tipografia, un bordo
-   appena accennato e una punta d'oro spenta. Si accendono in
-   sequenza (--nd inline) e restano con un respiro leggerissimo. */
-.s2-origin__nodes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  margin: 0 0 clamp(20px, 3.5vh, 32px);
-}
-
-.s2-node {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 13px;
-  border: 1px solid rgba(198, 154, 87, 0.22);
-  border-radius: 999px;
-  background: rgba(198, 154, 87, 0.06);
-  font-family: var(--font-label);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(122, 89, 38, 0.78);
-  opacity: 0;
-  filter: blur(6px);
-  transform: translateY(10px);
-}
-
-.s2-sec--visible .s2-node {
-  animation:
-    s2-node-in 1s var(--ease-out-expo) var(--nd) forwards,
-    s2-node-breathe 5.5s ease-in-out calc(var(--nd) + 1.2s) infinite alternate;
-}
-
-@keyframes s2-node-in {
-  to {
-    opacity: 0.92;
-    filter: blur(0);
-    transform: translateY(0);
-  }
-}
-
-@keyframes s2-node-breathe {
-  from {
-    opacity: 0.92;
-  }
-  to {
-    opacity: 0.62;
-  }
-}
-
-.s2-node__dot {
-  flex: none;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(198, 154, 87, 0.75);
-}
-
-/* ── Colonna di destra: la scultura ──
-   Sfondo dell'immagine reso trasparente in origine: qui la scultura
-   galleggia nuda, solo seta e filo d'oro, con un'ombra di posa
-   leggerissima che la stacca dallo sfondo chiaro. */
-.s2-origin__right {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.s2-sculpture {
-  position: relative;
-  width: min(100%, 470px);
-  aspect-ratio: 1 / 1;
-  animation: s2-sculpture-float 13s ease-in-out 2s infinite alternate;
-  will-change: transform;
-}
-
-@keyframes s2-sculpture-float {
-  from {
-    transform: translateY(0) rotate(0deg);
-  }
-  to {
-    transform: translateY(-20px) rotate(1.3deg);
-  }
-}
-
-.s2-sculpture__img {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 26px 44px rgba(16, 29, 50, 0.16));
-  opacity: 0;
-  transform: translateY(34px) scale(0.97);
-  transition:
-    opacity 1.7s var(--ease-out-expo) 0.35s,
-    transform 1.7s var(--ease-out-expo) 0.35s;
-}
-
-.s2-sec--visible .s2-sculpture__img {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-.s2-title-large {
-  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
-  font-size: clamp(2.2rem, 3.9vw, 3.6rem);
-  font-weight: 400;
-  line-height: 1.08;
-  letter-spacing: 0.01em;
-  color: #071526; /* Navy profondo solido */
-  max-width: 17ch;
-  margin: 0 0 clamp(16px, 2.4vh, 24px);
-}
-
-.s2-lead-origin {
-  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
-  font-style: italic;
-  font-size: clamp(1.2rem, 1.9vw, 1.6rem);
-  line-height: 1.4;
-  color: #8a6327;
-  margin: 0 0 clamp(28px, 4.5vh, 48px);
-}
-
-/* Riquadro con bordo dorato: più ampio e arioso, da manifesto */
-.s2-origin__desc {
-  font-family: var(--font-body);
-  font-size: clamp(1rem, 1.2vw, 1.15rem);
-  line-height: 1.7;
-  color: #1a2736;
-  max-width: 58ch;
-  margin: 0 0 clamp(14px, 2.5vh, 24px);
-}
-
-.s2-origin__axiom {
-  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
-  font-style: italic;
-  font-size: clamp(1.25rem, 1.9vw, 1.6rem);
-  line-height: 1.45;
-  color: #071526;
-  font-weight: 600;
-  margin: 0;
-}
-
-/* ── Tipografia viva: reveal dal blur al nitido, solo sull'Atto 1 ──
-   Il riquadro e la frase finale emergono sfocandosi: leggero, mentre
-   l'utente entra nella sezione. */
-.s2-origin .reveal {
-  transition:
-    opacity var(--dur-slow) var(--ease-snap),
-    transform var(--dur-slow) var(--ease-snap),
-    filter 1.3s var(--ease-snap);
-  filter: blur(10px);
-}
-
-.s2-origin .reveal--visible {
-  filter: blur(0);
-}
-
 /* ── TAPPA 03: La realtà non è frammentata ── */
+/* Layout e pittura isolati: la sezione è alta e scorre dentro la sua
+   slide, così le animazioni interne non invalidano nulla fuori. */
+.s2-sec--frammentazione {
+  contain: layout paint;
+}
+
 .s2-fragmentation {
   margin-bottom: clamp(70px, 10vh, 120px);
 }
@@ -348,13 +80,14 @@
   z-index: 1;
 }
 
+/* Alone del filo: un tratto largo e tenue al posto di filter: blur()
+   (il blur su SVG veniva ricalcolato a ogni frame del disegno) */
 .s2-field__thread-glow {
   fill: none;
-  stroke: rgba(208, 172, 117, 0.4);
-  stroke-width: 5;
+  stroke: rgba(208, 172, 117, 0.16);
+  stroke-width: 9;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  filter: blur(4px);
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   transition: stroke-dashoffset 2.2s var(--ease-out-expo) 0.1s;
@@ -366,9 +99,9 @@
   stroke-width: 2.2;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 3px rgba(198, 154, 87, 0.45));
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
+  /* disegno una tantum all'ingresso (breve, non legato allo scroll) */
   transition: stroke-dashoffset 2.2s var(--ease-out-expo) 0.1s;
 }
 
@@ -377,45 +110,67 @@
   stroke-dashoffset: 0;
 }
 
-/* Frammenti / Voci */
+/* Frammenti / Voci
+   Solo transform/opacity (prima l'ingresso animava anche filter: blur).
+   Layer GPU dedicato: translate3d + backface-visibility + preserve-3d.
+   La rotazione di riposo vive nella proprietà individuale `rotate`
+   (statica): le keyframe animano solo `transform` senza var() — con
+   var(--fr) dentro le keyframe Chrome non le passava al compositor e
+   ricalcolava lo stile a ogni frame. rotate + transform compongono come
+   il vecchio "rotate(var(--fr)) translateY(…)". */
 .s2-fragment {
   position: absolute;
   left: var(--fx);
   top: var(--fy);
-  transform: rotate(var(--fr));
+  rotate: var(--fr);
+  transform: translate3d(0, 0, 0);
   max-width: min(78vw, 32ch);
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
   z-index: 2;
   opacity: 0;
   will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Ingresso sul frammento, sway infinito sul wrapper interno: due
+   animazioni di transform sullo stesso elemento costringevano Chrome a
+   calcolarle sul main thread (ricalcolo stile a ogni frame). */
+.s2-fragment__sway {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 .s2-sec--visible .s2-fragment {
-  animation: s2-fragment-enter 1.2s var(--ease-out-expo) var(--fdelay) forwards,
-    s2-fragment-sway 8.5s ease-in-out calc(var(--fdelay) + 1.2s) infinite alternate;
+  animation: s2-fragment-enter 1.2s var(--ease-out-expo) var(--fdelay) forwards;
+}
+
+/* Il sway infinito gira solo con la sezione visibile (e la slide attiva:
+   vedi .sandbox-slide:not(.is-active) in sandbox.css) */
+.s2-sec--visible .s2-fragment__sway {
+  animation: s2-fragment-sway 8.5s ease-in-out calc(var(--fdelay) + 1.2s) infinite alternate;
+  will-change: transform;
 }
 
 @keyframes s2-fragment-enter {
   from {
     opacity: 0;
-    transform: rotate(var(--fr)) translateY(14px);
-    filter: blur(3px);
+    transform: translate3d(0, 14px, 0);
   }
   to {
     opacity: 1;
-    transform: rotate(var(--fr)) translateY(0);
-    filter: blur(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes s2-fragment-sway {
   from {
-    transform: rotate(var(--fr)) translateY(0) translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   to {
-    transform: rotate(var(--fr)) translateY(-6px) translateX(4px);
+    transform: translate3d(4px, -6px, 0);
   }
 }
 
@@ -435,10 +190,11 @@
   font-size: clamp(1.15rem, 1.75vw, 1.45rem);
   line-height: 1.38;
   color: #071526; /* Massima leggibilità, inchiostro profondo */
-  background: rgba(250, 248, 244, 0.85);
+  /* fondo pieno (prima 0.85 + backdrop-filter: blur, ricalcolato a ogni
+     frame del sway): un filo più opaco compensa l'assenza del blur */
+  background: rgba(250, 248, 244, 0.9);
   padding: 2px 8px;
   border-radius: 3px;
-  backdrop-filter: blur(2px);
 }
 
 /* Risoluzione / Payoff */
@@ -503,11 +259,25 @@
   gap: 12px;
   margin-left: var(--knot-shift, 0%);
   padding: 8px 12px;
-  transition: transform 300ms ease;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  /* opacity + transform: prima la sola "transition: transform" sovrascriveva
+     quella del .reveal e l'opacità compariva di scatto */
+  transition:
+    opacity var(--dur-slow) var(--ease-snap),
+    transform var(--dur-slow) var(--ease-snap);
 }
 
-.s2-weave__knot:hover {
-  transform: translateX(6px);
+.s2-weave__knot.reveal {
+  transform: translate3d(0, 30px, 0);
+}
+
+.s2-weave__knot.reveal--visible {
+  transform: translate3d(0, 0, 0);
+}
+
+.s2-weave__knot.reveal--visible:hover {
+  transform: translate3d(6px, 0, 0);
 }
 
 .s2-weave__knot-bullet {
@@ -583,9 +353,20 @@
   .s2-fragment {
     position: static;
     transform: none !important;
+    /* niente rotazione su mobile: azzeriamo la variabile (un "rotate: none"
+       verrebbe fuso dal minificatore CSS dentro transform e ignorato) */
+    --fr: 0deg !important;
     max-width: 100%;
     opacity: 1 !important;
     animation: none !important;
+    /* su mobile i frammenti sono fermi: nessun layer dedicato */
+    will-change: auto;
+  }
+
+  .s2-fragment__sway {
+    transform: none;
+    animation: none !important;
+    will-change: auto;
   }
 
   .s2-fragment__anchor {
@@ -608,101 +389,13 @@
 
   .s2-fragment {
     opacity: 1;
-    transform: rotate(var(--fr));
+    transform: translate3d(0, 0, 0);
     animation: none;
+    will-change: auto;
   }
 
-  /* il reveal senza blur: tutto nitido, solo il fade dell'observer */
-  .s2-origin .reveal {
-    filter: none;
-  }
-
-  /* filo disegnato, nodi accesi, scultura ferma: nessun loop */
-  .s2-origin__thread use {
-    stroke-dashoffset: 0;
-    transition: none;
-  }
-
-  .s2-origin__thread-drop {
-    display: none;
-  }
-
-  .s2-node {
-    opacity: 0.92;
-    filter: none;
-    transform: none;
+  .s2-sec--visible .s2-fragment__sway {
     animation: none;
-  }
-
-  .s2-sculpture {
-    animation: none;
-  }
-
-  .s2-sculpture__img {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
-
-/* ── Responsive ── */
-/* Sotto 1024px: colonna singola, la scultura scende sotto il testo
-   e la slide torna scrollabile (il deck passa oltre ai suoi bordi). */
-@media (max-width: 1023px) {
-  .s2-sec--origine {
-    height: auto;
-    min-height: 100svh;
-  }
-
-  .s2-origin {
-    grid-template-columns: 1fr;
-    row-gap: clamp(28px, 5vh, 48px);
-  }
-
-  /* in colonna singola il copy torna al flusso normale, non si
-     distribuisce su tutta l'altezza */
-  .s2-origin__body {
-    height: auto;
-  }
-
-  .s2-origin__right {
-    order: 2;
-  }
-
-  .s2-sculpture {
-    width: min(78%, 380px);
-  }
-}
-
-/* ── Mobile: la tappa 02 respira, ma non gonfia ── */
-@media (max-width: 800px) {
-  .s2-sec--origine {
-    padding-block: 56px 40px;
-  }
-
-  .s2-origin {
-    padding-block: 16px 8px;
-  }
-
-  /* il filo si stringe e il testo lo segue da vicino, ma senza
-     toccarlo: su schermi stretti 3rem di gap non ci stanno */
-  .s2-origin__left {
-    padding-left: clamp(74px, 19vw, 100px);
-  }
-
-  .s2-origin__thread {
-    width: clamp(56px, 15vw, 76px);
-  }
-
-  .s2-title-large {
-    font-size: clamp(2rem, 8.6vw, 2.7rem);
-  }
-
-  .s2-lead-origin {
-    margin-bottom: 36px;
-  }
-
-  .s2-sculpture {
-    width: min(88%, 320px);
+    will-change: auto;
   }
 }

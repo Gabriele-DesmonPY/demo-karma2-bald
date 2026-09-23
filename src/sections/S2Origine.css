@@ -1,0 +1,424 @@
+/* ═══════════════════════════════════════════════════════════════
+   SEZIONE 02 — ORIGINE E CONTESTO · Editorial Luxury
+   Tutti i selettori sono prefissati `.s2o` (nessun selettore globale).
+   Font display: Cormorant Garamond (serif di lusso, tondo + corsivo).
+   Font testo/etichette: Manrope, già caricato dal progetto.
+   ═══════════════════════════════════════════════════════════════ */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap");
+
+.s2o {
+  /* ── Token locali (con fallback sui token del progetto) ── */
+  --s2o-ivory: #fdfbf7;
+  --s2o-cream: #f8f5f0;
+  --s2o-ink: #0d1826;                          /* inchiostro quasi nero, tendente al navy */
+  --s2o-text: #28323e;                         /* testo corrente: contrasto ≈ 12:1 */
+  --s2o-gold: var(--gold, #c69a57);            /* oro per i punti e i filetti */
+  --s2o-gold-ink: #86602a;                     /* oro leggibile per testi piccoli (≈ 5.3:1) */
+  --s2o-gold-soft: #9a7036;                    /* oro morbido per il sottotitolo corsivo */
+  --s2o-rule: rgba(134, 96, 42, 0.26);         /* filetto sottile */
+  --s2o-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+  --s2o-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+  --s2o-ease: var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1));
+
+  /* Scultura: altezza visibile desiderata. Il PNG ha ~13% di margine
+     trasparente (contenuto alto 447/512 px): l'immagine viene quindi
+     dimensionata più grande, così il soggetto occupa davvero l'86%. */
+  --s2o-sculpt: 86vh;
+  --s2o-sculpt-ratio: 0.873;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+  color: var(--s2o-ink);
+  /* Avorio pieno con una sfumatura nativa appena percepibile:
+     un lieve chiarore dietro la scultura e un passaggio avorio → crema */
+  background-color: var(--s2o-ivory);
+  background-image:
+    radial-gradient(ellipse 48% 62% at 74% 50%, #fffefb 0%, rgba(255, 254, 251, 0) 70%),
+    linear-gradient(118deg, var(--s2o-ivory) 0%, #fbf8f3 52%, var(--s2o-cream) 100%);
+}
+
+@supports (height: 100svh) {
+  .s2o {
+    --s2o-sculpt: 86svh;
+  }
+}
+
+/* ── Griglia a due colonne bilanciate ── */
+.s2o .s2o__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: clamp(24px, 4vw, 72px);
+  width: 100%;
+  max-width: 1440px;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 6vw, 112px);
+}
+
+/* ═══════════ Colonna sinistra: tipografia ═══════════ */
+.s2o .s2o__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(22px, 4.6vh, 52px);
+  min-width: 0;
+  padding-block: clamp(40px, 9vh, 104px);
+}
+
+.s2o .s2o__head,
+.s2o .s2o__middle {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Etichetta: minuscola, spaziata, oro */
+.s2o .s2o__tag {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+  margin: 0 0 clamp(18px, 3.4vh, 34px);
+  font-family: var(--s2o-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--s2o-gold-ink);
+}
+
+.s2o .s2o__tag-sep {
+  color: var(--s2o-gold);
+  letter-spacing: 0;
+}
+
+/* Titolo monumentale */
+.s2o .s2o__title {
+  margin: 0;
+  font-family: var(--s2o-serif);
+  font-weight: 500;
+  /* scala sia sulla larghezza sia sull'altezza del viewport */
+  font-size: clamp(2.5rem, min(5.5vw, 9.4vh), 6.4rem);
+  line-height: 0.96;
+  letter-spacing: -0.018em;
+  color: var(--s2o-ink);
+  font-kerning: normal;
+  font-feature-settings: "liga", "dlig", "kern";
+}
+
+.s2o .s2o__title em {
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Maschera di riga: l'interno sale dal basso (solo transform) */
+.s2o .s2o__line {
+  display: block;
+  overflow: hidden;
+  /* spazio per i discendenti del corsivo, recuperato col margine */
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+}
+
+.s2o .s2o__line-in {
+  display: block;
+  transform: translate3d(0, 110%, 0);
+  transition: transform 1200ms var(--s2o-ease);
+  transition-delay: var(--d, 0ms);
+}
+
+/* Sottotitolo corsivo, oro morbido */
+.s2o .s2o__lede {
+  margin: clamp(16px, 3vh, 30px) 0 0;
+  max-width: 30ch;
+  font-family: var(--s2o-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.3rem, min(1.95vw, 3.3vh), 1.9rem);
+  line-height: 1.25;
+  color: var(--s2o-gold-soft);
+}
+
+/* Concetti chiave: blocco tipografico tra due filetti */
+.s2o .s2o__concepts {
+  align-self: flex-start;
+  padding-block: clamp(12px, 2vh, 18px);
+  border-top: 1px solid var(--s2o-rule);
+  border-bottom: 1px solid var(--s2o-rule);
+}
+
+.s2o .s2o__concepts-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  font-family: var(--s2o-sans);
+  font-size: clamp(10.5px, 0.82vw, 12px);
+  font-weight: 600;
+  line-height: 2.3;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--s2o-gold-ink);
+}
+
+.s2o .s2o__concept {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Nodo separatore: punto d'oro di 4px */
+.s2o .s2o__dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-inline: 0.55em 1.1em;
+  border-radius: 50%;
+  background: var(--s2o-gold);
+  opacity: 0.85;
+}
+
+/* Testo corrente: leggibile, contrasto pieno */
+.s2o .s2o__body {
+  margin: clamp(18px, 3.2vh, 32px) 0 0;
+  max-width: 52ch;
+  font-family: var(--s2o-sans);
+  font-size: clamp(0.95rem, min(1.08vw, 2.05vh), 1.075rem);
+  font-weight: 500;
+  line-height: 1.72;
+  letter-spacing: 0.002em;
+  color: var(--s2o-text);
+  text-wrap: pretty;
+}
+
+/* Manifesto di chiusura */
+.s2o .s2o__manifesto {
+  margin: 0;
+}
+
+.s2o .s2o__manifesto::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 1px;
+  margin-bottom: clamp(14px, 2.4vh, 22px);
+  background: var(--s2o-gold);
+}
+
+.s2o .s2o__manifesto p {
+  margin: 0;
+  font-family: var(--s2o-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.35rem, min(2.05vw, 3.5vh), 2.05rem);
+  line-height: 1.22;
+  letter-spacing: -0.005em;
+  max-width: 32ch;
+  color: var(--s2o-ink);
+  text-wrap: balance;
+}
+
+/* ═══════════ Colonna destra: scultura ═══════════ */
+.s2o .s2o__figure {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  margin: 0;
+  /* nessun contenitore visibile: il PNG si posa sull'avorio */
+  pointer-events: none;
+}
+
+/* Palco: gestisce solo l'ingresso (opacity + transform) */
+.s2o .s2o__stage {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--s2o-sculpt) / var(--s2o-sculpt-ratio));
+  height: calc(var(--s2o-sculpt) / var(--s2o-sculpt-ratio));
+  opacity: 0;
+  transform: translate3d(0, 3.5vh, 0) scale(0.97);
+  transition:
+    opacity 1400ms var(--s2o-ease),
+    transform 1800ms var(--s2o-ease);
+  transition-delay: 120ms;
+}
+
+.s2o .s2o__sculpture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;               /* annulla il max-width globale sulle img */
+  object-fit: contain;
+  user-select: none;
+  /* Composizione GPU richiesta dalla spec */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  transform-style: preserve-3d;
+  /* Il PNG è stato scontornato da un fondo scuro: i pixel di bordo
+     semitrasparenti conservano un alone grigio. Usare il PNG stesso come
+     maschera eleva l'alpha al quadrato → l'alone svanisce (0.25 → 0.06)
+     mentre le zone piene restano intatte. Statico: nessun costo per frame. */
+  -webkit-mask-image: url("/scultura-sezione2.png");
+  mask-image: url("/scultura-sezione2.png");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  /* Fluttuazione lentissima, solo transform; in pausa fuori vista */
+  animation: s2o-float 11s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+
+.s2o.s2o--live .s2o__sculpture {
+  animation-play-state: running;
+}
+
+@keyframes s2o-float {
+  from {
+    transform: translate3d(0, -0.7vh, 0);
+  }
+  to {
+    transform: translate3d(0, 0.9vh, 0);
+  }
+}
+
+/* Didascalia da rivista, in basso a destra */
+.s2o .s2o__caption {
+  position: absolute;
+  right: 0;
+  bottom: clamp(20px, 4.5vh, 44px);
+  font-family: var(--s2o-sans);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--s2o-gold-ink);
+  opacity: 0;
+  transition: opacity 1200ms var(--s2o-ease) 900ms;
+}
+
+/* ═══════════ Ingresso (una sola classe sulla sezione) ═══════════ */
+.s2o .s2o-r {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition:
+    opacity 1000ms var(--s2o-ease),
+    transform 1200ms var(--s2o-ease);
+  transition-delay: var(--d, 0ms);
+}
+
+.s2o.s2o--in .s2o-r,
+.s2o.s2o--in .s2o__stage {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.s2o.s2o--in .s2o__line-in {
+  transform: translate3d(0, 0, 0);
+}
+
+.s2o.s2o--in .s2o__caption {
+  opacity: 0.8;
+}
+
+/* ═══════════ Laptop bassi (768–820px di altezza) ═══════════ */
+@media (min-width: 901px) and (max-height: 820px) {
+  .s2o .s2o__text {
+    gap: clamp(18px, 3.6vh, 36px);
+    padding-block: clamp(32px, 7vh, 64px);
+  }
+}
+
+/* ═══════════ Tablet e mobile: una colonna ═══════════ */
+@media (max-width: 900px) {
+  .s2o {
+    --s2o-sculpt: 46vh;
+    background-image:
+      radial-gradient(ellipse 80% 38% at 50% 22%, #fffefb 0%, rgba(255, 254, 251, 0) 70%),
+      linear-gradient(180deg, var(--s2o-ivory) 0%, #fbf8f3 50%, var(--s2o-cream) 100%);
+  }
+
+  @supports (height: 100svh) {
+    .s2o {
+      --s2o-sculpt: 46svh;
+    }
+  }
+
+  .s2o .s2o__grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 20px;
+    min-height: 0;
+  }
+
+  /* Scultura in alto, testo sotto */
+  .s2o .s2o__figure {
+    order: -1;
+    height: calc(var(--s2o-sculpt) + 4svh);
+    margin-top: clamp(12px, 3svh, 28px);
+  }
+
+  .s2o .s2o__caption {
+    display: none;
+  }
+
+  .s2o .s2o__text {
+    justify-content: flex-start;
+    gap: 32px;
+    padding-block: 8px 64px;
+  }
+
+  .s2o .s2o__title {
+    font-size: clamp(2.35rem, 11.2vw, 4.2rem);
+    line-height: 0.98;
+  }
+
+  .s2o .s2o__lede {
+    font-size: clamp(1.2rem, 5.2vw, 1.5rem);
+  }
+
+  .s2o .s2o__concepts-row {
+    font-size: 10.5px;
+    letter-spacing: 0.22em;
+  }
+
+  .s2o .s2o__dot {
+    margin-inline: 0.45em 0.8em;
+  }
+
+  .s2o .s2o__body {
+    font-size: 1rem;
+  }
+
+  .s2o .s2o__manifesto p {
+    font-size: clamp(1.3rem, 5.6vw, 1.6rem);
+  }
+}
+
+/* ═══════════ Movimento ridotto: tutto già in posizione ═══════════ */
+@media (prefers-reduced-motion: reduce) {
+  .s2o .s2o-r,
+  .s2o .s2o__stage,
+  .s2o .s2o__line-in,
+  .s2o .s2o__caption {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .s2o .s2o__caption {
+    opacity: 0.8;
+  }
+
+  .s2o .s2o__sculpture {
+    animation: none;
+  }
+}

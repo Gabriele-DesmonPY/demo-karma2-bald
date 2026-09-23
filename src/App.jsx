@@ -2,13 +2,20 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import "./sandbox.css";
 import "./sections/home.css"; // stili di base validati del progetto (kh-*)
 import S1Hero from "./sections/S1Hero";
-import { S2Origine, S2Frammentazione } from "./sections/S2Complessita";
+import S2Origine from "./sections/S2Origine";
+import { S2Frammentazione } from "./sections/S2Complessita";
 
 // Sandbox Karma 2 — navigazione a swipe cinematografico a pieno schermo.
 // Ogni sezione è una slide del deck: il passaggio avviene con swipe
 // fluido su rotella, touch, frecce da tastiera o clic sull'indice laterale.
 // Le slide con contenuto più alto della viewport (es. la tappa 03)
 // scorrono al loro interno: il passaggio a deck avviene solo ai bordi.
+//
+// Performance: nessuno smooth-scroll JS (niente Lenis/ScrollSmoother): lo
+// scroll interno delle slide è nativo, sul compositor. La traccia si muove
+// solo con translate3d (transizione CSS), gli handler wheel/touch sono
+// passive e la slide attiva riceve la classe .is-active: le animazioni
+// infinite delle slide non attive restano in pausa (vedi sandbox.css).
 
 const SECTIONS = [
   { n: 1, id: "hero", nome: "Hero / Apertura", alta: true, fatto: true },
@@ -71,6 +78,28 @@ export default function App() {
     [activeIndex, goToSlide]
   );
 
+  // Tastiera: dentro una slide scrollabile le frecce scorrono il suo
+  // contenuto (il preventDefault blocca lo scroll nativo, quindi lo
+  // replichiamo); ai bordi passano alla slide successiva/precedente.
+  const keyStep = useCallback(
+    (dir) => {
+      if (isTransitioningRef.current) return;
+      const scroller = slideRefs.current[activeIndex];
+      if (scroller && scroller.scrollHeight - scroller.clientHeight > 10) {
+        const atEdge =
+          dir > 0
+            ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 10
+            : scroller.scrollTop <= 10;
+        if (!atEdge) {
+          scroller.scrollBy({ top: dir * scroller.clientHeight * 0.8, behavior: "smooth" });
+          return;
+        }
+      }
+      stepSlide(dir);
+    },
+    [activeIndex, stepSlide]
+  );
+
   // Gestione Wheel (rotella del mouse / touchpad)
   useEffect(() => {
     const handleWheel = (e) => {
@@ -108,18 +137,34 @@ export default function App() {
     const handleKeyDown = (e) => {
       if (e.key === "ArrowDown" || e.key === "PageDown") {
         e.preventDefault();
-        stepSlide(1);
+        keyStep(1);
       } else if (e.key === "ArrowUp" || e.key === "PageUp") {
         e.preventDefault();
-        stepSlide(-1);
+        keyStep(-1);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [stepSlide]);
+  }, [keyStep]);
+
+  // Le animazioni SMIL (<animate>, <animateMotion>) girano sul main thread
+  // anche fuori schermo e forzano layout + paint a ogni frame: le mettiamo
+  // in pausa nelle slide non attive (le CSS le ferma .is-active in sandbox.css).
+  useEffect(() => {
+    slideRefs.current.forEach((slide, i) => {
+      if (!slide) return;
+      slide.querySelectorAll("svg").forEach((svg) => {
+        if (svg.ownerSVGElement || typeof svg.pauseAnimations !== "function") return;
+        if (i === activeIndex) svg.unpauseAnimations();
+        else svg.pauseAnimations();
+      });
+    });
+  }, [activeIndex]);
+
+  const slideClass = (i) => "sandbox-slide" + (activeIndex === i ? " is-active" : "");
 
   return (
-    <div className="sandbox-viewport">
+    <div className="sandbox-viewport" data-tone={activeIndex === 1 ? "light" : "dark"}>
       {/* Indice laterale fisso interattivo */}
       <nav className="sandbox-index" aria-label="Indice sezioni">
         {SECTIONS.map((s) => {
@@ -152,7 +197,7 @@ export default function App() {
       >
         {/* Slide 0: Sezione 1 — Hero */}
         <div
-          className="sandbox-slide"
+          className={slideClass(0)}
           ref={(el) => (slideRefs.current[0] = el)}
           data-slide="0"
         >
@@ -161,7 +206,7 @@ export default function App() {
 
         {/* Slide 1: Sezione 2 — Origine e contesto (piena viewport, isolata) */}
         <div
-          className="sandbox-slide"
+          className={slideClass(1)}
           ref={(el) => (slideRefs.current[1] = el)}
           data-slide="1"
         >
@@ -170,7 +215,7 @@ export default function App() {
 
         {/* Slide 2: Sezione 3 — La realtà non è frammentata (scrollabile) */}
         <div
-          className="sandbox-slide"
+          className={slideClass(2)}
           ref={(el) => (slideRefs.current[2] = el)}
           data-slide="2"
         >
@@ -178,7 +223,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Badge interattivo di swipe */}
+      {/* Badge interattivo di swipe (sulla slide 1 — Sezione 02 — nessun badge) */}
       {activeIndex === 0 ? (
         <button
           type="button"
@@ -190,18 +235,7 @@ export default function App() {
             ↓
           </span>
         </button>
-      ) : activeIndex === 1 ? (
-        <button
-          type="button"
-          className="sandbox-swipe-hint"
-          onClick={() => goToSlide(2)}
-        >
-          <span>Swipe Sezione 03</span>
-          <span className="sandbox-swipe-hint__arrow" aria-hidden="true">
-            ↓
-          </span>
-        </button>
-      ) : (
+      ) : activeIndex === 1 ? null : (
         <button
           type="button"
           className="sandbox-swipe-hint"

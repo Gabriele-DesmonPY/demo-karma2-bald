@@ -4,6 +4,8 @@
    Tutto governato dalla spirale, tutto lento, tutto a bassa opacità. */
 
 .sb-hero {
+  /* layout e pittura isolati: niente invalidazioni fuori dall'hero */
+  contain: layout paint;
   /* il fascio nasce da un punto libero della spirale, MAI dietro al
      blocco di testo (che occupa grosso modo x 0–44%, y 14–78%): qui
      resta leggibile e visivamente agganciato agli anelli esterni. */
@@ -15,25 +17,51 @@
    Immagine della trama (navy + filamenti dorati) sfocata e a bassa
    opacità, primo strato della sezione: sta sopra il campo di nastri
    (che vive fuori dalla sezione) ma sotto a fascio, spirale, parole
-   e copy. Il blur + il velo navy tengono il contrasto dei testi alto;
-   la scala >1 nasconde i bordi sfocati del filtro. */
+   e copy. Il velo navy tiene il contrasto dei testi alto.
+   Performance: il blur (e saturate/brightness) è già applicato al file
+   (trama-bisso-soft.jpg): prima un filter: blur() live su un layer a
+   tutta viewport veniva riapplicato a ogni frame della deriva. */
 .sb-hero__trama {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: clip;
   pointer-events: none;
+  /* zoom-out liscio all'ingresso (ken-burns inverso), solo transform/opacity */
+  transform: translate3d(0, 0, 0) scale(1.14);
+  animation: sb-trama-enter 3.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes sb-trama-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1.32);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.14);
+  }
 }
 
 .sb-hero__trama-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: blur(clamp(8px, 1.1vw, 14px)) saturate(1.1) brightness(0.95);
   opacity: 0.5;
-  /* scala di riposo leggermente >1: il blur non mostra mai i bordi */
-  transform: scale(1.14);
+  transform: translate3d(0, 0, 0) scale(1.14);
+  backface-visibility: hidden;
   will-change: transform;
+  /* deriva lentissima (46s andata e ritorno), parte a ingresso finito */
+  animation: sb-trama-drift 23s ease-in-out 3.4s infinite alternate;
+}
+
+@keyframes sb-trama-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.14);
+  }
+  to {
+    transform: translate3d(-1.6%, 1.2%, 0) scale(1.19);
+  }
 }
 
 /* Velo navy sfumato: più denso sotto (dove poggia il copy), aperto
@@ -124,18 +152,26 @@
    Un cono di luce che parte da un punto e ruota piano, come una
    lancetta: nessun bordo, dissolvenza totale, ma visibile — è
    l'elemento che il cliente ha citato per nome nella call. Sotto la
-   spirale, sopra il RibbonField. */
+   spirale, sopra il RibbonField.
+   Performance: prima era un quadrato di 200vmax (texture GPU enorme,
+   ~30M px su schermi retina) ruotato per intero, di cui si vedeva solo
+   uno spicchio di 16°. Ora il layer è SOLO lo spicchio: un rettangolo
+   lungo quanto il raggio visibile (82vmax) e alto quanto il cono, che
+   ruota attorno al suo bordo sinistro (il punto d'origine). Stesso
+   gradiente conico, stessa dissolvenza radiale: ~20× meno pixel. */
 .sb-hero__beam {
   position: absolute;
   left: var(--beam-x);
   top: var(--beam-y);
-  width: 200vmax;
-  height: 200vmax;
-  margin: -100vmax 0 0 -100vmax;
+  width: 82vmax;
+  height: 26vmax;
+  margin-top: -13vmax;
   z-index: 0;
   pointer-events: none;
+  transform-origin: 0 50%;
+  /* lo spicchio punta a destra (90°): 82°→98° come i vecchi 0°→16° */
   background: conic-gradient(
-    from 0deg,
+    from 82deg at 0% 50%,
     transparent 0deg,
     rgba(208, 172, 117, 0.1) 3deg,
     rgba(240, 219, 174, 0.22) 7deg,
@@ -143,15 +179,22 @@
     transparent 16deg,
     transparent 360deg
   );
-  -webkit-mask-image: radial-gradient(circle, black 0%, rgba(0, 0, 0, 0.65) 30%, transparent 58%);
-  mask-image: radial-gradient(circle, black 0%, rgba(0, 0, 0, 0.65) 30%, transparent 58%);
+  /* dissolvenza radiale dal punto d'origine: 42vmax ≈ 30%, 82vmax ≈ 58%
+     del vecchio raggio (141vmax) */
+  -webkit-mask-image: radial-gradient(circle at 0% 50%, black 0, rgba(0, 0, 0, 0.65) 42vmax, transparent 82vmax);
+  mask-image: radial-gradient(circle at 0% 50%, black 0, rgba(0, 0, 0, 0.65) 42vmax, transparent 82vmax);
+  transform: rotate(-82deg) translate3d(0, 0, 0);
   animation: sb-beam-turn 64s linear infinite;
   will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes sb-beam-turn {
+  from {
+    transform: rotate(-82deg) translate3d(0, 0, 0);
+  }
   to {
-    transform: rotate(360deg);
+    transform: rotate(278deg) translate3d(0, 0, 0);
   }
 }
 
@@ -183,14 +226,15 @@
   color: rgba(250, 248, 244, 0.46);
   text-shadow: 0 0 18px rgba(10, 37, 69, 0.8);
   animation: sb-word-drift var(--wf) ease-in-out calc(var(--wd) + 1.8s) infinite alternate;
+  will-change: transform;
 }
 
 @keyframes sb-word-drift {
   from {
-    transform: translateY(0) translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   to {
-    transform: translateY(-10px) translateX(6px);
+    transform: translate3d(6px, -10px, 0);
   }
 }
 
@@ -208,7 +252,8 @@
   z-index: 1;
   pointer-events: none;
   transform-origin: top;
-  filter: drop-shadow(0 0 4px rgba(208, 172, 117, 0.4));
+  /* alone statico con box-shadow (prima filter: drop-shadow sul layer animato) */
+  box-shadow: 0 0 4px rgba(208, 172, 117, 0.3);
   background: linear-gradient(
     to bottom,
     transparent,
@@ -221,10 +266,10 @@
 
 @keyframes sb-thread-draw {
   from {
-    transform: scaleY(0);
+    transform: translate3d(0, 0, 0) scaleY(0);
   }
   to {
-    transform: scaleY(1);
+    transform: translate3d(0, 0, 0) scaleY(1);
   }
 }
 
@@ -239,11 +284,12 @@
   box-shadow: 0 0 12px 2px rgba(208, 172, 117, 0.45);
   opacity: 0;
   animation: sb-thread-fall 9s cubic-bezier(0.45, 0, 0.55, 1) 2.2s infinite;
+  will-change: transform, opacity;
 }
 
 @keyframes sb-thread-fall {
   0% {
-    transform: translateY(6vh);
+    transform: translate3d(0, 6vh, 0);
     opacity: 0;
   }
   8% {
@@ -253,7 +299,7 @@
     opacity: 0.85;
   }
   100% {
-    transform: translateY(78vh);
+    transform: translate3d(0, 78vh, 0);
     opacity: 0;
   }
 }
@@ -281,11 +327,11 @@
 @keyframes sb-spiral-enter {
   from {
     opacity: 0;
-    transform: scale(1.22) translateY(4vh);
+    transform: scale(1.22) translate3d(0, 4vh, 0);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1) translate3d(0, 0, 0);
   }
 }
 
@@ -371,7 +417,6 @@
     text-transform: uppercase;
     color: var(--kh-gold);
     cursor: pointer;
-    transition: border-color 0.3s ease, color 0.3s ease;
   }
 
   .sb-hero__quote-toggle:hover {
@@ -409,12 +454,15 @@
   .sb-hero__drift,
   .sb-hero__thread-pulse,
   .sb-hero__thread,
+  .sb-hero__trama,
   .sb-hero__trama-img {
     animation: none;
+    will-change: auto;
   }
   .sb-hero__thread {
     transform: none;
   }
+  .sb-hero__trama,
   .sb-hero__trama-img {
     transform: scale(1.14);
   }

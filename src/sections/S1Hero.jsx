@@ -25,7 +25,9 @@ import "./S1Hero.css";
 
 // ── Varianti Framer Motion ──
 // Entrata morbida e differita: il contenitore distribuisce lo stagger,
-// ogni blocco entra con fade + leggero risalire + defocus.
+// ogni blocco entra con fade + leggero risalire.
+// Performance: nessun filter: blur() animato (il "defocus" costava un
+// repaint per frame): solo opacity + transform, sul compositor.
 const staggerContainer = {
   hidden: {},
   show: {
@@ -35,54 +37,21 @@ const staggerContainer = {
 
 // La citazione arriva da destra, con più ritardo: chiude la scena.
 const fadeFromRight = {
-  hidden: { opacity: 0, x: 34, filter: "blur(6px)" },
+  hidden: { opacity: 0, x: 34 },
   show: {
     opacity: 1,
     x: 0,
-    filter: "blur(0px)",
     transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] },
   },
 };
 
 // ── Sfondo trama: zoom-out liscio all'ingresso, poi deriva lenta ──
-// Parte scalata (ken-burns inverso) e si assesta su una scala che
-// nasconde i bordi del blur; il loop infinito è quasi impercettibile.
-const tramaEnter = {
-  hidden: { opacity: 0, scale: 1.32 },
-  show: {
-    opacity: 1,
-    scale: 1.14,
-    transition: { duration: 3.4, ease: [0.16, 1, 0.3, 1] },
-  },
-};
+// Ora è tutto CSS (S1Hero.css: sb-trama-enter / sb-trama-drift): le
+// keyframe di transform/opacity girano sul compositor, mentre Framer
+// ricalcolava la transform sul main thread a ogni frame per 46s in loop.
 
-const tramaDrift = {
-  show: {
-    scale: [1.14, 1.19, 1.14],
-    x: ["0%", "-1.6%", "0%"],
-    y: ["0%", "1.2%", "0%"],
-    transition: {
-      duration: 46,
-      repeat: Infinity,
-      ease: "easeInOut",
-      delay: 3.4,
-    },
-  },
-};
-
-// Le parole sparse: ogni span ha le sue coordinate CSS (--wx/--wy).
-// Framer Motion gestisce solo l'entrata (fade + defocus scalato);
-// la deriva infinita resta al CSS interno (.sb-hero__drift), così
-// le due animazioni non si contendono lo stesso transform.
-const wordVariants = {
-  hidden: { opacity: 0, scale: 0.92, filter: "blur(5px)" },
-  show: (i) => ({
-    opacity: 1,
-    scale: 1,
-    filter: "blur(0px)",
-    transition: { duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 1.9 + i * 0.45 },
-  }),
-};
+// Le parole sparse: ogni span ha le sue coordinate CSS (--wx/--wy);
+// la deriva infinita è CSS puro (.sb-hero__drift, solo transform).
 
 const WORDS = [
   { t: "senso", x: "50%", y: "9%", d: "0.9s", f: "11s" },
@@ -113,17 +82,18 @@ function HeroInner() {
             Primo strato della sezione: sta sotto al fascio di luce e
             sotto alla spirale vettoriale. Blur medio + opacità bassa +
             velo navy: dà materia e profondità senza competere coi testi. */}
-        <motion.div className="sb-hero__trama" aria-hidden="true" variants={tramaEnter} initial="hidden" animate="show">
-          <motion.img
-            src="/trama-bisso.jpg"
+        {/* L'immagine è già sfocata in origine (trama-bisso-soft.jpg, 512px):
+            niente filter: blur() live su un layer a tutta viewport. */}
+        <div className="sb-hero__trama" aria-hidden="true">
+          <img
+            src="/trama-bisso-soft.jpg"
             alt=""
             className="sb-hero__trama-img"
-            variants={tramaDrift}
-            animate="show"
+            decoding="async"
           />
           {/* Velo navy per riportare il contrasto dove serve */}
           <div className="sb-hero__trama-veil" />
-        </motion.div>
+        </div>
 
         {/* ── Fascio di luce rotante — da un punto, ruota piano ── */}
         <div className="sb-hero__beam" aria-hidden="true" />
@@ -141,19 +111,17 @@ function HeroInner() {
             le parole vivono tutte fuori da quell'area, lungo gli anelli
             della spirale che attraversano la metà destra dello schermo. */}
         <div className="sb-hero__words" aria-hidden="true">
-          {WORDS.map((w, i) => (
-            <motion.span
+          {WORDS.map((w) => (
+            <span
               key={w.t}
               className="sb-hero__word"
               style={{ "--wx": w.x, "--wy": w.y }}
-              custom={i}
-              variants={wordVariants}
             >
               {/* Lo span interno porta la deriva CSS: transform separato */}
               <span className="sb-hero__drift" style={{ "--wd": w.d, "--wf": w.f }}>
                 {w.t}
               </span>
-            </motion.span>
+            </span>
           ))}
         </div>
 
