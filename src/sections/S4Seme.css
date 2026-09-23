@@ -1,0 +1,344 @@
+/* ═══════════════════════════════════════════════════════════════
+   SEZIONE 04 — I CONCETTI CHE GERMOGLIANO DAL SEME
+   Video immersivo guidato dallo scroll + frasi che sbocciano dai nodi.
+   Tipografia della casa: Cormorant Garamond (display) + Manrope.
+   Selettori prefissati `.s4` / `.s4-`.
+   ═══════════════════════════════════════════════════════════════ */
+
+.s4 {
+  --s4-bg: #0d1320;                 /* il blu-notte dei bordi del video */
+  --s4-ivory: #fdfbf7;
+  --s4-cream: #f3e6c4;              /* avorio dorato per le frasi */
+  --s4-gold: #d9b377;
+  --s4-gold-bright: #e2c974;
+  --s4-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+  --s4-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+
+  position: relative;
+  background: var(--s4-bg);
+  color: var(--s4-ivory);
+}
+
+/* Traccia di scroll: la sua altezza è la "durata" della fioritura */
+.s4 .s4__track {
+  position: relative;
+  height: 420vh;
+}
+
+/* Il palco resta appeso allo schermo mentre la traccia scorre (pin) */
+.s4 .s4__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+/* Riquadro 16:9 che copre tutto lo schermo (come object-fit: cover),
+   centrato: le coordinate % delle frasi coincidono con il video. */
+.s4 .s4__stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100vw, 177.78vh);
+  aspect-ratio: 16 / 9;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.s4 .s4__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Velo statico: scurisce i bordi e il cielo in alto dove vivono i
+   testi, lascia pieno il centro dove cresce la pianta */
+.s4 .s4__veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 46% 52% at 50% 46%, rgba(13, 19, 32, 0) 0%, rgba(13, 19, 32, 0.45) 100%),
+    linear-gradient(180deg, rgba(13, 19, 32, 0.55) 0%, rgba(13, 19, 32, 0) 26%, rgba(13, 19, 32, 0) 72%, rgba(13, 19, 32, 0.6) 100%);
+}
+
+/* ═══════════ Header (fase 1) ═══════════ */
+.s4 .s4__head {
+  position: absolute;
+  z-index: 3;
+  top: clamp(64px, 10vh, 120px);
+  left: 50%;
+  width: min(92vw, 900px);
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.s4 .s4__tag {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8em;
+  margin: 0 0 clamp(12px, 2vh, 20px);
+  font-family: var(--s4-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--s4-gold);
+}
+
+.s4 .s4__tag-sep {
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+
+.s4 .s4__title {
+  margin: 0;
+  font-family: var(--s4-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.8rem, min(3.3vw, 5.4vh), 3.2rem);
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+  color: var(--s4-ivory);
+  text-wrap: balance;
+  text-shadow: 0 2px 30px rgba(6, 10, 20, 0.7);
+}
+
+/* ═══════════ Frasi-germoglio (fasi 2 e 3) ═══════════ */
+/* Il <p> è solo un punto di ancoraggio (0×0) sul nodo della pianta;
+   il testo cresce dal punto verso l'esterno. */
+.s4 .s4-bud {
+  position: absolute;
+  z-index: 2;
+  left: var(--x);
+  top: var(--y);
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+.s4 .s4-bud__text {
+  position: absolute;
+  top: 0;
+  display: block;
+  width: max-content;
+  max-width: min(26vw, 340px);
+  transform: translate3d(0, -50%, 0);
+  font-family: var(--s4-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.25rem, min(2.1vw, 3.6vh), 2.1rem);
+  line-height: 1.2;
+  color: var(--s4-cream);
+  text-shadow: 0 0 22px rgba(6, 10, 20, 0.85), 0 0 2px rgba(6, 10, 20, 0.6);
+  will-change: transform, opacity;
+}
+
+/* sinistra: il testo finisce sul nodo e cresce verso sinistra */
+.s4 .s4-bud--sx .s4-bud__text {
+  right: 0;
+  text-align: right;
+  transform-origin: 100% 50%;
+}
+
+/* destra: il testo parte dal nodo */
+.s4 .s4-bud--dx .s4-bud__text {
+  left: 0;
+  text-align: left;
+  transform-origin: 0% 50%;
+}
+
+/* piccolo punto di luce che segna il nodo di partenza */
+.s4 .s4-bud__text::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, var(--s4-gold-bright) 60%, #b89343 100%);
+  box-shadow: 0 0 8px var(--s4-gold-bright);
+}
+
+.s4 .s4-bud--sx .s4-bud__text::after {
+  right: -14px;
+}
+
+.s4 .s4-bud--dx .s4-bud__text::after {
+  left: -14px;
+}
+
+/* ═══════════ Parole chiave attorno al fiore (fase 4) ═══════════ */
+.s4 .s4-kws {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s4 .s4-kw {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;     /* centra la parola sul punto */
+}
+
+.s4 .s4-kw__inner {
+  flex: none;
+  display: block;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+.s4 .s4-kw__float {
+  display: block;
+  font-family: var(--s4-sans);
+  font-size: clamp(10px, 0.85vw, 12.5px);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(226, 201, 116, 0.72);
+  text-shadow: 0 0 14px rgba(6, 10, 20, 0.9);
+  /* galleggiano piano, solo transform (in pausa fuori slide: sandbox.css) */
+  animation: s4-float 7s ease-in-out infinite alternate;
+}
+
+@keyframes s4-float {
+  from {
+    transform: translate3d(-4px, 3px, 0);
+  }
+  to {
+    transform: translate3d(5px, -5px, 0);
+  }
+}
+
+/* ═══════════ La frase che si accende sotto il fiore ═══════════ */
+.s4 .s4__bloom {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 85%;
+  width: min(92vw, 900px);
+  transform: translate3d(-50%, -50%, 0);
+  text-align: center;
+}
+
+.s4 .s4__bloom-line {
+  margin: 0;
+  font-family: var(--s4-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.4rem, min(2.4vw, 4vh), 2.3rem);
+  line-height: 1.2;
+  color: var(--s4-cream);
+  text-shadow: 0 0 26px rgba(6, 10, 20, 0.85);
+  will-change: transform, opacity;
+}
+
+.s4 .s4__bloom-line--strong {
+  margin-top: 0.15em;
+  font-weight: 600;
+  font-size: clamp(1.9rem, min(3.6vw, 6vh), 3.5rem);
+  color: var(--s4-gold-bright);
+  text-shadow:
+    0 0 30px rgba(226, 201, 116, 0.35),
+    0 0 26px rgba(6, 10, 20, 0.85);
+}
+
+/* Stato iniziale degli elementi animati (GSAP li porta a visibili) */
+.s4 .s4-anim {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* ═══════════ Mobile: video non a copertura, riquadro più largo ═══════════
+   In verticale la copertura taglierebbe i rami: il riquadro è largo 150vw
+   (la pianta resta tutta in vista), centrato, e sfuma in alto e in basso
+   nel blu-notte della sezione. */
+@media (max-width: 900px) and (orientation: portrait) {
+  .s4 .s4__stage {
+    width: 150vw;
+  }
+
+  /* la sfumatura riguarda solo il video, non le frasi */
+  .s4 .s4__video,
+  .s4 .s4__veil {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  }
+
+  .s4 .s4__head {
+    top: clamp(56px, 9vh, 90px);
+  }
+
+  .s4 .s4__title {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+
+  /* su mobile le frasi stanno sopra e sotto la pianta, centrate */
+  .s4 .s4-bud {
+    left: var(--mx);
+    top: var(--my);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .s4 .s4-bud--sx .s4-bud__text,
+  .s4 .s4-bud--dx .s4-bud__text {
+    position: relative;
+    left: auto;
+    right: auto;
+    flex: none;
+    max-width: 40vw;
+    text-align: center;
+    transform-origin: 50% 50%;
+    font-size: clamp(1rem, 4.4vw, 1.2rem);
+  }
+
+  .s4 .s4-bud__text::after {
+    display: none;
+  }
+
+  .s4 .s4-kw__float {
+    font-size: 8.5px;
+    letter-spacing: 0.22em;
+  }
+
+  /* la frase finale scende sotto il riquadro, nello spazio libero */
+  .s4 .s4__bloom {
+    top: 124%;
+  }
+
+  .s4 .s4__bloom-line {
+    font-size: 1.2rem;
+  }
+
+  .s4 .s4__bloom-line--strong {
+    font-size: 1.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s4 .s4-anim {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .s4 .s4-kw__float {
+    animation: none;
+  }
+}
