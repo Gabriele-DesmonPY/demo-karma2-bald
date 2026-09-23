@@ -188,22 +188,25 @@ export function S2Origine() {
                 Per questo, ogni evoluzione parte sempre da ciò che esiste.
               </Reveal>
 
-              {/* I sei nodi-concetto: tag dorati appesi al filo, si
-                  illuminano in sequenza all'ingresso della sezione */}
-              <div className="s2-origin__nodes" aria-label="Persone, processi, abitudini, relazioni, strumenti, responsabilità">
-                {CONCEPT_NODES.map((node, i) => (
-                  <span className="s2-node" style={{ "--nd": `${0.7 + i * 0.22}s` }} key={node}>
-                    <i className="s2-node__dot" aria-hidden="true" />
-                    {node}
-                  </span>
-                ))}
+              {/* Blocco centrale: i sei nodi-concetto (pillole traslucide
+                  che si accendono in sequenza) e il paragrafo descrittivo */}
+              <div className="s2-origin__middle">
+                <div className="s2-origin__nodes" aria-label="Persone, processi, abitudini, relazioni, strumenti, responsabilità">
+                  {CONCEPT_NODES.map((node, i) => (
+                    <span className="s2-node" style={{ "--nd": `${0.7 + i * 0.22}s` }} key={node}>
+                      <i className="s2-node__dot" aria-hidden="true" />
+                      {node}
+                    </span>
+                  ))}
+                </div>
+
+                <Reveal as="p" className="s2-origin__desc" delay={220}>
+                  Ci sono cose che funzionano, cose che si sono stratificate, altre che chiedono di
+                  essere ripensate. Significa osservare ciò che c’è, riconoscere ciò che ha ancora
+                  valore, sciogliere ciò che crea attrito e lasciare spazio a ciò che serve davvero.
+                </Reveal>
               </div>
 
-              <Reveal as="p" className="s2-origin__desc" delay={220}>
-                Ci sono cose che funzionano, cose che si sono stratificate, altre che chiedono di
-                essere ripensate. Significa osservare ciò che c’è, riconoscere ciò che ha ancora
-                valore, sciogliere ciò che crea attrito e lasciare spazio a ciò che serve davvero.
-              </Reveal>
               <Reveal as="p" className="s2-origin__axiom" delay={280}>
                 Prima di cambiare qualcosa, bisogna capire che cosa merita di continuare.
               </Reveal>
@@ -211,11 +214,10 @@ export function S2Origine() {
           </div>
 
           {/* ── Colonna di destra: la scultura di bisso ──
-              Gala in parallasse (deriva lenta) dentro un alone navy
-              che fonde lo sfondo dell'immagine con la sezione. */}
+              Gala in parallasse (deriva lenta) su sfondo trasparente:
+              solo seta e filamenti dorati, nessun alone. */}
           <div className="s2-origin__right" aria-hidden="true">
             <div className="s2-sculpture">
-              <div className="s2-sculpture__glow" />
               <img
                 src="/scultura-sezione2.png"
                 alt=""

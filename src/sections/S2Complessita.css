@@ -42,31 +42,36 @@
   padding-block: clamp(72px, 10vh, 120px) clamp(40px, 6vh, 80px);
 }
 
+/* container più largo solo qui: due colonne + il filo hanno bisogno
+   di più strada del layout a colonna singola delle altre tappe */
 .s2-sec--origine .s2-container {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  max-width: 1280px;
 }
 
 /* ── TAPPA 02: layout a 2 colonne ──
-   Sinistra: filo ondulato + copy + nodi-concetto. Destra: la scultura
-   di bisso in deriva (parallasse) dentro un alone navy che fonde lo
-   sfondo dell'immagine con la sezione chiara. */
+   Sinistra: filo ondulato + copy distribuito su tutta l'altezza
+   (testa in alto, nodi al centro, manifesto in basso). Destra: la
+   scultura di bisso in deriva (parallasse), trasparente. */
 .s2-origin {
   flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 58fr) minmax(0, 38fr);
-  align-items: center;
+  align-items: stretch;
   column-gap: clamp(32px, 5vw, 80px);
   padding-block: clamp(16px, 3vh, 36px);
 }
 
-/* ── Colonna di sinistra ── */
+/* ── Colonna di sinistra ──
+   Il padding-left tiene il testo a distanza di respiro dal filo
+   (~3rem oltre la sua ampiezza massima): le onde non sfociano nel copy. */
 .s2-origin__left {
   position: relative;
-  padding-left: clamp(48px, 5.5vw, 88px);
-  max-width: 640px;
+  padding-left: clamp(150px, 12vw, 184px);
+  max-width: 700px;
 }
 
 /* Il filo dorato ondulato: scende lungo il margine del testo e in
@@ -120,36 +125,50 @@
   opacity: 0.9;
 }
 
+/* Il copy vive distribuito su tutta l'altezza della slide:
+   testa (tag+titolo+lede) in alto, nodi+descrizione al centro,
+   frase manifesto in basso — niente ammucchiamento centrale. */
 .s2-origin__body {
   position: relative;
   z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-bottom: clamp(8px, 2vh, 24px);
+}
+
+/* Blocco centrale (nodi + paragrafo): tiene unita la coppia che
+   respira insieme al centro della colonna. */
+.s2-origin__middle {
+  margin-block: clamp(14px, 2.5vh, 28px);
 }
 
 /* ── I sei nodi-concetto ──
-   Tag dorati appesi al filo: partono sfocati e si illuminano in
-   sequenza (--nd inline), poi restano con un respiro di luce. */
+   Pillole traslucide, discrete: quasi solo tipografia, un bordo
+   appena accennato e una punta d'oro spenta. Si accendono in
+   sequenza (--nd inline) e restano con un respiro leggerissimo. */
 .s2-origin__nodes {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin: 0 0 clamp(24px, 4vh, 38px);
-  max-width: 460px;
+  gap: 8px 10px;
+  margin: 0 0 clamp(20px, 3.5vh, 32px);
 }
 
 .s2-node {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 15px;
-  border: 1px solid rgba(198, 154, 87, 0.45);
+  gap: 7px;
+  padding: 5px 13px;
+  border: 1px solid rgba(198, 154, 87, 0.22);
   border-radius: 999px;
-  background: rgba(250, 248, 244, 0.72);
+  background: rgba(198, 154, 87, 0.06);
   font-family: var(--font-label);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #8a6327;
+  color: rgba(122, 89, 38, 0.78);
   opacity: 0;
   filter: blur(6px);
   transform: translateY(10px);
@@ -158,39 +177,38 @@
 .s2-sec--visible .s2-node {
   animation:
     s2-node-in 1s var(--ease-out-expo) var(--nd) forwards,
-    s2-node-breathe 4.5s ease-in-out calc(var(--nd) + 1.2s) infinite alternate;
+    s2-node-breathe 5.5s ease-in-out calc(var(--nd) + 1.2s) infinite alternate;
 }
 
 @keyframes s2-node-in {
   to {
-    opacity: 1;
+    opacity: 0.92;
     filter: blur(0);
     transform: translateY(0);
-    box-shadow: 0 4px 18px rgba(198, 154, 87, 0.18);
   }
 }
 
 @keyframes s2-node-breathe {
   from {
-    box-shadow: 0 4px 18px rgba(198, 154, 87, 0.14);
+    opacity: 0.92;
   }
   to {
-    box-shadow: 0 4px 26px rgba(198, 154, 87, 0.38);
+    opacity: 0.62;
   }
 }
 
 .s2-node__dot {
   flex: none;
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: #c69a57;
-  box-shadow: 0 0 0 3px rgba(198, 154, 87, 0.2), 0 0 8px rgba(198, 154, 87, 0.5);
+  background: rgba(198, 154, 87, 0.75);
 }
 
 /* ── Colonna di destra: la scultura ──
-   L'immagine (sfondo navy) galleggia dentro un alone navy sfumato:
-   i bordi dell'immagine si dissolvono nella luce della sezione. */
+   Sfondo dell'immagine reso trasparente in origine: qui la scultura
+   galleggia nuda, solo seta e filo d'oro, con un'ombra di posa
+   leggerissima che la stacca dallo sfondo chiaro. */
 .s2-origin__right {
   display: flex;
   justify-content: center;
@@ -200,7 +218,7 @@
 .s2-sculpture {
   position: relative;
   width: min(100%, 470px);
-  aspect-ratio: 512 / 540;
+  aspect-ratio: 1 / 1;
   animation: s2-sculpture-float 13s ease-in-out 2s infinite alternate;
   will-change: transform;
 }
@@ -214,25 +232,12 @@
   }
 }
 
-.s2-sculpture__glow {
-  position: absolute;
-  inset: -14%;
-  background: radial-gradient(
-    closest-side,
-    rgba(16, 29, 50, 0.72) 0%,
-    rgba(16, 29, 50, 0.42) 46%,
-    rgba(16, 29, 50, 0) 74%
-  );
-}
-
 .s2-sculpture__img {
   position: relative;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  /* i bordi navy dell'immagine si dissolvono: nessun rettangolo visibile */
-  -webkit-mask-image: radial-gradient(closest-side, black 56%, transparent 88%);
-  mask-image: radial-gradient(closest-side, black 56%, transparent 88%);
+  filter: drop-shadow(0 26px 44px rgba(16, 29, 50, 0.16));
   opacity: 0;
   transform: translateY(34px) scale(0.97);
   transition:
@@ -247,13 +252,13 @@
 
 .s2-title-large {
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
-  font-size: clamp(2.3rem, 4.2vw, 3.9rem);
+  font-size: clamp(2.2rem, 3.9vw, 3.6rem);
   font-weight: 400;
   line-height: 1.08;
   letter-spacing: 0.01em;
   color: #071526; /* Navy profondo solido */
-  max-width: 15ch;
-  margin: 0 0 clamp(18px, 2.6vh, 26px);
+  max-width: 17ch;
+  margin: 0 0 clamp(16px, 2.4vh, 24px);
 }
 
 .s2-lead-origin {
@@ -268,11 +273,11 @@
 /* Riquadro con bordo dorato: più ampio e arioso, da manifesto */
 .s2-origin__desc {
   font-family: var(--font-body);
-  font-size: clamp(1.02rem, 1.3vw, 1.22rem);
-  line-height: 1.75;
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  line-height: 1.7;
   color: #1a2736;
-  max-width: 56ch;
-  margin: 0 0 clamp(18px, 3vh, 28px);
+  max-width: 58ch;
+  margin: 0 0 clamp(14px, 2.5vh, 24px);
 }
 
 .s2-origin__axiom {
@@ -623,7 +628,7 @@
   }
 
   .s2-node {
-    opacity: 1;
+    opacity: 0.92;
     filter: none;
     transform: none;
     animation: none;
@@ -654,6 +659,12 @@
     row-gap: clamp(28px, 5vh, 48px);
   }
 
+  /* in colonna singola il copy torna al flusso normale, non si
+     distribuisce su tutta l'altezza */
+  .s2-origin__body {
+    height: auto;
+  }
+
   .s2-origin__right {
     order: 2;
   }
@@ -671,6 +682,16 @@
 
   .s2-origin {
     padding-block: 16px 8px;
+  }
+
+  /* il filo si stringe e il testo lo segue da vicino, ma senza
+     toccarlo: su schermi stretti 3rem di gap non ci stanno */
+  .s2-origin__left {
+    padding-left: clamp(74px, 19vw, 100px);
+  }
+
+  .s2-origin__thread {
+    width: clamp(56px, 15vw, 76px);
   }
 
   .s2-title-large {
