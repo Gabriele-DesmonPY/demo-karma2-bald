@@ -88,9 +88,11 @@ const WORDS = [
   { t: "senso", x: "50%", y: "9%", d: "0.9s", f: "11s" },
   { t: "contesto", x: "83%", y: "18%", d: "1.6s", f: "13s" },
   { t: "equilibrio", x: "64%", y: "40%", d: "2.2s", f: "10s" },
-  { t: "tempo", x: "91%", y: "54%", d: "1.2s", f: "12s" },
+  // tempo e coerenza vivono fuori dall'area della citazione (x 73–95%,
+  // y 48–90%): la prima sale sopra la card, la seconda scende a sinistra
+  { t: "tempo", x: "89%", y: "37%", d: "1.2s", f: "12s" },
   { t: "sé", x: "58%", y: "66%", d: "2.8s", f: "14s" },
-  { t: "coerenza", x: "78%", y: "84%", d: "3.1s", f: "11s" },
+  { t: "coerenza", x: "53%", y: "87%", d: "3.1s", f: "11s" },
 ];
 
 function HeroInner() {

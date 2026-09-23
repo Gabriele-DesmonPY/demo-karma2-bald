@@ -29,21 +29,21 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: blur(clamp(10px, 1.4vw, 18px)) saturate(1.05) brightness(0.9);
-  opacity: 0.3;
+  filter: blur(clamp(8px, 1.1vw, 14px)) saturate(1.1) brightness(0.95);
+  opacity: 0.5;
   /* scala di riposo leggermente >1: il blur non mostra mai i bordi */
   transform: scale(1.14);
   will-change: transform;
 }
 
-/* Velo navy sfumato: più denso sotto (dove poggia il copy) e sul lato
-   sinistro, più aperto a destra dove respirano spirale, fascio e parole. */
+/* Velo navy sfumato: più denso sotto (dove poggia il copy), aperto
+   altrove — protegge la leggibilità senza spengere la trama. */
 .sb-hero__trama-veil {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(112deg, rgba(11, 19, 43, 0.82) 0%, rgba(11, 19, 43, 0.42) 46%, rgba(11, 19, 43, 0.14) 78%),
-    linear-gradient(to bottom, rgba(11, 19, 43, 0.34), rgba(11, 19, 43, 0.62) 88%);
+    linear-gradient(112deg, rgba(11, 19, 43, 0.66) 0%, rgba(11, 19, 43, 0.32) 46%, rgba(11, 19, 43, 0.08) 78%),
+    linear-gradient(to bottom, rgba(11, 19, 43, 0.22), rgba(11, 19, 43, 0.5) 88%);
 }
 
 /* ── Layout a 2 colonne: copy (60%) + citazione (35%) ──
@@ -72,9 +72,9 @@
   z-index: auto;
 }
 
-/* ── La citazione — card minimalista fluttuante ──
-   Vetro scuro sottilissimo, bordo doro filo, leggermente sollevata
-   rispetto alla base comune: "sfalsata" rispetto al copy. */
+/* ── La citazione — blocco fluttuante, nessuna cornice ──
+   Solo tipografia: niente box, niente bordi. Leggermente sollevata
+   rispetto alla base comune, "sfalsata" come un pensiero a margine. */
 .sb-hero__quote {
   position: relative;
   max-width: 420px;
@@ -82,26 +82,7 @@
   align-self: center;
   /* sfalsata: sale rispetto al copy, come un biglietto appoggiato */
   transform: translateY(-6vh);
-  padding: clamp(24px, 2.6vw, 38px) clamp(22px, 2.4vw, 34px);
-  background: linear-gradient(160deg, rgba(16, 26, 54, 0.55), rgba(10, 17, 40, 0.38));
-  border: 1px solid rgba(208, 172, 117, 0.28);
-  border-radius: 2px;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow:
-    0 24px 60px rgba(4, 8, 22, 0.45),
-    inset 0 1px 0 rgba(250, 248, 244, 0.06);
-}
-
-/* Tratto doro in alto: la citazione è cucita alla pagina */
-.sb-hero__quote::before {
-  content: "";
-  position: absolute;
-  left: clamp(22px, 2.4vw, 34px);
-  right: clamp(22px, 2.4vw, 34px);
-  top: 0;
-  height: 1px;
-  background: linear-gradient(to right, transparent, rgba(208, 172, 117, 0.85), transparent);
+  padding: 0;
 }
 
 .sb-hero__quote-mark {
@@ -216,10 +197,11 @@
 /* ── Il filo laterale che scende ──
    Prima apparizione del filo: un tratto doro lungo il margine destro
    che si disegna dall'alto verso il basso, con una gocciolina di luce
-   che lo percorre in loop lento. */
+   che lo percorre in loop lento. Sta sul bordo estremo: la card della
+   citazione si ferma prima, i due non si toccano. */
 .sb-hero__thread {
   position: absolute;
-  right: clamp(28px, 5vw, 72px);
+  right: clamp(12px, 1.5vw, 22px);
   top: 0;
   height: 92vh;
   width: 1.5px;
@@ -340,11 +322,12 @@
   .sb-hero__word:nth-child(6) {
     display: none;
   }
-  /* equilibrio scivola sul lede a queste proporzioni: la risaliamo
-     in una zona libera a destra, sopra il fascio */
+  /* equilibrio scivola sul lede a queste proporzioni: la spostiamo
+     sul bordo destro libero, accanto al titolo (!important: le
+     coordinate di riposo sono inline sull'elemento) */
   .sb-hero__word:nth-child(3) {
-    --wx: 74%;
-    --wy: 31%;
+    --wx: 86% !important;
+    --wy: 27% !important;
   }
   .sb-hero__thread {
     right: 14px;
@@ -405,7 +388,6 @@
     margin-top: 16px;
     transform: none;
     max-width: 100%;
-    padding: 20px 20px 18px;
   }
 
   .sb-hero__quote-zone .sb-hero__quote--open .sb-hero__quote-text {
