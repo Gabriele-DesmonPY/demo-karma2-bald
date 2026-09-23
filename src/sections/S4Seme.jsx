@@ -10,7 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
    Sequenza A TEMPO, non legata allo scroll:
    1. quando la schermata del seme è pienamente in vista, lo scroll si
       blocca per un momento (lock) e l'attenzione resta sul video;
-   2. il video riparte da 0 a velocità 1.6× (10 s → ~6,3 s);
+   2. il video riparte da 0 a velocità 2.2× (10 s → ~4,5 s);
    3. una timeline GSAP a tempo fa sbocciare i testi in 4 tempi;
    4. a fine video (ultimo fotogramma: il fiore aperto) lo scroll si
       sblocca e sotto continua il copy, in flusso normale.
@@ -27,10 +27,10 @@ gsap.registerPlugin(ScrollTrigger);
 // Video: VP9/WebM (Chrome, Edge, Firefox) e H.264/MP4 (Safari), ~1 MB
 const VIDEO_WEBM = "/seme-germoglio.webm";
 const VIDEO_MP4 = "/seme-germoglio.mp4";
-const RATE = 1.6; // velocità di riproduzione della sequenza
+const RATE = 2.2; // velocità della sequenza: 10 s di video → ~4,5 s
 
 // Tempi (s) della sequenza di testi
-const STEP = { head: 0, low: 1.5, high: 3.0, bloom: 4.5 };
+const STEP = { head: 0, low: 1.1, high: 2.2, bloom: 3.3 };
 
 // Frasi-germoglio: coordinate in % del riquadro video, accanto ai nodi
 // ma fuori dall'ingombro finale della pianta (foglie x 28–73%, y 40–72%;
@@ -114,6 +114,8 @@ export default function S4Seme() {
         }
         video.playbackRate = RATE;
         video.play().catch(() => {});
+        // alcuni browser azzerano la velocità al primo play: la riapplichiamo
+        video.addEventListener("playing", () => (video.playbackRate = RATE), { once: true });
 
         // 2. Testi a tempo (nessuno scrub)
         const grow = { autoAlpha: 1, scale: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease: "power2.out" };
@@ -126,8 +128,14 @@ export default function S4Seme() {
 
         // 3. Sblocco a fine video (fermo sull'ultimo fotogramma).
         //    Rete di sicurezza: sblocca comunque dopo la durata prevista.
-        video.addEventListener("ended", unlock, { once: true });
-        unlockTimer = setTimeout(unlock, (10 / RATE) * 1000 + 900);
+        const textsEnd = (STEP.bloom + 1.1) * 1000;
+        const t0 = performance.now();
+        video.addEventListener(
+          "ended",
+          () => setTimeout(unlock, Math.max(0, textsEnd - (performance.now() - t0))),
+          { once: true }
+        );
+        unlockTimer = setTimeout(unlock, Math.max((10 / RATE) * 1000, (STEP.bloom + 1.2) * 1000) + 400);
       };
 
       // Avvio: la schermata del seme è (quasi) tutta visibile
@@ -189,6 +197,8 @@ export default function S4Seme() {
               <source src={VIDEO_MP4} type="video/mp4" />
             </video>
             <div className="s4__veil" aria-hidden="true" />
+            {/* sfumatura in basso: il video si scioglie nel blu del copy sotto */}
+            <div className="s4__fade" aria-hidden="true" />
 
             {BUDS.map((b) => (
               <p
@@ -234,17 +244,23 @@ export default function S4Seme() {
           </header>
       </div>
 
-      {/* Il copy continua sotto, in scroll normale */}
+      {/* ── "Il filo vivo": il copy continua sotto, in scroll normale ── */}
       <div className="s4-after">
-        <p className="s4-after__item s4-after__body">
-          Cresce, cambia, incontra nuove condizioni. Il filo che l’ha generata continua a offrire
-          un punto da cui leggere ciò che accade e orientare ciò che verrà.
-        </p>
-        <p className="s4-after__item s4-after__axiom">
-          La coerenza è un filo vivo che permette all’impresa di evolvere continuando a
-          riconoscersi.
-        </p>
-        <p className="s4-after__item s4-after__close">Poi la scelta comincia a vivere.</p>
+        <div className="s4-after__glow" aria-hidden="true" />
+        <div className="s4-after__inner">
+          <p className="s4-after__item s4-after__intro">
+            Cresce, cambia, incontra nuove condizioni. Il filo che l’ha generata continua a offrire
+            un punto da cui leggere ciò che accade e orientare ciò che verrà.
+          </p>
+          <p className="s4-after__item s4-after__statement">
+            La coerenza è un <em>filo vivo</em> che permette all’impresa di evolvere continuando a
+            riconoscersi.
+          </p>
+          <span className="s4-after__item s4-after__rule" aria-hidden="true" />
+          <p className="s4-after__item s4-after__close">
+            <span className="s4-after__pill">Poi la scelta comincia a vivere.</span>
+          </p>
+        </div>
       </div>
     </section>
   );
