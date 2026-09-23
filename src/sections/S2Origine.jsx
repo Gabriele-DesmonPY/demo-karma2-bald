@@ -4,14 +4,15 @@ import "./S2Origine.css";
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 02 — ORIGINE E CONTESTO
    Direzione: Editorial Luxury / rivista di alta gamma.
-   Doppia pagina: a sinistra la colonna tipografica, a destra la
-   scultura monumentale in bisso e filo d'oro.
+   Doppia pagina: a sinistra la colonna tipografica su panna, a destra
+   un'immagine d'atmosfera sfocata (seta e fili d'oro) che si fonde col fondo.
 
    Performance:
    - un solo IntersectionObserver sulla sezione;
    - l'ingresso aggiunge una classe (`s2o--in`) una volta sola;
-   - la fluttuazione della scultura gira solo quando la sezione è
+   - la deriva lenta dell'atmosfera gira solo quando la sezione è
      in vista (`s2o--live`), altrimenti è in pausa;
+   - la sfocatura è già nell'immagine: zero filtri calcolati dal browser;
    - animazioni esclusivamente su transform / opacity.
    ═══════════════════════════════════════════════════════════════ */
 
@@ -120,20 +121,26 @@ export default function S2Origine() {
           </blockquote>
         </div>
 
-        {/* ── Colonna destra: la scultura, senza cornici né ombre ── */}
-        <figure className="s2o__figure">
-          <div className="s2o__stage">
-            <img
-              className="s2o__sculpture"
-              src="/scultura-sezione2.png"
-              alt="Scultura di nastri in bisso intrecciati da un sottile filo d'oro"
-              width="512"
-              height="512"
-              decoding="async"
-              draggable="false"
-            />
-          </div>
-        </figure>
+        {/* ── Colonna destra: spazio lasciato all'atmosfera ── */}
+        <div className="s2o__spacer" aria-hidden="true" />
+      </div>
+
+      {/* ── Atmosfera visiva: metà destra a pieno bordo ──
+          Seta e fili d'oro già sfocati in fase di export (nessun filtro
+          live): la sfumatura verso il panna è una maschera CSS statica. */}
+      <div className="s2o__atmo" aria-hidden="true">
+        <picture>
+          <source srcSet="/atmosfera-sezione2.webp" type="image/webp" />
+          <img
+            className="s2o__atmo-img"
+            src="/atmosfera-sezione2.jpg"
+            alt=""
+            width="1024"
+            height="1536"
+            decoding="async"
+            draggable="false"
+          />
+        </picture>
       </div>
     </section>
   );

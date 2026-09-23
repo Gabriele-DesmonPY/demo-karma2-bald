@@ -20,11 +20,9 @@
   --s2o-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
   --s2o-ease: var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1));
 
-  /* Scultura: altezza visibile desiderata. Il PNG ha ~13% di margine
-     trasparente (contenuto alto 447/512 px): l'immagine viene quindi
-     dimensionata più grande, così il soggetto occupa davvero l'86%. */
-  --s2o-sculpt: 86vh;
-  --s2o-sculpt-ratio: 0.873;
+  /* Atmosfera: larghezza del livello (sborda un poco oltre la metà
+     per ospitare la sfumatura) e punto in cui l'immagine è piena */
+  --s2o-atmo-w: 56vw;
 
   position: relative;
   isolation: isolate;
@@ -32,18 +30,9 @@
   min-height: 100svh;
   overflow: hidden;
   color: var(--s2o-ink);
-  /* Avorio pieno con una sfumatura nativa appena percepibile:
-     un lieve chiarore dietro la scultura e un passaggio avorio → crema */
+  /* Panna/avorio pieno con un passaggio nativo appena percepibile */
   background-color: var(--s2o-ivory);
-  background-image:
-    radial-gradient(ellipse 48% 62% at 74% 50%, #fffefb 0%, rgba(255, 254, 251, 0) 70%),
-    linear-gradient(118deg, var(--s2o-ivory) 0%, #fbf8f3 52%, var(--s2o-cream) 100%);
-}
-
-@supports (height: 100svh) {
-  .s2o {
-    --s2o-sculpt: 86svh;
-  }
+  background-image: linear-gradient(118deg, var(--s2o-ivory) 0%, #fbf8f3 52%, var(--s2o-cream) 100%);
 }
 
 /* ── Griglia a due colonne bilanciate ── */
@@ -57,6 +46,8 @@
   min-height: 100svh;
   margin-inline: auto;
   padding-inline: clamp(20px, 6vw, 112px);
+  position: relative;
+  z-index: 1;                    /* il testo resta sempre sopra l'atmosfera */
 }
 
 /* ═══════════ Colonna sinistra: tipografia ═══════════ */
@@ -222,88 +213,93 @@
   text-wrap: balance;
 }
 
-/* ═══════════ Colonna destra: scultura ═══════════ */
-.s2o .s2o__figure {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ═══════════ Colonna destra: atmosfera sfocata ═══════════ */
+.s2o .s2o__spacer {
   min-width: 0;
-  margin: 0;
-  /* nessun contenitore visibile: il PNG si posa sull'avorio */
+}
+
+/* Livello a pieno bordo sulla metà destra. La sfocatura è già
+   nell'immagine esportata; qui c'è solo una maschera statica che la
+   dissolve verso sinistra nel panna: nessun contorno, nessuno stacco. */
+.s2o .s2o__atmo {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--s2o-atmo-w);
+  overflow: hidden;
   pointer-events: none;
-}
-
-/* Palco: gestisce solo l'ingresso (opacity + transform) */
-.s2o .s2o__stage {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: calc(var(--s2o-sculpt) / var(--s2o-sculpt-ratio));
-  height: calc(var(--s2o-sculpt) / var(--s2o-sculpt-ratio));
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.18) 12%,
+    rgba(0, 0, 0, 0.55) 24%,
+    rgba(0, 0, 0, 0.88) 36%,
+    #000 46%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.18) 12%,
+    rgba(0, 0, 0, 0.55) 24%,
+    rgba(0, 0, 0, 0.88) 36%,
+    #000 46%
+  );
+  /* ingresso: solo opacità */
   opacity: 0;
-  transform: translate3d(0, 3.5vh, 0) scale(0.97);
-  transition:
-    opacity 1400ms var(--s2o-ease),
-    transform 1800ms var(--s2o-ease);
-  transition-delay: 120ms;
+  transition: opacity 1600ms var(--s2o-ease) 80ms;
+  contain: strict;
 }
 
-.s2o .s2o__sculpture {
+/* Velo panna statico: schiarisce le zone più calde in basso e tiene
+   l'atmosfera luminosa ed eterea, senza competere con la tipografia */
+.s2o .s2o__atmo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(253, 251, 247, 0.06) 0%,
+    rgba(253, 251, 247, 0.18) 55%,
+    rgba(253, 251, 247, 0.38) 100%
+  );
+}
+
+.s2o .s2o__atmo picture {
   display: block;
   width: 100%;
   height: 100%;
-  max-width: none;               /* annulla il max-width globale sulle img */
-  object-fit: contain;
+}
+
+.s2o .s2o__atmo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: 38% 34%;
   user-select: none;
-  /* Composizione GPU richiesta dalla spec */
-  will-change: transform, opacity;
+  /* layer GPU: la deriva è solo transform */
+  will-change: transform;
   backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-  transform-style: preserve-3d;
-  /* Il PNG è stato scontornato da un fondo scuro: i pixel di bordo
-     semitrasparenti conservano un alone grigio. Usare il PNG stesso come
-     maschera eleva l'alpha al quadrato → l'alone svanisce (0.25 → 0.06)
-     mentre le zone piene restano intatte. Statico: nessun costo per frame. */
-  -webkit-mask-image: url("/scultura-sezione2.png");
-  mask-image: url("/scultura-sezione2.png");
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  /* Fluttuazione lentissima, solo transform; in pausa fuori vista */
-  animation: s2o-float 11s ease-in-out infinite alternate;
+  transform: translate3d(0, 0, 0) scale(1.06);
+  /* deriva lentissima della luce, in pausa fuori vista */
+  animation: s2o-drift 18s ease-in-out infinite alternate;
   animation-play-state: paused;
 }
 
-.s2o.s2o--live .s2o__sculpture {
+.s2o.s2o--live .s2o__atmo-img {
   animation-play-state: running;
 }
 
-@keyframes s2o-float {
+@keyframes s2o-drift {
   from {
-    transform: translate3d(0, -0.7vh, 0);
+    transform: translate3d(-1.2%, 0.8%, 0) scale(1.06);
   }
   to {
-    transform: translate3d(0, 0.9vh, 0);
+    transform: translate3d(1.2%, -0.8%, 0) scale(1.09);
   }
-}
-
-/* Didascalia da rivista, in basso a destra */
-.s2o .s2o__caption {
-  position: absolute;
-  right: 0;
-  bottom: clamp(20px, 4.5vh, 44px);
-  font-family: var(--s2o-sans);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--s2o-gold-ink);
-  opacity: 0;
-  transition: opacity 1200ms var(--s2o-ease) 900ms;
 }
 
 /* ═══════════ Ingresso (una sola classe sulla sezione) ═══════════ */
@@ -316,18 +312,17 @@
   transition-delay: var(--d, 0ms);
 }
 
-.s2o.s2o--in .s2o-r,
-.s2o.s2o--in .s2o__stage {
+.s2o.s2o--in .s2o-r {
   opacity: 1;
   transform: translate3d(0, 0, 0);
 }
 
-.s2o.s2o--in .s2o__line-in {
-  transform: translate3d(0, 0, 0);
+.s2o.s2o--in .s2o__atmo {
+  opacity: 1;
 }
 
-.s2o.s2o--in .s2o__caption {
-  opacity: 0.8;
+.s2o.s2o--in .s2o__line-in {
+  transform: translate3d(0, 0, 0);
 }
 
 /* ═══════════ Laptop bassi (768–820px di altezza) ═══════════ */
@@ -341,16 +336,22 @@
 /* ═══════════ Tablet e mobile: una colonna ═══════════ */
 @media (max-width: 900px) {
   .s2o {
-    --s2o-sculpt: 46vh;
-    background-image:
-      radial-gradient(ellipse 80% 38% at 50% 22%, #fffefb 0%, rgba(255, 254, 251, 0) 70%),
-      linear-gradient(180deg, var(--s2o-ivory) 0%, #fbf8f3 50%, var(--s2o-cream) 100%);
+    background-image: linear-gradient(180deg, var(--s2o-ivory) 0%, #fbf8f3 50%, var(--s2o-cream) 100%);
   }
 
-  @supports (height: 100svh) {
-    .s2o {
-      --s2o-sculpt: 46svh;
-    }
+  /* L'atmosfera diventa una fascia in alto che sfuma verso il basso */
+  .s2o .s2o__atmo {
+    left: 0;
+    bottom: auto;
+    width: 100%;
+    height: 48vh;
+    height: 48svh;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, rgba(0, 0, 0, 0.45) 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 45%, rgba(0, 0, 0, 0.45) 72%, transparent 100%);
+  }
+
+  .s2o .s2o__atmo-img {
+    object-position: 50% 45%;
   }
 
   .s2o .s2o__grid {
@@ -359,15 +360,11 @@
     min-height: 0;
   }
 
-  /* Scultura in alto, testo sotto */
-  .s2o .s2o__figure {
+  /* Spazio per la fascia d'atmosfera, poi il testo */
+  .s2o .s2o__spacer {
     order: -1;
-    height: calc(var(--s2o-sculpt) + 4svh);
-    margin-top: clamp(12px, 3svh, 28px);
-  }
-
-  .s2o .s2o__caption {
-    display: none;
+    height: 34vh;
+    height: 34svh;
   }
 
   .s2o .s2o__text {
@@ -406,19 +403,14 @@
 /* ═══════════ Movimento ridotto: tutto già in posizione ═══════════ */
 @media (prefers-reduced-motion: reduce) {
   .s2o .s2o-r,
-  .s2o .s2o__stage,
   .s2o .s2o__line-in,
-  .s2o .s2o__caption {
+  .s2o .s2o__atmo {
     opacity: 1;
     transform: none;
     transition: none;
   }
 
-  .s2o .s2o__caption {
-    opacity: 0.8;
-  }
-
-  .s2o .s2o__sculpture {
+  .s2o .s2o__atmo-img {
     animation: none;
   }
 }
