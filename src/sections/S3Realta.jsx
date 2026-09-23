@@ -48,15 +48,14 @@ const ORDER_RELATIONS = [
   ["Una nuova opportunità", "incontra priorità, risorse e visione."],
 ];
 
-// 3B · stato di "disordine" di partenza delle 5 connessioni: scarti
-// orizzontali e rotazioni fissi (non casuali a ogni render → stesso
-// disordine in andata e ritorno)
+// 3B · stato di "disordine" di partenza delle 5 connessioni (valori fissi:
+// stesso disordine all'andata e al ritorno)
 const DISORDER = [
-  { x: -42, r: -1.2 },
-  { x: 36, r: 1.5 },
-  { x: -28, r: -0.8 },
-  { x: 48, r: 1.1 },
-  { x: -18, r: -1.5 },
+  { x: -60, y: -20, r: -2 },
+  { x: 70, y: 15, r: 1.8 },
+  { x: -45, y: -10, r: -1.2 },
+  { x: 55, y: 25, r: 2 },
+  { x: -30, y: 10, r: -1.5 },
 ];
 
 const MOBILE_Q = "(max-width: 900px)";
@@ -159,7 +158,7 @@ export default function S3Realta() {
         gsap.set(q(".s3-reveal, .s3-card, .s3-node"), { autoAlpha: 1, y: 0, x: 0, scale: 1 });
         gsap.set(q(".s3-thread__wipe"), { y: 0, yPercent: 0 });
         gsap.set(q(".s3-thread__svg"), { y: 0, yPercent: 0 });
-        gsap.set(q(".s3b__row"), { x: 0, rotation: 0, opacity: 1 });
+        gsap.set(q(".s3b__row"), { x: 0, y: 0, rotation: 0, opacity: 1, filter: "none" });
         return;
       }
 
@@ -243,25 +242,42 @@ export default function S3Realta() {
       });
 
       // ── 3B · Mettere ordine: disordine ↔ ordine, legato allo scroll ──
+      // Il trigger è la lista delle 5 righe (non tutto il blocco dark):
+      // così l'intero riallineamento avviene mentre le righe sono in vista.
       const rows = q(".s3b__row");
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: q(".s3b")[0],
-          scroller,
-          start: "top 75%",
-          end: "center center",
-          scrub: 1,
-        },
-      });
-      rows.forEach((row, i) => {
-        const d = DISORDER[i % DISORDER.length];
-        tl.fromTo(
-          row,
-          { x: d.x, rotation: d.r, opacity: 0.3 },
-          { x: 0, rotation: 0, opacity: 1, ease: "power2.out", duration: 1 },
-          i * 0.12 // leggero sfasamento: l'ordine si compone riga dopo riga
-        );
-      });
+      const disorder = {
+        // Partenza: disordine
+        x: (i) => DISORDER[i % DISORDER.length].x,
+        y: (i) => DISORDER[i % DISORDER.length].y,
+        rotation: (i) => DISORDER[i % DISORDER.length].r,
+        opacity: 0.2,
+        filter: "blur(4px)",
+      };
+      // stato di partenza applicato subito a TUTTE le righe (anche a quelle
+      // il cui tratto di stagger non è ancora iniziato)
+      gsap.set(rows, disorder);
+      gsap.fromTo(
+        rows,
+        disorder,
+        {
+          // Arrivo: allineamento perfetto
+          x: 0,
+          y: 0,
+          rotation: 0,
+          opacity: 1,
+          filter: "blur(0px)",
+          stagger: 0.1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: q(".s3b__list")[0],
+            scroller,
+            start: "top 88%",
+            end: "center center",
+            scrub: 1.2,
+            invalidateOnRefresh: true,
+          },
+        }
+      );
     }, section);
 
     ScrollTrigger.refresh();
