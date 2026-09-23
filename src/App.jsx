@@ -54,7 +54,9 @@ export default function App() {
   // così non si sovrappone mai al contenuto che scorre)
   const [slideScrolled, setSlideScrolled] = useState(false);
 
-  const goToSlide = useCallback((targetIndex) => {
+  // fromBelow: si arriva risalendo → la slide di destinazione si apre
+  // dal suo FONDO (stato finale delle sue animazioni), non dalla cima.
+  const goToSlide = useCallback((targetIndex, { fromBelow = false } = {}) => {
     if (targetIndex < 0 || targetIndex >= AVAILABLE_COUNT) return;
     if (isTransitioningRef.current || lockedRef.current) return;
 
@@ -63,7 +65,7 @@ export default function App() {
 
     // La slide di destinazione riparte sempre dal suo inizio
     const target = slideRefs.current[targetIndex];
-    if (target) target.scrollTop = 0;
+    if (target) target.scrollTop = fromBelow ? target.scrollHeight : 0;
 
     // durata allineata alla transizione "pesante" del deck (sandbox.css)
     setTimeout(() => {
@@ -88,7 +90,7 @@ export default function App() {
         if (atBottom && activeIndex < AVAILABLE_COUNT - 1) goToSlide(activeIndex + 1);
       } else {
         const atTop = !scroller || scroller.scrollTop <= 10;
-        if (atTop && activeIndex > 0) goToSlide(activeIndex - 1);
+        if (atTop && activeIndex > 0) goToSlide(activeIndex - 1, { fromBelow: true });
       }
     },
     [activeIndex, goToSlide]
@@ -162,6 +164,12 @@ export default function App() {
       lenis.destroy();
       if (lenisRef.current === lenis) lenisRef.current = null;
     };
+  }, [activeIndex]);
+
+  // Avvisa le sezioni quale slide è attiva (per avviare/riavvolgere
+  // le sequenze a tempo, es. Sezione 04)
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("deck:slide", { detail: { index: activeIndex } }));
   }, [activeIndex]);
 
   // Blocco/sblocco chiesto dalle sezioni: ferma Lenis e la navigazione
@@ -306,7 +314,7 @@ export default function App() {
 
         {/* Slide 3: Sezione 4 — I concetti che germogliano dal seme (video in scrub) */}
         <div
-          className="sandbox-slide"
+          className={slideClass(3)}
           ref={(el) => (slideRefs.current[3] = el)}
           data-slide="3"
         >

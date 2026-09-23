@@ -14,8 +14,8 @@ gsap.registerPlugin(ScrollTrigger);
    3. una timeline GSAP a tempo fa sbocciare i testi in 4 tempi;
    4. a fine video (ultimo fotogramma: il fiore aperto) lo scroll si
       sblocca e sotto continua il copy, in flusso normale.
-   La sequenza avviene una sola volta; tornando qui resta il fiore aperto
-   con tutte le frasi visibili.
+   Bidirezionale: risalendo alla Sezione 03 la timeline si riavvolge
+   (reverse) e il video torna a 0; rientrando la sequenza riparte.
 
    Nota: il sito è un deck a slide, la finestra non scorre. Per questo
    l'avvio usa un IntersectionObserver (la slide entra davvero in vista)
@@ -66,9 +66,12 @@ export default function S4Seme() {
     const scroller = section.closest(".sandbox-slide");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    let done = false;
+    let running = false; // sequenza avviata per questo ingresso
     let unlockTimer;
     let io;
+    let tl;
+    let onSlide;
+    const SLIDE_INDEX = scroller ? Number(scroller.dataset.slide) : -1;
 
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(section);
@@ -102,8 +105,8 @@ export default function S4Seme() {
       };
 
       const run = () => {
-        if (done) return;
-        done = true;
+        if (running) return;
+        running = true;
         lock();
 
         // 1. Video dall'inizio, accelerato
@@ -119,7 +122,8 @@ export default function S4Seme() {
 
         // 2. Testi a tempo (nessuno scrub)
         const grow = { autoAlpha: 1, scale: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease: "power2.out" };
-        const tl = gsap.timeline();
+        tl?.kill();
+        tl = gsap.timeline();
         tl.to(q(".s4__head .s4-anim"), { ...grow, stagger: 0.2 }, STEP.head);
         q(".s4-bud__text").forEach((el, i) => tl.to(el, { ...grow, yPercent: -50 }, BUDS[i].phase));
         tl.to(q(".s4__head"), { autoAlpha: 0, duration: 0.6 }, STEP.bloom - 0.3); // fa spazio alle parole chiave
@@ -138,17 +142,39 @@ export default function S4Seme() {
         unlockTimer = setTimeout(unlock, Math.max((10 / RATE) * 1000, (STEP.bloom + 1.2) * 1000) + 400);
       };
 
-      // Avvio: la schermata del seme è (quasi) tutta visibile
+      // Uscita verso l'alto (la slide non è più attiva): la timeline si
+      // riavvolge, il video torna al primo fotogramma, pronto a ripartire.
+      const rewind = () => {
+        if (!running) return;
+        running = false;
+        unlock();
+        video.pause();
+        try {
+          video.currentTime = 0;
+        } catch {
+          /* niente metadata: nulla da riavvolgere */
+        }
+        if (tl) tl.timeScale(2.5).reverse();
+      };
+
+      // Avvio: la slide è attiva e la schermata del seme è tutta in vista
+      // (entrando dall'alto la slide si apre dalla cima → schermata visibile)
+      let visible = false;
       io = new IntersectionObserver(
         ([entry]) => {
-          if (entry.intersectionRatio >= 0.9) {
-            io.disconnect();
-            run();
-          }
+          visible = entry.intersectionRatio >= 0.9;
+          if (visible && scroller?.classList.contains("is-active")) run();
         },
-        { threshold: [0.9] }
+        { threshold: [0, 0.9] }
       );
       io.observe(screen);
+
+      // Il deck cambia slide: fuori da questa → riavvolgi; dentro → parti
+      onSlide = (e) => {
+        if (e.detail.index !== SLIDE_INDEX) rewind();
+        else if (visible) run();
+      };
+      window.addEventListener("deck:slide", onSlide);
 
       // Il copy sotto il video: dissolvenza leggera legata allo scroll
       if (scroller) {
@@ -169,6 +195,7 @@ export default function S4Seme() {
 
     return () => {
       io?.disconnect();
+      if (onSlide) window.removeEventListener("deck:slide", onSlide);
       clearTimeout(unlockTimer);
       scroller?.classList.remove("is-locked");
       window.dispatchEvent(new Event("deck:unlock"));
