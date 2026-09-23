@@ -83,7 +83,7 @@
   display: grid;
   grid-template-columns: minmax(0, 60fr) minmax(0, 35fr);
   justify-content: space-between;
-  align-items: end;
+  align-items: center;              /* il blocco sta al centro, non sul fondo */
   column-gap: clamp(32px, 5vw, 72px);
   width: 100%;
 }
@@ -105,11 +105,11 @@
    rispetto alla base comune, "sfalsata" come un pensiero a margine. */
 .sb-hero__quote {
   position: relative;
-  max-width: 420px;
+  max-width: 460px;
   justify-self: end;
-  align-self: center;
-  /* sfalsata: sale rispetto al copy, come un biglietto appoggiato */
-  transform: translateY(-6vh);
+  /* allineata in alto con il titolo, appena sollevata: un pensiero a margine */
+  align-self: start;
+  transform: translateY(-2vh);
   padding: 0;
 }
 
@@ -127,9 +127,9 @@
   margin: 0;
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
   font-style: italic;
-  font-size: clamp(1rem, 1.25vw, 1.18rem);
-  line-height: 1.55;
-  color: rgba(250, 248, 244, 0.9);
+  font-size: clamp(1.1rem, 1.45vw, 1.42rem);   /* bilancia l'H1 più grande */
+  line-height: 1.5;
+  color: rgba(250, 248, 244, 0.92);
 }
 
 .sb-hero__quote-author {
@@ -309,12 +309,43 @@
    fascio, parole e filo: leggermente più compatto e con meno gap verso
    il lede, lascia leggere l'apertura intera senza scroll e apre spazio
    perché la spirale, il fascio e le parole si vedano davvero. */
+/* ── Hero centrata e monumentale ──
+   Il contenuto non è più spinto sul fondo: sta al centro verticale della
+   viewport, con un titolo dominante che scala su larghezza E altezza. */
+.sb-hero.kh-hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  align-items: center;
+  padding-top: clamp(88px, 12vh, 150px);
+  padding-bottom: clamp(88px, 12vh, 140px);   /* libera i badge fissi in basso */
+}
+
 .sb-hero .kh-hero__title {
-  font-size: clamp(2.1rem, 4.8vw, 4.4rem);
+  font-size: clamp(2.75rem, min(5.6vw, 10vh), 6rem);
+  line-height: 1.02;
+  max-width: none;               /* va a capo sulla colonna, non a 16ch */
+}
+
+.sb-hero .kh-lede {
+  font-size: clamp(1.2rem, 1.65vw, 1.65rem);
+  line-height: 1.42;
+  max-width: 40ch;
+}
+
+.sb-hero .kh-body {
+  font-size: clamp(1.02rem, 1.12vw, 1.2rem);
+  line-height: 1.7;
 }
 
 .sb-hero .kh-hero__copy {
-  gap: clamp(14px, 2vw, 22px);
+  gap: clamp(18px, 2.6vh, 30px);
+  /* colonna più ampia: il titolo monumentale va a capo in 3–4 righe */
+  max-width: min(100%, 980px);
+}
+
+.sb-hero .kh-lede,
+.sb-hero .kh-body {
+  max-width: 44ch;
 }
 
 /* ── Entrata della spirale: da fuori schermo, piano ──
@@ -387,7 +418,7 @@
 
   /* meno aria sopra e tra i blocchi: con la citazione aperta tutto
      deve stare nella viewport, è una slide a pieno schermo */
-  .sb-hero {
+  .sb-hero.kh-hero {
     padding-top: clamp(64px, 9vh, 110px);
     padding-bottom: 96px;
   }
@@ -397,7 +428,7 @@
   }
 
   .sb-hero .kh-hero__title {
-    font-size: clamp(1.9rem, 8.4vw, 2.4rem);
+    font-size: clamp(2.2rem, 10vw, 2.9rem);
   }
 
   /* ── Accordion citazione ──

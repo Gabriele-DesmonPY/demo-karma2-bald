@@ -54,14 +54,14 @@ const fadeFromRight = {
 // la deriva infinita è CSS puro (.sb-hero__drift, solo transform).
 
 const WORDS = [
-  { t: "senso", x: "50%", y: "9%", d: "0.9s", f: "11s" },
-  { t: "contesto", x: "83%", y: "18%", d: "1.6s", f: "13s" },
-  { t: "equilibrio", x: "64%", y: "40%", d: "2.2s", f: "10s" },
-  // tempo e coerenza vivono fuori dall'area della citazione (x 73–95%,
-  // y 48–90%): la prima sale sopra la card, la seconda scende a sinistra
-  { t: "tempo", x: "89%", y: "37%", d: "1.2s", f: "12s" },
-  { t: "sé", x: "58%", y: "66%", d: "2.8s", f: "14s" },
-  { t: "coerenza", x: "53%", y: "87%", d: "3.1s", f: "11s" },
+  // la citazione ora sale e occupa la colonna destra tra ~28% e ~70% di
+  // altezza: le parole vivono nel corridoio centrale, sopra e sotto di lei
+  { t: "senso", x: "52%", y: "8%", d: "0.9s", f: "11s" },
+  { t: "contesto", x: "80%", y: "13%", d: "1.6s", f: "13s" },
+  { t: "equilibrio", x: "52%", y: "40%", d: "2.2s", f: "10s" },
+  { t: "tempo", x: "84%", y: "82%", d: "1.2s", f: "12s" },
+  { t: "sé", x: "58%", y: "64%", d: "2.8s", f: "14s" },
+  { t: "coerenza", x: "66%", y: "90%", d: "3.1s", f: "11s" },
 ];
 
 function HeroInner() {
