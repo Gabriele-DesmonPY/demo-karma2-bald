@@ -25,6 +25,12 @@
   overflow: hidden;
   color: var(--s3-ink);
 
+  background-color: var(--s3-navy);
+}
+
+/* ═══════════ 3A: il mesh gradient vive solo nella prima parte ═══════════ */
+.s3 .s3a {
+  position: relative;
   /* ── Mesh gradient organico, solo gradienti CSS nativi (statici) ──
      In cima è panna pieno (#F8F5F0): raccordo invisibile con la 02.
      Poi scende, in diagonale, fino al Deep Navy in basso a destra.
@@ -34,7 +40,9 @@
     radial-gradient(70% 22% at 0% 0%, var(--s3-ivory) 0%, rgba(253, 251, 247, 0) 100%),
     radial-gradient(55% 14% at 88% 24%, rgba(217, 179, 119, 0.28) 0%, rgba(217, 179, 119, 0) 100%),
     radial-gradient(60% 16% at 12% 44%, rgba(198, 154, 87, 0.18) 0%, rgba(198, 154, 87, 0) 100%),
-    radial-gradient(90% 30% at 100% 100%, #060b1d 0%, rgba(6, 11, 29, 0) 100%),
+    /* navy profondo in basso a destra, che si spegne prima del bordo:
+       il fondo della 3A resta #0A1128 pieno e si salda alla 3B */
+    radial-gradient(70% 15% at 92% 80%, #060b1d 0%, rgba(6, 11, 29, 0) 100%),
     linear-gradient(
       172deg,
       var(--s3-cream) 0%,
@@ -56,7 +64,7 @@
   max-width: 1320px;
   margin-inline: auto;
   /* fondo generoso: la chiusura non incontra mai i controlli fissi in basso */
-  padding: clamp(72px, 13vh, 140px) clamp(20px, 6vw, 112px) clamp(180px, 28vh, 300px);
+  padding: clamp(72px, 13vh, 140px) clamp(20px, 6vw, 112px) clamp(40px, 8vh, 96px);
 }
 
 /* ═══════════ Header ═══════════ */
@@ -100,8 +108,7 @@
   text-wrap: balance;
 }
 
-.s3 .s3__title em,
-.s3 .s3-weave__title em {
+.s3 .s3__title em {
   font-style: italic;
   letter-spacing: -0.01em;
 }
@@ -314,62 +321,121 @@
   color: rgba(253, 251, 247, 0.82);
 }
 
-/* ═══════════ Fase B — la trama d'ordine, sul navy ═══════════ */
-.s3 .s3-weave {
-  max-width: 980px;
-  margin: clamp(120px, 20vh, 220px) auto 0;
+/* ═══════════ 3B — "Il contesto dà significato alla scelta" ═══════════
+   Contenitore a tutta larghezza: il fondo fotografico vive SOLO qui. */
+.s3 .s3b {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--s3-navy);
 }
 
-.s3 .s3-weave__title {
-  margin: 0 0 clamp(32px, 6vh, 64px);
+/* Livello immagine, statico, senza filtri. La maschera in alto la fa
+   emergere dal navy della 3A senza stacco; il velo scuro sopra tiene
+   la colonna di testo leggibile anche sui riflessi d'oro. */
+.s3 .s3b__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--s3-navy);
+  background-image:
+    radial-gradient(ellipse 62% 70% at 50% 52%, rgba(6, 11, 29, 0.66) 0%, rgba(6, 11, 29, 0.2) 100%),
+    linear-gradient(180deg, rgba(10, 17, 40, 0.35) 0%, rgba(10, 17, 40, 0.15) 40%, rgba(10, 17, 40, 0.55) 100%),
+    url("/contesto-dark.jpg");
+  background-image:
+    radial-gradient(ellipse 62% 70% at 50% 52%, rgba(6, 11, 29, 0.66) 0%, rgba(6, 11, 29, 0.2) 100%),
+    linear-gradient(180deg, rgba(10, 17, 40, 0.35) 0%, rgba(10, 17, 40, 0.15) 40%, rgba(10, 17, 40, 0.55) 100%),
+    image-set(url("/contesto-dark.webp") type("image/webp"), url("/contesto-dark.jpg") type("image/jpeg"));
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 18%);
+  transform: translateZ(0);
+}
+
+.s3 .s3b__inner {
+  position: relative;
+  width: 100%;
+  max-width: 980px;
+  margin-inline: auto;
+  padding: clamp(120px, 20vh, 200px) clamp(20px, 6vw, 72px) 128px;   /* pb-32 */
+}
+
+.s3 .s3b__tag {
+  justify-content: center;
+}
+
+.s3 .s3b__title {
+  margin: 0 0 clamp(40px, 7vh, 72px);
   font-family: var(--s3-serif);
   font-weight: 500;
-  font-size: clamp(2.1rem, min(4.4vw, 7vh), 4.2rem);
+  font-size: clamp(2.3rem, min(4.8vw, 8vh), 4.6rem);
   line-height: 1.02;
   letter-spacing: -0.015em;
+  text-align: center;
   color: var(--s3-ivory);
+  text-wrap: balance;
 }
 
-.s3 .s3-weave__list {
-  margin: 0;
+.s3 .s3b__title em {
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+/* Le 5 connessioni, incolonnate al centro */
+.s3 .s3b__list {
+  max-width: 860px;
+  margin: 0 auto;
   padding: 0;
   list-style: none;
-  border-top: 1px solid rgba(217, 179, 119, 0.25);
 }
 
-.s3 .s3-weave__row {
+.s3 .s3b__row {
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) 2fr;
-  gap: 24px;
+  grid-template-columns: minmax(200px, 0.85fr) 1.6fr;
+  gap: clamp(20px, 3vw, 40px);
   align-items: baseline;
-  padding: clamp(16px, 2.6vh, 24px) 0;
-  border-bottom: 1px solid rgba(217, 179, 119, 0.25);
+  padding: clamp(18px, 2.8vh, 26px) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.s3 .s3-weave__concept {
+.s3 .s3b__row:first-child {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.s3 .s3b__concept {
   font-family: var(--s3-serif);
   font-style: italic;
   font-weight: 500;
-  font-size: clamp(1.3rem, 1.9vw, 1.7rem);
+  font-size: clamp(1.4rem, 2vw, 1.85rem);
   line-height: 1.2;
-  color: var(--s3-gold-light);
+  color: #e2c974;
+  text-shadow: 0 0 18px rgba(226, 201, 116, 0.25);   /* luce statica */
 }
 
-.s3 .s3-weave__connection {
+.s3 .s3b__connection {
   font-family: var(--s3-sans);
-  font-size: clamp(0.95rem, 1.1vw, 1.06rem);
+  font-size: clamp(0.98rem, 1.12vw, 1.08rem);
   font-weight: 500;
   line-height: 1.65;
-  color: rgba(253, 251, 247, 0.86);
+  color: rgba(253, 251, 247, 0.9);
 }
 
-.s3 .s3-weave__epilogue {
-  margin: clamp(40px, 7vh, 72px) 0 0;
+.s3 .s3b__epilogue {
+  margin: clamp(64px, 11vh, 112px) 0 0;
   font-family: var(--s3-serif);
   font-style: italic;
   font-weight: 500;
-  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
-  line-height: 1.2;
+  font-size: clamp(1.9rem, min(3.6vw, 6vh), 3.2rem);
+  line-height: 1.15;
+  text-align: center;
   color: var(--s3-ivory);
 }
 
@@ -434,7 +500,11 @@
     font-size: clamp(1.8rem, 8vw, 2.4rem);
   }
 
-  .s3 .s3-weave__row {
+  .s3 .s3b__inner {
+    padding: 96px 20px 128px;
+  }
+
+  .s3 .s3b__row {
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
