@@ -56,6 +56,15 @@
   filter: contrast(1.08) brightness(1.02);
 }
 
+/* Contenitore dei video: invisibile finché la sequenza non parte;
+   l'opacità la governa GSAP (dissolvenze di ingresso e uscita) */
+.s4 .s4__media {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+
 /* La copia al contrario resta invisibile finché non serve */
 .s4 .s4__video--rev {
   opacity: 0;
@@ -494,5 +503,9 @@
 
   .s4 .s4-after__pill::before {
     animation: none;
+  }
+
+  .s4 .s4__media {
+    opacity: 1;
   }
 }

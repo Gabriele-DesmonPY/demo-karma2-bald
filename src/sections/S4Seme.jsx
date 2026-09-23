@@ -21,6 +21,11 @@ gsap.registerPlugin(ScrollTrigger);
    contrario (riprodotta in modo nativo e fluido): i browser non
    supportano playbackRate negativo.
 
+   Dissolvenze: i due video vivono in un contenitore (.s4__media) che
+   parte invisibile. Entra in dissolvenza quando la sequenza parte ed
+   esce in dissolvenza prima di ogni reset: il fotogramma della goccia
+   non compare mai "a scatto" (currentTime = 0 solo a video invisibile).
+
    Nota: il sito è un deck a slide, la finestra non scorre. Per questo
    l'avvio usa un IntersectionObserver (la slide entra davvero in vista)
    invece di un ScrollTrigger "top top", che scatterebbe al caricamento.
@@ -65,13 +70,15 @@ export default function S4Seme() {
   const screenRef = useRef(null);
   const videoRef = useRef(null);
   const revRef = useRef(null);
+  const mediaRef = useRef(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     const screen = screenRef.current;
     const video = videoRef.current;
     const rev = revRef.current;
-    if (!section || !screen || !video || !rev) return;
+    const media = mediaRef.current;
+    if (!section || !screen || !video || !rev || !media) return;
     const scroller = section.closest(".sandbox-slide");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -97,6 +104,7 @@ export default function S4Seme() {
         video.removeAttribute("autoplay");
         video.poster = "/seme-germoglio-fiore.jpg";
         video.preload = "none";
+        gsap.set(media, { opacity: 1 });
         showAll();
         return;
       }
@@ -115,6 +123,11 @@ export default function S4Seme() {
         window.dispatchEvent(new Event("deck:unlock"));
       };
 
+      // Dissolvenze del contenitore video
+      const fadeIn = () => gsap.to(media, { opacity: 1, duration: 0.6, ease: "power2.out", overwrite: true });
+      const fadeOut = (onComplete) =>
+        gsap.to(media, { opacity: 0, duration: 0.4, ease: "power2.in", overwrite: true, onComplete });
+
       const run = () => {
         if (running) return;
         running = true;
@@ -128,6 +141,7 @@ export default function S4Seme() {
         }
         video.playbackRate = RATE;
         video.play().catch(() => {});
+        fadeIn(); // la goccia emerge dal blu, non compare a scatto
         // alcuni browser azzerano la velocità al primo play: la riapplichiamo
         video.addEventListener("playing", () => (video.playbackRate = RATE), { once: true });
 
@@ -160,11 +174,15 @@ export default function S4Seme() {
         running = false;
         unlock();
         video.pause();
-        try {
-          video.currentTime = 0;
-        } catch {
-          /* niente metadata: nulla da riavvolgere */
-        }
+        fadeOut(() => {
+          // il reset avviene solo quando il video è già invisibile
+          try {
+            video.currentTime = 0;
+          } catch {
+            /* niente metadata: nulla da riavvolgere */
+          }
+          showRev(false);
+        });
         if (tl) tl.timeScale(2.5).reverse();
       };
 
@@ -199,22 +217,26 @@ export default function S4Seme() {
         const revMs = (Math.max(0, video.currentTime) / REV_RATE) * 1000;
         if (tl) tl.timeScale(Math.max(1, tl.duration() / Math.max(0.6, revMs / 1000))).reverse();
 
+        // a fine riavvolgimento: dissolvenza al blu, poi reset e passaggio alla 03
         const finish = () => {
           rev.pause();
-          try {
-            video.currentTime = 0;
-          } catch {
-            /* nulla */
-          }
-          showRev(false);
-          running = false;
-          reversing = false;
-          unlock();
-          window.dispatchEvent(
-            new CustomEvent("deck:goto", { detail: { index: SLIDE_INDEX - 1, fromBelow: true } })
-          );
+          fadeOut(() => {
+            try {
+              video.currentTime = 0;
+            } catch {
+              /* nulla */
+            }
+            showRev(false);
+            running = false;
+            reversing = false;
+            unlock();
+            window.dispatchEvent(
+              new CustomEvent("deck:goto", { detail: { index: SLIDE_INDEX - 1, fromBelow: true } })
+            );
+          });
         };
-        setTimeout(finish, revMs + 150);
+        // la dissolvenza parte sugli ultimi istanti del riavvolgimento
+        setTimeout(finish, Math.max(0, revMs - 250));
       };
 
       onBeforeLeave = (e) => {
@@ -231,7 +253,14 @@ export default function S4Seme() {
       io = new IntersectionObserver(
         ([entry]) => {
           visible = entry.intersectionRatio >= 0.9;
-          if (visible && scroller?.classList.contains("is-active")) run();
+          const active = scroller?.classList.contains("is-active");
+          if (visible && active) {
+            if (running && !reversing) fadeIn(); // rientro dal copy sotto
+            else run();
+          } else if (!entry.isIntersecting && running && !reversing) {
+            // scesa nel copy sotto: il video esce in dissolvenza, fermo
+            fadeOut(() => video.pause());
+          }
         },
         { threshold: [0, 0.9] }
       );
@@ -279,6 +308,8 @@ export default function S4Seme() {
           {/* Riquadro 16:9 del video: tutto ciò che deve "seguire i rami"
               vive qui dentro, in coordinate percentuali */}
           <div className="s4__stage">
+            {/* contenitore dei due video: parte invisibile, entra/esce in dissolvenza */}
+            <div ref={mediaRef} className="s4__media">
             <video
               ref={videoRef}
               className="s4__video"
@@ -305,6 +336,7 @@ export default function S4Seme() {
               <source src={REV_WEBM} type="video/webm" />
               <source src={REV_MP4} type="video/mp4" />
             </video>
+            </div>
             <div className="s4__veil" aria-hidden="true" />
             {/* sfumatura in basso: il video si scioglie nel blu del copy sotto */}
             <div className="s4__fade" aria-hidden="true" />
