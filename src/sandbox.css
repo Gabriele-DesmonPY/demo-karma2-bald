@@ -215,3 +215,10 @@
   background: rgba(134, 96, 42, 0.1);
   box-shadow: 0 0 0 1px rgba(134, 96, 42, 0.35);
 }
+
+/* ── Blocco temporaneo dello scroll (es. sequenza del seme, Sezione 04) ── */
+.sandbox-slide.is-locked {
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}

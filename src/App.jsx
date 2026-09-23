@@ -48,13 +48,15 @@ export default function App() {
   const touchStartYRef = useRef(0);
   // istanza Lenis della slide attiva (smooth scroll interno)
   const lenisRef = useRef(null);
+  // blocco temporaneo chiesto da una sezione (es. sequenza del seme)
+  const lockedRef = useRef(false);
   // la slide attiva è scesa oltre la cima? (nasconde il badge in basso,
   // così non si sovrappone mai al contenuto che scorre)
   const [slideScrolled, setSlideScrolled] = useState(false);
 
   const goToSlide = useCallback((targetIndex) => {
     if (targetIndex < 0 || targetIndex >= AVAILABLE_COUNT) return;
-    if (isTransitioningRef.current) return;
+    if (isTransitioningRef.current || lockedRef.current) return;
 
     isTransitioningRef.current = true;
     setActiveIndex(targetIndex);
@@ -75,7 +77,7 @@ export default function App() {
   // torna solo dalla cima — come tra la Sezione 1 e la Sezione 2.
   const stepSlide = useCallback(
     (dir) => {
-      if (isTransitioningRef.current) return;
+      if (isTransitioningRef.current || lockedRef.current) return;
       const scroller = document.querySelector(`.sandbox-slide[data-slide="${activeIndex}"]`);
       const scrollable = scroller && scroller.scrollHeight - scroller.clientHeight > 10;
 
@@ -97,7 +99,7 @@ export default function App() {
   // replichiamo); ai bordi passano alla slide successiva/precedente.
   const keyStep = useCallback(
     (dir) => {
-      if (isTransitioningRef.current) return;
+      if (isTransitioningRef.current || lockedRef.current) return;
       const scroller = slideRefs.current[activeIndex];
       if (scroller && scroller.scrollHeight - scroller.clientHeight > 10) {
         const atEdge =
@@ -148,6 +150,7 @@ export default function App() {
       syncTouch: false, // sul touch resta lo scroll nativo (ex smoothTouch: false)
     });
     lenisRef.current = lenis;
+    if (lockedRef.current) lenis.stop();
 
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (time) => lenis.raf(time * 1000);
@@ -160,6 +163,24 @@ export default function App() {
       if (lenisRef.current === lenis) lenisRef.current = null;
     };
   }, [activeIndex]);
+
+  // Blocco/sblocco chiesto dalle sezioni: ferma Lenis e la navigazione
+  useEffect(() => {
+    const lock = () => {
+      lockedRef.current = true;
+      lenisRef.current?.stop();
+    };
+    const unlock = () => {
+      lockedRef.current = false;
+      lenisRef.current?.start();
+    };
+    window.addEventListener("deck:lock", lock);
+    window.addEventListener("deck:unlock", unlock);
+    return () => {
+      window.removeEventListener("deck:lock", lock);
+      window.removeEventListener("deck:unlock", unlock);
+    };
+  }, []);
 
   // Gestione Wheel (rotella del mouse / touchpad)
   useEffect(() => {

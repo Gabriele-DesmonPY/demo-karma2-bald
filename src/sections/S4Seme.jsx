@@ -7,26 +7,30 @@ gsap.registerPlugin(ScrollTrigger);
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 04 — I CONCETTI CHE GERMOGLIANO DAL SEME
-   Esperienza immersiva a tutto schermo: il video (goccia → tocco →
-   germoglio → fiore d'oro) scorre DA SOLO in loop, in riproduzione
-   nativa (60fps, nessun controllo del currentTime via JS). Lo scroll
-   guida soltanto la fioritura dei testi sopra il video.
+   Sequenza A TEMPO, non legata allo scroll:
+   1. quando la schermata del seme è pienamente in vista, lo scroll si
+      blocca per un momento (lock) e l'attenzione resta sul video;
+   2. il video riparte da 0 a velocità 1.6× (10 s → ~6,3 s);
+   3. una timeline GSAP a tempo fa sbocciare i testi in 4 tempi;
+   4. a fine video (ultimo fotogramma: il fiore aperto) lo scroll si
+      sblocca e sotto continua il copy, in flusso normale.
+   La sequenza avviene una sola volta; tornando qui resta il fiore aperto
+   con tutte le frasi visibili.
 
-   - Blocco appeso (sticky) dentro una traccia alta: equivale a un
-     pin di ScrollTrigger, fluido con Lenis e con lo scroll della slide.
-   - Testi in scrub → bidirezionali: salendo si richiudono.
-   - Il video è in pausa quando la sezione non è in vista (batteria/GPU).
-   - Le frasi sono posizionate in % DENTRO il riquadro 16:9 del video,
-     quindi restano accanto ai rami a qualunque dimensione di schermo.
+   Nota: il sito è un deck a slide, la finestra non scorre. Per questo
+   l'avvio usa un IntersectionObserver (la slide entra davvero in vista)
+   invece di un ScrollTrigger "top top", che scatterebbe al caricamento.
+   Il blocco comunica con il deck (App.jsx) tramite gli eventi
+   `deck:lock` / `deck:unlock` (ferma Lenis e la navigazione tra slide).
    ═══════════════════════════════════════════════════════════════ */
 
-// Video in riproduzione continua: VP9/WebM (Chrome, Edge, Firefox) e
-// H.264/MP4 (Safari). Nessun audio, codifica leggera (~1 MB).
+// Video: VP9/WebM (Chrome, Edge, Firefox) e H.264/MP4 (Safari), ~1 MB
 const VIDEO_WEBM = "/seme-germoglio.webm";
 const VIDEO_MP4 = "/seme-germoglio.mp4";
+const RATE = 1.6; // velocità di riproduzione della sequenza
 
-// Momenti dello scroll (0 → 1) in cui sbocciano i testi
-const STEP = { head: 0.02, low: 0.22, high: 0.44, keywords: 0.66, final: 0.84 };
+// Tempi (s) della sequenza di testi
+const STEP = { head: 0, low: 1.5, high: 3.0, bloom: 4.5 };
 
 // Frasi-germoglio: coordinate in % del riquadro video, accanto ai nodi
 // ma fuori dall'ingombro finale della pianta (foglie x 28–73%, y 40–72%;
@@ -35,9 +39,9 @@ const STEP = { head: 0.02, low: 0.22, high: 0.44, keywords: 0.66, final: 0.84 };
 // centrato sopra/sotto la pianta, dove c'è spazio).
 const BUDS = [
   { text: "Per questa impresa.", x: 30, y: 62, mx: 29, my: 86, side: "sx", phase: STEP.low },
-  { text: "Con questa storia.", x: 70, y: 62, mx: 71, my: 86, side: "dx", phase: STEP.low + 0.03 },
+  { text: "Con questa storia.", x: 70, y: 62, mx: 71, my: 86, side: "dx", phase: STEP.low + 0.25 },
   { text: "Con queste persone.", x: 26, y: 47, mx: 29, my: 7, side: "sx", phase: STEP.high },
-  { text: "Con queste possibilità.", x: 74, y: 47, mx: 71, my: 7, side: "dx", phase: STEP.high + 0.03 },
+  { text: "Con queste possibilità.", x: 74, y: 47, mx: 71, my: 7, side: "dx", phase: STEP.high + 0.25 },
 ];
 
 // Parole chiave che galleggiano attorno al fiore aperto
@@ -51,109 +55,123 @@ const KEYWORDS = [
 
 export default function S4Seme() {
   const sectionRef = useRef(null);
-  const trackRef = useRef(null);
+  const screenRef = useRef(null);
   const videoRef = useRef(null);
 
-  // Il video gira solo quando la sezione è davvero in vista
   useEffect(() => {
+    const section = sectionRef.current;
+    const screen = screenRef.current;
     const video = videoRef.current;
-    const section = sectionRef.current;
-    if (!video || !section) return;
+    if (!section || !screen || !video) return;
+    const scroller = section.closest(".sandbox-slide");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      // movimento ridotto: niente riproduzione, immagine fissa del fiore aperto
-      video.removeAttribute("autoplay");
-      video.pause();
-      video.poster = "/seme-germoglio-fiore.jpg";
-      video.preload = "none";
-      return;
-    }
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) video.play().catch(() => {});
-        else video.pause();
-      },
-      { threshold: 0.15 }
-    );
-    io.observe(section);
-    return () => io.disconnect();
-  }, []);
 
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-    const scroller = section.closest(".sandbox-slide") || window;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let done = false;
+    let unlockTimer;
+    let io;
 
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(section);
 
-      if (reduced) {
+      // Stato finale: fiore aperto, tutte le frasi visibili
+      const showAll = () => {
         gsap.set(q(".s4-anim"), { autoAlpha: 1, scale: 1, y: 0, filter: "none" });
         gsap.set(q(".s4-bud__text"), { yPercent: -50 });
+      };
+
+      if (reduced) {
+        video.removeAttribute("autoplay");
+        video.poster = "/seme-germoglio-fiore.jpg";
+        video.preload = "none";
+        showAll();
         return;
       }
 
-      // Lo scroll guida SOLO i testi (il video scorre per conto suo)
-      const tl = gsap.timeline({
-        defaults: { ease: "power2.out" },
-        scrollTrigger: {
-          trigger: trackRef.current,
-          scroller,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1,
-          invalidateOnRefresh: true,
+      // Stati di partenza (nascosti, leggermente "chiusi")
+      gsap.set(q(".s4-anim"), { autoAlpha: 0, scale: 0.9, y: 14, filter: "blur(6px)" });
+      gsap.set(q(".s4-bud__text"), { yPercent: -50 });
+
+      const lock = () => {
+        scroller?.classList.add("is-locked");
+        window.dispatchEvent(new Event("deck:lock"));
+      };
+      const unlock = () => {
+        clearTimeout(unlockTimer);
+        scroller?.classList.remove("is-locked");
+        window.dispatchEvent(new Event("deck:unlock"));
+      };
+
+      const run = () => {
+        if (done) return;
+        done = true;
+        lock();
+
+        // 1. Video dall'inizio, accelerato
+        try {
+          video.currentTime = 0;
+        } catch {
+          /* metadata non ancora pronti: parte comunque da 0 */
+        }
+        video.playbackRate = RATE;
+        video.play().catch(() => {});
+
+        // 2. Testi a tempo (nessuno scrub)
+        const grow = { autoAlpha: 1, scale: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease: "power2.out" };
+        const tl = gsap.timeline();
+        tl.to(q(".s4__head .s4-anim"), { ...grow, stagger: 0.2 }, STEP.head);
+        q(".s4-bud__text").forEach((el, i) => tl.to(el, { ...grow, yPercent: -50 }, BUDS[i].phase));
+        tl.to(q(".s4__head"), { autoAlpha: 0, duration: 0.6 }, STEP.bloom - 0.3); // fa spazio alle parole chiave
+        tl.to(q(".s4-kw__inner"), { ...grow, stagger: 0.12 }, STEP.bloom);
+        tl.to(q(".s4__bloom .s4-anim"), { ...grow, stagger: 0.25 }, STEP.bloom + 0.3);
+
+        // 3. Sblocco a fine video (fermo sull'ultimo fotogramma).
+        //    Rete di sicurezza: sblocca comunque dopo la durata prevista.
+        video.addEventListener("ended", unlock, { once: true });
+        unlockTimer = setTimeout(unlock, (10 / RATE) * 1000 + 900);
+      };
+
+      // Avvio: la schermata del seme è (quasi) tutta visibile
+      io = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.intersectionRatio >= 0.9) {
+            io.disconnect();
+            run();
+          }
         },
-      });
-      // la timeline dura esattamente 1 → le posizioni sono % di scroll
-      tl.set({}, {}, 1);
-
-      // Start — header
-      tl.fromTo(
-        q(".s4__head .s4-anim"),
-        { autoAlpha: 0, y: 14, scale: 0.96 },
-        { autoAlpha: 1, y: 0, scale: 1, duration: 0.08, stagger: 0.03 },
-        STEP.head
+        { threshold: [0.9] }
       );
+      io.observe(screen);
 
-      // Step 1 e 2 — le frasi in basso, poi quelle in alto
-      q(".s4-bud__text").forEach((el, i) => {
-        tl.fromTo(
-          el,
-          // yPercent -50: il testo resta centrato in verticale sul nodo
-          { autoAlpha: 0, scale: 0.9, y: 16, yPercent: -50, filter: "blur(6px)" },
-          { autoAlpha: 1, scale: 1, y: 0, yPercent: -50, filter: "blur(0px)", duration: 0.1 },
-          BUDS[i].phase
-        );
-      });
-
-      // Step 3 — l'header si ritira, compaiono le parole chiave
-      tl.to(q(".s4__head"), { autoAlpha: 0, duration: 0.06 }, STEP.keywords - 0.04);
-      tl.fromTo(
-        q(".s4-kw__inner"),
-        { autoAlpha: 0, scale: 0.9 },
-        { autoAlpha: 1, scale: 1, duration: 0.08, stagger: 0.015 },
-        STEP.keywords
-      );
-
-      // Step 4 — la frase finale
-      tl.fromTo(
-        q(".s4__bloom .s4-anim"),
-        { autoAlpha: 0, scale: 0.9, y: 18, filter: "blur(8px)" },
-        { autoAlpha: 1, scale: 1, y: 0, filter: "blur(0px)", duration: 0.09, stagger: 0.03 },
-        STEP.final
-      );
+      // Il copy sotto il video: dissolvenza leggera legata allo scroll
+      if (scroller) {
+        q(".s4-after__item").forEach((el) => {
+          gsap.fromTo(
+            el,
+            { autoAlpha: 0, y: 28 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              ease: "power2.out",
+              scrollTrigger: { trigger: el, scroller, start: "top 92%", end: "top 64%", scrub: 1 },
+            }
+          );
+        });
+      }
     }, section);
 
-    ScrollTrigger.refresh();
-    return () => ctx.revert();
+    return () => {
+      io?.disconnect();
+      clearTimeout(unlockTimer);
+      scroller?.classList.remove("is-locked");
+      window.dispatchEvent(new Event("deck:unlock"));
+      ctx.revert();
+    };
   }, []);
 
   return (
     <section ref={sectionRef} className="s4" id="seme" data-n="4" aria-labelledby="s4-title">
-      <div ref={trackRef} className="s4__track">
-        <div className="s4__sticky">
+      {/* Schermata del seme: una viewport, il video e i testi a tempo */}
+      <div ref={screenRef} className="s4__screen">
           {/* Riquadro 16:9 del video: tutto ciò che deve "seguire i rami"
               vive qui dentro, in coordinate percentuali */}
           <div className="s4__stage">
@@ -161,8 +179,6 @@ export default function S4Seme() {
               ref={videoRef}
               className="s4__video"
               poster="/seme-germoglio-poster.jpg"
-              autoPlay
-              loop
               muted
               playsInline
               preload="auto"
@@ -216,7 +232,19 @@ export default function S4Seme() {
               Tenere insieme significa riconoscere ciò che conta.
             </h2>
           </header>
-        </div>
+      </div>
+
+      {/* Il copy continua sotto, in scroll normale */}
+      <div className="s4-after">
+        <p className="s4-after__item s4-after__body">
+          Cresce, cambia, incontra nuove condizioni. Il filo che l’ha generata continua a offrire
+          un punto da cui leggere ciò che accade e orientare ciò che verrà.
+        </p>
+        <p className="s4-after__item s4-after__axiom">
+          La coerenza è un filo vivo che permette all’impresa di evolvere continuando a
+          riconoscersi.
+        </p>
+        <p className="s4-after__item s4-after__close">Poi la scelta comincia a vivere.</p>
       </div>
     </section>
   );
