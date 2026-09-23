@@ -9,6 +9,7 @@ import S1Hero from "./sections/S1Hero";
 import S2Origine from "./sections/S2Origine";
 import S3Realta from "./sections/S3Realta";
 import S4Seme from "./sections/S4Seme";
+import SiteHeader from "./components/SiteHeader";
 
 // Sandbox Karma 2 — navigazione a swipe cinematografico a pieno schermo.
 // Ogni sezione è una slide del deck: il passaggio avviene con swipe
@@ -38,6 +39,23 @@ const SECTIONS = [
 
 // Durata del passaggio tra slide: lunga e morbida, inerzia "preziosa"
 const DECK_MS = 1100;
+
+// Voci del menu → slide del deck.
+// "contatti" punta alla sezione finale (Mappa Karma + CTA, n.11); finché non
+// è costruita, porta al fondo dell'ultima sezione disponibile.
+const navTarget = (id) => {
+  if (id === "home") return { index: 0 };
+  if (id === "karmaround") return { index: 1 };
+  const finale = SECTIONS.findIndex((s) => s.id === "mappa-cta");
+  if (finale >= 0 && finale < AVAILABLE_COUNT) return { index: finale };
+  return { index: AVAILABLE_COUNT - 1, fromBelow: true };
+};
+const navActive = (index) => {
+  const finale = SECTIONS.findIndex((s) => s.id === "mappa-cta");
+  if (index === 0) return "home";
+  if (index === finale) return "contatti";
+  return "karmaround";
+};
 
 const AVAILABLE_COUNT = 4; // sezioni 1–4 pronte
 
@@ -90,7 +108,16 @@ export default function App() {
         if (atBottom && activeIndex < AVAILABLE_COUNT - 1) goToSlide(activeIndex + 1);
       } else {
         const atTop = !scroller || scroller.scrollTop <= 10;
-        if (atTop && activeIndex > 0) goToSlide(activeIndex - 1, { fromBelow: true });
+        if (atTop && activeIndex > 0) {
+          // una sezione può trattenere l'uscita verso l'alto (es. la 04
+          // riavvolge il video al contrario) e poi chiedere lei il passaggio
+          const ev = new CustomEvent("deck:beforeleave", {
+            cancelable: true,
+            detail: { from: activeIndex, dir: -1 },
+          });
+          if (!window.dispatchEvent(ev)) return;
+          goToSlide(activeIndex - 1, { fromBelow: true });
+        }
       }
     },
     [activeIndex, goToSlide]
@@ -182,13 +209,42 @@ export default function App() {
       lockedRef.current = false;
       lenisRef.current?.start();
     };
+    // passaggio di slide richiesto da una sezione (dopo una sua animazione)
+    const go = (e) => goToSlide(e.detail.index, { fromBelow: !!e.detail.fromBelow });
     window.addEventListener("deck:lock", lock);
     window.addEventListener("deck:unlock", unlock);
+    window.addEventListener("deck:goto", go);
     return () => {
       window.removeEventListener("deck:lock", lock);
       window.removeEventListener("deck:unlock", unlock);
+      window.removeEventListener("deck:goto", go);
     };
-  }, []);
+  }, [goToSlide]);
+
+  // Menu globale: porta il deck alla slide della voce scelta (la transizione
+  // del deck È lo scroll morbido) e aggiorna l'hash dell'indirizzo.
+  const navigate = useCallback(
+    (id) => {
+      const t = navTarget(id);
+      if (t.index === activeIndex && !t.fromBelow) return;
+      goToSlide(t.index, { fromBelow: !!t.fromBelow });
+      try {
+        history.replaceState(null, "", `#${id}`);
+      } catch {
+        /* nulla */
+      }
+    },
+    [activeIndex, goToSlide]
+  );
+
+  // Apertura con un hash (#karmaround, #contatti): si parte da lì
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id && id !== "home" && ["karmaround", "contatti"].includes(id)) {
+      const t = navTarget(id);
+      goToSlide(t.index, { fromBelow: !!t.fromBelow });
+    }
+  }, [goToSlide]);
 
   // Gestione Wheel (rotella del mouse / touchpad)
   useEffect(() => {
@@ -255,6 +311,13 @@ export default function App() {
 
   return (
     <div className="sandbox-viewport" data-tone={activeIndex === 1 ? "light" : "dark"}>
+      {/* Header / menu globale */}
+      <SiteHeader
+        active={navActive(activeIndex)}
+        tone={activeIndex === 1 ? "light" : "dark"}
+        onNavigate={navigate}
+      />
+
       {/* Indice laterale fisso interattivo */}
       <nav className="sandbox-index" aria-label="Indice sezioni">
         {SECTIONS.map((s) => {
@@ -297,6 +360,7 @@ export default function App() {
         {/* Slide 1: Sezione 2 — Origine e contesto (piena viewport, isolata) */}
         <div
           className={slideClass(1)}
+          id="karmaround"
           ref={(el) => (slideRefs.current[1] = el)}
           data-slide="1"
         >

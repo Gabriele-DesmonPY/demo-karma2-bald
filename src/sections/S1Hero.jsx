@@ -77,7 +77,7 @@ function HeroInner() {
     <>
       <RibbonField className="kh-backdrop" flatBase intensity={0.9} />
 
-      <section className="kh-hero sb-hero" id="hero" data-n="1">
+      <section className="kh-hero sb-hero" id="home" data-n="1">
         {/* ── Sfondo: trama del bisso (navy + filamenti dorati) ──
             Primo strato della sezione: sta sotto al fascio di luce e
             sotto alla spirale vettoriale. Blur medio + opacità bassa +

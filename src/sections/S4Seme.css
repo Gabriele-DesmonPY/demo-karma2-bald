@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 04 — I CONCETTI CHE GERMOGLIANO DAL SEME
-   Sequenza a tempo (video 1.6× + frasi che sbocciano), poi copy in scroll.
+   Sequenza a tempo (video 2.2× + frasi che sbocciano), reverse in risalita,
+   poi copy in scroll.
    Tipografia della casa: Cormorant Garamond (display) + Manrope.
    Selettori prefissati `.s4` / `.s4-`.
    ═══════════════════════════════════════════════════════════════ */
@@ -53,6 +54,11 @@
   perspective: 1000px;
   will-change: transform;
   filter: contrast(1.08) brightness(1.02);
+}
+
+/* La copia al contrario resta invisibile finché non serve */
+.s4 .s4__video--rev {
+  opacity: 0;
 }
 
 /* Velo statico: scurisce i bordi e il cielo in alto dove vivono i

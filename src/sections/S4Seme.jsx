@@ -14,8 +14,12 @@ gsap.registerPlugin(ScrollTrigger);
    3. una timeline GSAP a tempo fa sbocciare i testi in 4 tempi;
    4. a fine video (ultimo fotogramma: il fiore aperto) lo scroll si
       sblocca e sotto continua il copy, in flusso normale.
-   Bidirezionale: risalendo alla Sezione 03 la timeline si riavvolge
-   (reverse) e il video torna a 0; rientrando la sequenza riparte.
+   Bidirezionale: risalendo (rotella/swipe in cima alla sezione) il
+   passaggio alla 03 viene trattenuto: il video si RIAVVOLGE AL CONTRARIO
+   e i testi si richiudono (reverse), poi il deck sale alla 03. Rientrando,
+   la sequenza riparte. Il reverse usa una copia del video codificata al
+   contrario (riprodotta in modo nativo e fluido): i browser non
+   supportano playbackRate negativo.
 
    Nota: il sito è un deck a slide, la finestra non scorre. Per questo
    l'avvio usa un IntersectionObserver (la slide entra davvero in vista)
@@ -28,6 +32,9 @@ gsap.registerPlugin(ScrollTrigger);
 const VIDEO_WEBM = "/seme-germoglio.webm";
 const VIDEO_MP4 = "/seme-germoglio.mp4";
 const RATE = 2.2; // velocità della sequenza: 10 s di video → ~4,5 s
+const REV_RATE = 3.6; // riavvolgimento: più svelto (~2,8 s dal fiore alla goccia)
+const REV_WEBM = "/seme-germoglio-rev.webm";
+const REV_MP4 = "/seme-germoglio-rev.mp4";
 
 // Tempi (s) della sequenza di testi
 const STEP = { head: 0, low: 1.1, high: 2.2, bloom: 3.3 };
@@ -57,20 +64,24 @@ export default function S4Seme() {
   const sectionRef = useRef(null);
   const screenRef = useRef(null);
   const videoRef = useRef(null);
+  const revRef = useRef(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     const screen = screenRef.current;
     const video = videoRef.current;
-    if (!section || !screen || !video) return;
+    const rev = revRef.current;
+    if (!section || !screen || !video || !rev) return;
     const scroller = section.closest(".sandbox-slide");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let running = false; // sequenza avviata per questo ingresso
+    let reversing = false; // riavvolgimento in corso
     let unlockTimer;
     let io;
     let tl;
     let onSlide;
+    let onBeforeLeave;
     const SLIDE_INDEX = scroller ? Number(scroller.dataset.slide) : -1;
 
     const ctx = gsap.context(() => {
@@ -145,7 +156,7 @@ export default function S4Seme() {
       // Uscita verso l'alto (la slide non è più attiva): la timeline si
       // riavvolge, il video torna al primo fotogramma, pronto a ripartire.
       const rewind = () => {
-        if (!running) return;
+        if (!running || reversing) return;
         running = false;
         unlock();
         video.pause();
@@ -156,6 +167,63 @@ export default function S4Seme() {
         }
         if (tl) tl.timeScale(2.5).reverse();
       };
+
+      // Mostra il video "in avanti" o quello "al contrario"
+      const showRev = (on) => {
+        rev.style.opacity = on ? "1" : "0";
+        video.style.opacity = on ? "0" : "1";
+      };
+
+      // Uscita verso l'alto con la rotella/lo swipe: riavvolgimento visibile
+      // (video al contrario + testi in reverse), poi il deck sale alla 03.
+      const reverseOut = () => {
+        reversing = true;
+        clearTimeout(unlockTimer);
+        lock();
+        video.pause();
+
+        const dur = video.duration || 10;
+        const startRev = () => {
+          showRev(true);
+          rev.playbackRate = REV_RATE;
+          rev.play().catch(() => {});
+        };
+        try {
+          // stesso fotogramma: il punto t in avanti è (durata − t) al contrario
+          rev.currentTime = Math.max(0, dur - video.currentTime);
+          rev.addEventListener("seeked", startRev, { once: true });
+        } catch {
+          startRev();
+        }
+
+        const revMs = (Math.max(0, video.currentTime) / REV_RATE) * 1000;
+        if (tl) tl.timeScale(Math.max(1, tl.duration() / Math.max(0.6, revMs / 1000))).reverse();
+
+        const finish = () => {
+          rev.pause();
+          try {
+            video.currentTime = 0;
+          } catch {
+            /* nulla */
+          }
+          showRev(false);
+          running = false;
+          reversing = false;
+          unlock();
+          window.dispatchEvent(
+            new CustomEvent("deck:goto", { detail: { index: SLIDE_INDEX - 1, fromBelow: true } })
+          );
+        };
+        setTimeout(finish, revMs + 150);
+      };
+
+      onBeforeLeave = (e) => {
+        const d = e.detail;
+        if (d.from !== SLIDE_INDEX || d.dir >= 0 || !running || reversing) return;
+        e.preventDefault(); // il passaggio lo chiediamo noi a fine reverse
+        reverseOut();
+      };
+      window.addEventListener("deck:beforeleave", onBeforeLeave);
 
       // Avvio: la slide è attiva e la schermata del seme è tutta in vista
       // (entrando dall'alto la slide si apre dalla cima → schermata visibile)
@@ -196,6 +264,7 @@ export default function S4Seme() {
     return () => {
       io?.disconnect();
       if (onSlide) window.removeEventListener("deck:slide", onSlide);
+      if (onBeforeLeave) window.removeEventListener("deck:beforeleave", onBeforeLeave);
       clearTimeout(unlockTimer);
       scroller?.classList.remove("is-locked");
       window.dispatchEvent(new Event("deck:unlock"));
@@ -222,6 +291,19 @@ export default function S4Seme() {
             >
               <source src={VIDEO_WEBM} type="video/webm" />
               <source src={VIDEO_MP4} type="video/mp4" />
+            </video>
+            {/* copia al contrario, usata solo per il riavvolgimento */}
+            <video
+              ref={revRef}
+              className="s4__video s4__video--rev"
+              muted
+              playsInline
+              preload="auto"
+              aria-hidden="true"
+              tabIndex={-1}
+            >
+              <source src={REV_WEBM} type="video/webm" />
+              <source src={REV_MP4} type="video/mp4" />
             </video>
             <div className="s4__veil" aria-hidden="true" />
             {/* sfumatura in basso: il video si scioglie nel blu del copy sotto */}
