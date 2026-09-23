@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./sandbox.css";
 import "./sections/home.css"; // stili di base validati del progetto (kh-*)
 import S1Hero from "./sections/S1Hero";
@@ -31,6 +35,9 @@ const SECTIONS = [
   { n: 11, id: "mappa-cta", nome: "Mappa Karma + CTA", alta: true },
 ];
 
+// Durata del passaggio tra slide: lunga e morbida, inerzia "preziosa"
+const DECK_MS = 1100;
+
 const AVAILABLE_COUNT = 3; // Attualmente sezioni 1, 2 e 3 pronte
 
 export default function App() {
@@ -38,6 +45,8 @@ export default function App() {
   const isTransitioningRef = useRef(false);
   const slideRefs = useRef([]);
   const touchStartYRef = useRef(0);
+  // istanza Lenis della slide attiva (smooth scroll interno)
+  const lenisRef = useRef(null);
   // la slide attiva è scesa oltre la cima? (nasconde il badge in basso,
   // così non si sovrappone mai al contenuto che scorre)
   const [slideScrolled, setSlideScrolled] = useState(false);
@@ -53,9 +62,10 @@ export default function App() {
     const target = slideRefs.current[targetIndex];
     if (target) target.scrollTop = 0;
 
+    // durata allineata alla transizione "pesante" del deck (sandbox.css)
     setTimeout(() => {
       isTransitioningRef.current = false;
-    }, 800);
+    }, DECK_MS);
   }, []);
 
   // ── Passo avanti/indietro consapevole dello scroll interno ──
@@ -94,7 +104,9 @@ export default function App() {
             ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 10
             : scroller.scrollTop <= 10;
         if (!atEdge) {
-          scroller.scrollBy({ top: dir * scroller.clientHeight * 0.8, behavior: "smooth" });
+          const delta = dir * scroller.clientHeight * 0.8;
+          if (lenisRef.current) lenisRef.current.scrollTo(scroller.scrollTop + delta);
+          else scroller.scrollBy({ top: delta, behavior: "smooth" });
           return;
         }
       }
@@ -113,6 +125,39 @@ export default function App() {
     onScroll();
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
+  }, [activeIndex]);
+
+  // ── Smooth scroll luxury con Lenis, sincronizzato con GSAP ScrollTrigger ──
+  // Il sito è un deck: la finestra non scorre, scorre la slide attiva.
+  // Lenis vive quindi sul contenitore della slide attiva (wrapper) e viene
+  // ricreato a ogni cambio slide. Un solo motore di frame: il ticker di GSAP
+  // (niente rAF parallelo), così filo, card e righe restano in sincrono.
+  useEffect(() => {
+    const wrapper = slideRefs.current[activeIndex];
+    if (!wrapper) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+
+    const lenis = new Lenis({
+      wrapper,
+      content: wrapper.firstElementChild || wrapper,
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      syncTouch: false, // sul touch resta lo scroll nativo (ex smoothTouch: false)
+    });
+    lenisRef.current = lenis;
+
+    lenis.on("scroll", ScrollTrigger.update);
+    const tick = (time) => lenis.raf(time * 1000);
+    gsap.ticker.add(tick);
+    gsap.ticker.lagSmoothing(0);
+
+    return () => {
+      gsap.ticker.remove(tick);
+      lenis.destroy();
+      if (lenisRef.current === lenis) lenisRef.current = null;
+    };
   }, [activeIndex]);
 
   // Gestione Wheel (rotella del mouse / touchpad)
