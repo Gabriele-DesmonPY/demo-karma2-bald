@@ -1,0 +1,456 @@
+/* ═══════════════════════════════════════════════════════════════
+   SEZIONE 03 — LA REALTÀ NON È FRAMMENTATA · Editorial Luxury
+   Stessa tipografia della Sezione 02 (Cormorant Garamond + Manrope).
+   Selettori prefissati `.s3` / `.s3-` (nessun selettore globale).
+   Il font Cormorant è già importato da S2Origine.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+.s3 {
+  /* ── Token (allineati alla Sezione 02) ── */
+  --s3-ivory: #fdfbf7;
+  --s3-cream: #f8f5f0;               /* = colore finale della Sezione 02 */
+  --s3-navy: #0a1128;                /* Deep Navy */
+  --s3-ink: #0d1826;
+  --s3-text: #28323e;
+  --s3-gold: #c69a57;
+  --s3-gold-ink: #86602a;            /* oro leggibile su chiaro */
+  --s3-gold-soft: #9a7036;
+  --s3-gold-light: #d9b377;          /* oro leggibile su navy */
+  --s3-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+  --s3-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--s3-ink);
+
+  /* ── Mesh gradient organico, solo gradienti CSS nativi (statici) ──
+     In cima è panna pieno (#F8F5F0): raccordo invisibile con la 02.
+     Poi scende, in diagonale, fino al Deep Navy in basso a destra.
+     Una macchia d'oro caldo a metà evita i grigi "sporchi" del passaggio. */
+  background-color: var(--s3-navy);
+  background-image:
+    radial-gradient(70% 22% at 0% 0%, var(--s3-ivory) 0%, rgba(253, 251, 247, 0) 100%),
+    radial-gradient(55% 14% at 88% 24%, rgba(217, 179, 119, 0.28) 0%, rgba(217, 179, 119, 0) 100%),
+    radial-gradient(60% 16% at 12% 44%, rgba(198, 154, 87, 0.18) 0%, rgba(198, 154, 87, 0) 100%),
+    radial-gradient(90% 30% at 100% 100%, #060b1d 0%, rgba(6, 11, 29, 0) 100%),
+    linear-gradient(
+      172deg,
+      var(--s3-cream) 0%,
+      var(--s3-cream) 9%,
+      #f0e8da 17%,
+      #dccaa9 27%,
+      #b09a7c 35%,
+      #6a6570 42%,
+      #2e3656 50%,
+      #151d3a 57%,
+      var(--s3-navy) 64%,
+      var(--s3-navy) 100%
+    );
+}
+
+.s3 .s3__wrap {
+  position: relative;
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  /* fondo generoso: la chiusura non incontra mai i controlli fissi in basso */
+  padding: clamp(72px, 13vh, 140px) clamp(20px, 6vw, 112px) clamp(180px, 28vh, 300px);
+}
+
+/* ═══════════ Header ═══════════ */
+.s3 .s3__head {
+  max-width: 760px;
+  margin-bottom: clamp(56px, 11vh, 120px);
+}
+
+.s3 .s3__tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9em;
+  margin: 0 0 clamp(18px, 3.4vh, 32px);
+  font-family: var(--s3-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--s3-gold-ink);
+}
+
+.s3 .s3__tag-sep {
+  color: var(--s3-gold);
+  letter-spacing: 0;
+}
+
+.s3 .s3__tag--light {
+  color: var(--s3-gold-light);
+}
+
+.s3 .s3__title {
+  margin: 0;
+  font-family: var(--s3-serif);
+  font-weight: 500;
+  font-size: clamp(2.6rem, min(6vw, 10vh), 6.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.018em;
+  color: var(--s3-ink);
+  text-wrap: balance;
+}
+
+.s3 .s3__title em,
+.s3 .s3-weave__title em {
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.s3 .s3__lede {
+  margin: clamp(16px, 3vh, 28px) 0 0;
+  max-width: 34ch;
+  font-family: var(--s3-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.3rem, min(1.95vw, 3.3vh), 1.9rem);
+  line-height: 1.25;
+  color: var(--s3-gold-soft);
+}
+
+/* ═══════════ Campo del filo ═══════════ */
+.s3 .s3-field {
+  position: relative;
+}
+
+/* Il filo: livello dietro alle schede */
+.s3 .s3-thread {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Tendina: il contenitore scende, l'SVG sale della stessa quantità →
+   il filo sembra srotolarsi dall'alto, ma sono solo due transform. */
+.s3 .s3-thread__wipe {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translate3d(0, -100%, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.s3 .s3-thread__svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  overflow: visible;
+  transform: translate3d(0, 100%, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.s3 .s3-thread__line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: url(#s3-gold);
+  stroke-width: 1.4;             /* sottile e prezioso */
+}
+
+/* Bagliore aurico: filtro statico sull'SVG. Il livello è già promosso
+   (will-change: transform), quindi viene rasterizzato una volta sola e
+   durante lo srotolamento si sposta soltanto: nessun ricalcolo per frame. */
+.s3 .s3-thread__svg {
+  filter: drop-shadow(0 0 4px rgba(226, 201, 116, 0.4));
+}
+
+/* Nodi: piccoli punti di luce dorata, ingresso in scale/opacity */
+.s3 .s3-node {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.s3 .s3-node__dot {
+  position: absolute;
+  left: -4.5px;
+  top: -4.5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #e2c974 60%, #b89343 100%);
+  box-shadow: 0 0 8px #e2c974;
+}
+
+/* ═══════════ Le 6 schede ═══════════ */
+.s3 .s3-cards {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: clamp(80px, 12vw, 200px);   /* il corridoio del filo */
+  margin: 0;
+  padding: clamp(40px, 8vh, 90px) 0 clamp(64px, 12vh, 130px);
+  list-style: none;
+}
+
+/* Ogni scheda ha la sua riga (mai due parallele) e si aggancia alla
+   precedente con uno scarto verticale diverso: zig-zag "spettinato".
+   Il contenitore <li> è animato da GSAP (x/y/autoAlpha); la carta
+   interna porta la rotazione statica. */
+.s3 .s3-card {
+  position: relative;
+  grid-row: var(--row);
+  width: var(--w, 80%);
+  max-width: 480px;
+  margin-top: var(--lift, 0px);
+  /* stato iniziale (GSAP porta a visibile) */
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.s3 .s3-card--sx {
+  grid-column: 1;
+  justify-self: start;
+  margin-left: var(--off, 0%);
+}
+
+.s3 .s3-card--dx {
+  grid-column: 2;
+  justify-self: end;
+  margin-right: var(--off, 0%);
+}
+
+/* Carta avorio traslucida, leggera */
+.s3 .s3-card__paper {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: clamp(28px, 4.2vh, 40px) clamp(28px, 2.9vw, 42px);   /* più respiro */
+  border-radius: 3px;
+  /* foglio avorio caldo, appena trasparente */
+  background: rgba(253, 251, 247, 0.88);
+  border: 1px solid rgba(212, 175, 55, 0.15);     /* micro-bordo dorato */
+  /* ombra soffusa ad ampio raggio + filo di luce sul bordo alto */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 20px 40px -15px rgba(10, 17, 40, 0.25);
+  transform: rotate(var(--rot, 0deg)) translateZ(0);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Vetro sfocato (blur 8px) dove la GPU lo regge senza fatica: desktop
+   con puntatore preciso. Sul touch resta il foglio velato allo 0.88,
+   visivamente identico (dietro c'è un gradiente liscio). */
+@media (min-width: 901px) and (pointer: fine) {
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .s3 .s3-card__paper {
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+  }
+}
+
+.s3 .s3-card__num {
+  flex: none;
+  padding-top: 0.55em;
+  font-family: var(--s3-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: #c5a059;                 /* oro discreto */
+}
+
+.s3 .s3-card__text {
+  margin: 0;
+  font-family: var(--s3-serif);   /* Cormorant Garamond, come la Sezione 02 */
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.25rem, min(1.7vw, 3vh), 1.65rem);
+  line-height: 1.36;
+  letter-spacing: 0.006em;
+  color: var(--s3-ink);
+  text-wrap: pretty;
+}
+
+/* ═══════════ Chiusura Fase A ═══════════ */
+.s3 .s3__close {
+  max-width: 820px;
+  margin: 0 auto;
+  padding-block: clamp(24px, 6vh, 64px) clamp(72px, 14vh, 140px);
+  text-align: center;
+}
+
+.s3 .s3__axiom {
+  margin: 0;
+  font-family: var(--s3-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(2rem, min(4vw, 6.6vh), 3.6rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  color: var(--s3-ivory);
+}
+
+.s3 .s3__thesis {
+  margin: clamp(20px, 3.4vh, 32px) auto 0;
+  max-width: 44ch;
+  font-family: var(--s3-sans);
+  font-size: clamp(0.95rem, 1.1vw, 1.08rem);
+  font-weight: 500;
+  line-height: 1.7;
+  color: rgba(253, 251, 247, 0.82);
+}
+
+/* ═══════════ Fase B — la trama d'ordine, sul navy ═══════════ */
+.s3 .s3-weave {
+  max-width: 980px;
+  margin: clamp(120px, 20vh, 220px) auto 0;
+}
+
+.s3 .s3-weave__title {
+  margin: 0 0 clamp(32px, 6vh, 64px);
+  font-family: var(--s3-serif);
+  font-weight: 500;
+  font-size: clamp(2.1rem, min(4.4vw, 7vh), 4.2rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: var(--s3-ivory);
+}
+
+.s3 .s3-weave__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(217, 179, 119, 0.25);
+}
+
+.s3 .s3-weave__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) 2fr;
+  gap: 24px;
+  align-items: baseline;
+  padding: clamp(16px, 2.6vh, 24px) 0;
+  border-bottom: 1px solid rgba(217, 179, 119, 0.25);
+}
+
+.s3 .s3-weave__concept {
+  font-family: var(--s3-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.3rem, 1.9vw, 1.7rem);
+  line-height: 1.2;
+  color: var(--s3-gold-light);
+}
+
+.s3 .s3-weave__connection {
+  font-family: var(--s3-sans);
+  font-size: clamp(0.95rem, 1.1vw, 1.06rem);
+  font-weight: 500;
+  line-height: 1.65;
+  color: rgba(253, 251, 247, 0.86);
+}
+
+.s3 .s3-weave__epilogue {
+  margin: clamp(40px, 7vh, 72px) 0 0;
+  font-family: var(--s3-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
+  line-height: 1.2;
+  color: var(--s3-ivory);
+}
+
+/* Elementi con ingresso GSAP: nascosti finché lo script non li porta */
+.s3 .s3-reveal {
+  visibility: hidden;
+}
+
+/* ═══════════ Tablet e mobile: timeline sul margine sinistro ═══════════ */
+@media (max-width: 900px) {
+  .s3 .s3__wrap {
+    padding: 64px 20px 96px;
+  }
+
+  .s3 .s3__head {
+    margin-bottom: 40px;
+  }
+
+  .s3 .s3__title {
+    font-size: clamp(2.4rem, 11vw, 4rem);
+  }
+
+  .s3 .s3__lede {
+    font-size: clamp(1.2rem, 5.2vw, 1.5rem);
+  }
+
+  .s3 .s3-cards {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 22px;
+    padding: 36px 0 64px 36px;   /* spazio per il filo a sinistra */
+  }
+
+  .s3 .s3-card--sx,
+  .s3 .s3-card--dx {
+    grid-column: 1;
+    grid-row: auto;
+    width: auto;
+    max-width: none;
+    margin-top: 0;
+  }
+
+  /* lieve alternanza, per ricordare lo zig-zag */
+  .s3 .s3-card--sx {
+    justify-self: stretch;
+    margin: 0 10% 0 0;
+  }
+
+  .s3 .s3-card--dx {
+    justify-self: stretch;
+    margin: 0 0 0 10%;
+  }
+
+  .s3 .s3__wrap {
+    padding-bottom: 160px;
+  }
+
+  .s3 .s3-card__text {
+    font-size: 1.2rem;
+  }
+
+  .s3 .s3__axiom {
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+  }
+
+  .s3 .s3-weave__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}
+
+/* ═══════════ Movimento ridotto: tutto visibile, niente tendina ═══════════ */
+@media (prefers-reduced-motion: reduce) {
+  .s3 .s3-reveal,
+  .s3 .s3-card,
+  .s3 .s3-node {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .s3 .s3-thread__wipe,
+  .s3 .s3-thread__svg {
+    transform: none;
+  }
+}

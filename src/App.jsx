@@ -3,7 +3,7 @@ import "./sandbox.css";
 import "./sections/home.css"; // stili di base validati del progetto (kh-*)
 import S1Hero from "./sections/S1Hero";
 import S2Origine from "./sections/S2Origine";
-import { S2Frammentazione } from "./sections/S2Complessita";
+import S3Realta from "./sections/S3Realta";
 
 // Sandbox Karma 2 — navigazione a swipe cinematografico a pieno schermo.
 // Ogni sezione è una slide del deck: il passaggio avviene con swipe
@@ -38,6 +38,9 @@ export default function App() {
   const isTransitioningRef = useRef(false);
   const slideRefs = useRef([]);
   const touchStartYRef = useRef(0);
+  // la slide attiva è scesa oltre la cima? (nasconde il badge in basso,
+  // così non si sovrappone mai al contenuto che scorre)
+  const [slideScrolled, setSlideScrolled] = useState(false);
 
   const goToSlide = useCallback((targetIndex) => {
     if (targetIndex < 0 || targetIndex >= AVAILABLE_COUNT) return;
@@ -99,6 +102,18 @@ export default function App() {
     },
     [activeIndex, stepSlide]
   );
+
+  useEffect(() => {
+    const el = slideRefs.current[activeIndex];
+    if (!el) return;
+    const onScroll = () => {
+      const next = el.scrollTop > 40;
+      setSlideScrolled((prev) => (prev === next ? prev : next));
+    };
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [activeIndex]);
 
   // Gestione Wheel (rotella del mouse / touchpad)
   useEffect(() => {
@@ -219,7 +234,7 @@ export default function App() {
           ref={(el) => (slideRefs.current[2] = el)}
           data-slide="2"
         >
-          <S2Frammentazione />
+          <S3Realta />
         </div>
       </div>
 
@@ -235,7 +250,7 @@ export default function App() {
             ↓
           </span>
         </button>
-      ) : activeIndex === 1 ? null : (
+      ) : activeIndex === 1 || slideScrolled ? null : (
         <button
           type="button"
           className="sandbox-swipe-hint"
