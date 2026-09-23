@@ -1,0 +1,14 @@
+/* SilkWash — velo setoso pastello + fili d'oro nelle zone chiare.
+   Layer assoluto dietro al contenuto (kh-col è z-index 1). */
+.silk-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.silk-wash__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

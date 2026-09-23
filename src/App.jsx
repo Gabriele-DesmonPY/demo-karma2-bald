@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import "./sandbox.css";
 import "./sections/home.css"; // stili di base validati del progetto (kh-*)
 import S1Hero from "./sections/S1Hero";
+import S2Complessita from "./sections/S2Complessita";
 
-// Sandbox Karma 2 — costruzione a sezioni.
-// Ogni sezione vive in src/sections/, impilata in ordine di racconto.
-// L'indice laterale permette di saltare alle sezioni validate;
-// le sezioni da costruire restano in elenco ma disattivate.
+// Sandbox Karma 2 — navigazione a swipe cinematografico a pieno schermo.
+// Ogni sezione occupa 100vh: il passaggio avviene con swipe fluido su
+// rotella, touch, frecce da tastiera o clic sull'indice laterale.
 
 const SECTIONS = [
   { n: 1, id: "hero", nome: "Hero / Apertura", alta: true, fatto: true },
-  { n: 2, id: "complessita", nome: "La complessità della scelta", alta: false },
+  { n: 2, id: "complessita", nome: "La realtà non è frammentata", alta: false, fatto: true },
   { n: 3, id: "tenere-insieme", nome: "Decidere è tenere insieme", alta: false },
   { n: 4, id: "domanda", nome: "La domanda", alta: false },
   { n: 5, id: "spirale-tappe", nome: "Entrare nella spirale", alta: true },
@@ -21,57 +21,183 @@ const SECTIONS = [
   { n: 10, id: "mappa-cta", nome: "Mappa Karma + CTA", alta: true },
 ];
 
-function SectionIndex() {
-  const [attiva, setAttiva] = useState(1);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) setAttiva(Number(e.target.dataset.n));
-        });
-      },
-      { rootMargin: "-45% 0px -45% 0px" }
-    );
-    document.querySelectorAll("section[data-n]").forEach((s) => obs.observe(s));
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <nav className="sandbox-index" aria-label="Indice sezioni">
-      {SECTIONS.map((s) => (
-        <a
-          key={s.n}
-          href={s.fatto ? `#${s.id}` : undefined}
-          aria-disabled={!s.fatto}
-          title={`${s.n} — ${s.nome}`}
-          className={
-            "sandbox-index__item" +
-            (s.fatto ? "" : " sandbox-index__item--todo") +
-            (attiva === s.n ? " sandbox-index__item--on" : "")
-          }
-        >
-          {String(s.n).padStart(2, "0")}
-        </a>
-      ))}
-    </nav>
-  );
-}
+const AVAILABLE_COUNT = 2; // Attualmente sezioni 1 e 2 pronte
 
 export default function App() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const isTransitioningRef = useRef(false);
+  const slide1Ref = useRef(null);
+  const touchStartYRef = useRef(0);
+
+  const goToSlide = useCallback((targetIndex) => {
+    if (targetIndex < 0 || targetIndex >= AVAILABLE_COUNT) return;
+    if (isTransitioningRef.current) return;
+
+    isTransitioningRef.current = true;
+    setActiveIndex(targetIndex);
+
+    // Se si torna alla sezione 2, reset dello scroll interno
+    if (targetIndex === 1 && slide1Ref.current) {
+      slide1Ref.current.scrollTop = 0;
+    }
+
+    setTimeout(() => {
+      isTransitioningRef.current = false;
+    }, 800);
+  }, []);
+
+  // Gestione Wheel (rotella del mouse / touchpad)
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (isTransitioningRef.current) return;
+
+      const delta = e.deltaY;
+      if (Math.abs(delta) < 25) return;
+
+      if (delta > 0) {
+        // Scroll verso il basso
+        if (activeIndex === 0) {
+          goToSlide(1);
+        }
+      } else {
+        // Scroll verso l'alto
+        if (activeIndex === 1) {
+          // Torna su solo se il contenuto interno della sezione 2 è in cima
+          const scrollTop = slide1Ref.current ? slide1Ref.current.scrollTop : 0;
+          if (scrollTop <= 10) {
+            goToSlide(0);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [activeIndex, goToSlide]);
+
+  // Gestione Touch (swipe su mobile)
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      touchStartYRef.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e) => {
+      if (isTransitioningRef.current) return;
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffY = touchStartYRef.current - touchEndY;
+
+      if (Math.abs(diffY) > 45) {
+        if (diffY > 0) {
+          // Swipe verso l'alto (vai avanti)
+          if (activeIndex === 0) goToSlide(1);
+        } else {
+          // Swipe verso il basso (torna indietro)
+          if (activeIndex === 1) {
+            const scrollTop = slide1Ref.current ? slide1Ref.current.scrollTop : 0;
+            if (scrollTop <= 10) goToSlide(0);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [activeIndex, goToSlide]);
+
+  // Gestione Tastiera (Frecce giù/su, PageDown/PageUp)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isTransitioningRef.current) return;
+      if (e.key === "ArrowDown" || e.key === "PageDown") {
+        e.preventDefault();
+        if (activeIndex === 0) goToSlide(1);
+      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+        e.preventDefault();
+        if (activeIndex === 1) {
+          const scrollTop = slide1Ref.current ? slide1Ref.current.scrollTop : 0;
+          if (scrollTop <= 10) goToSlide(0);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeIndex, goToSlide]);
+
   return (
-    <>
-      <SectionIndex />
-      <main>
-        <S1Hero />
-      </main>
-      {/* Placeholder delle sezioni da costruire — si toglie man mano */}
-      <footer className="sandbox-todo">
-        <p>
-          Sandbox a sezioni — in corsa: <strong>01 Hero</strong>. Prossime (ordine): 2 → 3 → 4 → 5
-          → 6 → 7 → 8 → 9 → 10.
-        </p>
-      </footer>
-    </>
+    <div className="sandbox-viewport">
+      {/* Indice laterale fisso interattivo */}
+      <nav className="sandbox-index" aria-label="Indice sezioni">
+        {SECTIONS.map((s) => {
+          const isActive = activeIndex + 1 === s.n;
+          return (
+            <button
+              key={s.n}
+              type="button"
+              disabled={!s.fatto}
+              onClick={() => s.fatto && goToSlide(s.n - 1)}
+              title={`${s.n} — ${s.nome}`}
+              className={
+                "sandbox-index__item" +
+                (s.fatto ? "" : " sandbox-index__item--todo") +
+                (isActive ? " sandbox-index__item--on" : "")
+              }
+            >
+              {String(s.n).padStart(2, "0")}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Traccia di swipe a sezioni (fullpage deck) */}
+      <div
+        className="sandbox-track"
+        style={{
+          transform: `translate3d(0, -${activeIndex * 100}vh, 0)`,
+        }}
+      >
+        {/* Slide 0: Sezione 1 — Hero */}
+        <div className="sandbox-slide" data-slide="0">
+          <S1Hero />
+        </div>
+
+        {/* Slide 1: Sezione 2 — La realtà non è frammentata */}
+        <div className="sandbox-slide" ref={slide1Ref} data-slide="1">
+          <S2Complessita />
+        </div>
+      </div>
+
+      {/* Badge interattivo di swipe */}
+      {activeIndex === 0 ? (
+        <button
+          type="button"
+          className="sandbox-swipe-hint"
+          onClick={() => goToSlide(1)}
+        >
+          <span>Swipe Sezione 02</span>
+          <span className="sandbox-swipe-hint__arrow" aria-hidden="true">
+            ↓
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="sandbox-swipe-hint"
+          onClick={() => goToSlide(0)}
+        >
+          <span>↑ Torna a Hero 01</span>
+        </button>
+      )}
+
+      {/* Badge informativo di stato in basso a sinistra */}
+      <div className="sandbox-badge">
+        Karma 2 Sandbox · Sezione <strong>0{activeIndex + 1}</strong> di 10
+      </div>
+    </div>
   );
 }

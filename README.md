@@ -22,8 +22,9 @@ src/
   sandbox.css        stili del viewer (non finiscono nel progetto)
   sections/          ← le sezioni vivono qui, una alla volta
     home.css         stili di base validati del progetto (kh-*)
-    S1Hero.jsx/css   sezione corrente
-  components/        Spiral, RibbonField, Reveal, LineReveal, ScrollFloat, TextReveal
+    S1Hero.jsx/css   sezione 1
+    S2Complessita.jsx/css sezione 2
+  components/        Spiral, RibbonField, SilkWash, Reveal, LineReveal, ScrollFloat, TextReveal
 ```
 
 ## Stato sezioni (ordine di racconto 1→10)
@@ -31,7 +32,7 @@ src/
 | # | Sezione | Intensità | Stato |
 |---|---------|-----------|-------|
 | 1 | Hero / Apertura | alta | ✅ prima versione |
-| 2 | La complessità della scelta | media | ⬜ |
+| 2 | La realtà non è frammentata | media | ✅ prima versione |
 | 3 | Decidere è tenere insieme | media | ⬜ |
 | 4 | La domanda | bassa | ⬜ |
 | 5 | Entrare nella spirale | alta | ⬜ |

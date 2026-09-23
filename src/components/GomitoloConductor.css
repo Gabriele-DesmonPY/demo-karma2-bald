@@ -1,0 +1,158 @@
+/* ═══ GOMITOLO CONDUCTOR — STILI ═══ */
+
+.gomitolo-conductor {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: clamp(16px, 3.2vw, 44px);
+  width: 36px;
+  z-index: 55;
+  pointer-events: none;
+}
+
+/* Guida verticale sottile e trasparente */
+.gomitolo-conductor__track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(198, 154, 87, 0.22) 8%,
+    rgba(198, 154, 87, 0.22) 92%,
+    transparent 100%
+  );
+}
+
+/* Filo dorato srotolato che scende dall'alto */
+.gomitolo-conductor__trail {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(208, 172, 117, 0.8) 10%,
+    rgba(198, 154, 87, 0.95) 85%,
+    rgba(240, 219, 174, 1) 100%
+  );
+  box-shadow: 0 0 8px rgba(198, 154, 87, 0.65);
+  will-change: height;
+  height: 10vh;
+}
+
+/* Bagliore dorato che segue il gomitolo */
+.gomitolo-conductor__glow {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 60px;
+  height: 60px;
+  margin-top: -30px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(208, 172, 117, 0.45) 0%,
+    rgba(198, 154, 87, 0.15) 50%,
+    transparent 75%
+  );
+  filter: blur(6px);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Il Gomitolo rotante */
+.gomitolo-conductor__ball {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gomitolo-conductor__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+  filter: drop-shadow(0 4px 14px rgba(175, 129, 59, 0.55)) drop-shadow(0 0 8px rgba(208, 172, 117, 0.4));
+  transition: transform 0.2s ease-out;
+}
+
+/* Filo vivo che esce dal gomitolo */
+.gomitolo-conductor__loose-thread {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 14px;
+  height: 10px;
+  border-bottom: 2px solid #dfb775;
+  border-right: 1.5px solid #dfb775;
+  border-radius: 0 0 10px 0;
+  opacity: 0.85;
+  transform: rotate(-15deg);
+}
+
+/* Nodi segnaletici per le sezioni */
+.gomitolo-conductor__milestones {
+  position: absolute;
+  inset: 0;
+}
+
+.gomitolo-conductor__node {
+  position: absolute;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--gold-deep);
+  box-shadow: 0 0 0 3px rgba(198, 154, 87, 0.18);
+  opacity: 0.6;
+  transition: all 400ms ease;
+}
+
+.gomitolo-conductor__node--1 {
+  top: 10vh;
+}
+
+.gomitolo-conductor__node--2 {
+  top: 50vh;
+}
+
+.gomitolo-conductor__node--3 {
+  top: 90vh;
+}
+
+/* ── Responsive Mobile ── */
+@media (max-width: 768px) {
+  .gomitolo-conductor {
+    right: 10px;
+    width: 28px;
+  }
+  .gomitolo-conductor__ball {
+    width: 32px;
+    height: 32px;
+    margin-top: -16px;
+  }
+  .gomitolo-conductor__glow {
+    display: none;
+  }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .gomitolo-conductor {
+    display: none;
+  }
+}

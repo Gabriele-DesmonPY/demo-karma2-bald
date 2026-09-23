@@ -53,15 +53,16 @@ export default function S1Hero() {
             Karma · Ecologia della decisione
           </Reveal>
           <LineReveal as="h1" className="kh-hero__title" delay={120}>
-            Ogni decisione educa il futuro della tua impresa.
+            Evolviamo verso ciò che scegliamo di essere.
           </LineReveal>
           <Reveal as="p" className="kh-lede" delay={80}>
-            Una scelta continua oltre il momento in cui viene presa.
+            Dal filo alla trama, accompagniamo la tua impresa nella sua evoluzione: incontrare ciò che
+            cambia, riconoscere ciò che conta, scegliere ciò che vuole diventare continuando a
+            riconoscersi.
           </Reveal>
           <Reveal as="p" className="kh-body kh-body--onnavy" delay={140} style={{ maxWidth: "52ch" }}>
-            Entra nel modo in cui l'impresa pensa, agisce, assume responsabilità e affronta ciò
-            che verrà. Karma accompagna chi decide a comprenderne le connessioni, riconoscere ciò
-            che conta e costruire una direzione coerente con la propria realtà.
+            L’identità è il filo che attraversa il cambiamento e ci permette di abitare la complessità
+            senza perdere la profondità di ciò che siamo.
           </Reveal>
         </div>
       </section>
