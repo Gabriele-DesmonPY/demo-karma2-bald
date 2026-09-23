@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 04 — I CONCETTI CHE GERMOGLIANO DAL SEME
-   Video immersivo guidato dallo scroll + frasi che sbocciano dai nodi.
+   Video in loop nativo + frasi che sbocciano dai nodi guidate dallo scroll.
    Tipografia della casa: Cormorant Garamond (display) + Manrope.
    Selettori prefissati `.s4` / `.s4-`.
    ═══════════════════════════════════════════════════════════════ */
@@ -22,7 +22,7 @@
 /* Traccia di scroll: la sua altezza è la "durata" della fioritura */
 .s4 .s4__track {
   position: relative;
-  height: 420vh;
+  height: 400vh;                    /* = 300% di scroll col blocco appeso */
 }
 
 /* Il palco resta appeso allo schermo mentre la traccia scorre (pin) */
