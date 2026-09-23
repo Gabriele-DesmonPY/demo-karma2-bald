@@ -11,6 +11,134 @@
   --beam-y: 30%;
 }
 
+/* ── Sfondo: trama del bisso ──
+   Immagine della trama (navy + filamenti dorati) sfocata e a bassa
+   opacità, primo strato della sezione: sta sopra il campo di nastri
+   (che vive fuori dalla sezione) ma sotto a fascio, spirale, parole
+   e copy. Il blur + il velo navy tengono il contrasto dei testi alto;
+   la scala >1 nasconde i bordi sfocati del filtro. */
+.sb-hero__trama {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.sb-hero__trama-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(clamp(10px, 1.4vw, 18px)) saturate(1.05) brightness(0.9);
+  opacity: 0.3;
+  /* scala di riposo leggermente >1: il blur non mostra mai i bordi */
+  transform: scale(1.14);
+  will-change: transform;
+}
+
+/* Velo navy sfumato: più denso sotto (dove poggia il copy) e sul lato
+   sinistro, più aperto a destra dove respirano spirale, fascio e parole. */
+.sb-hero__trama-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, rgba(11, 19, 43, 0.82) 0%, rgba(11, 19, 43, 0.42) 46%, rgba(11, 19, 43, 0.14) 78%),
+    linear-gradient(to bottom, rgba(11, 19, 43, 0.34), rgba(11, 19, 43, 0.62) 88%);
+}
+
+/* ── Layout a 2 colonne: copy (60%) + citazione (35%) ──
+   Affiancato da ≥1024px; sotto, il flusso torna verticale e la
+   citazione scende sotto il testo principale. */
+.sb-hero__grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 60fr) minmax(0, 35fr);
+  justify-content: space-between;
+  align-items: end;
+  column-gap: clamp(32px, 5vw, 72px);
+  width: 100%;
+}
+
+/* Il toggle dell'accordion citazione: esiste solo su mobile (<640px),
+   dove la card ripiega per non sovraccaricare la viewport. */
+.sb-hero__quote-toggle {
+  display: none;
+}
+
+/* La colonna copy riprende le regole validate di .kh-hero__copy */
+.sb-hero__copy {
+  position: relative;
+  z-index: auto;
+}
+
+/* ── La citazione — card minimalista fluttuante ──
+   Vetro scuro sottilissimo, bordo doro filo, leggermente sollevata
+   rispetto alla base comune: "sfalsata" rispetto al copy. */
+.sb-hero__quote {
+  position: relative;
+  max-width: 420px;
+  justify-self: end;
+  align-self: center;
+  /* sfalsata: sale rispetto al copy, come un biglietto appoggiato */
+  transform: translateY(-6vh);
+  padding: clamp(24px, 2.6vw, 38px) clamp(22px, 2.4vw, 34px);
+  background: linear-gradient(160deg, rgba(16, 26, 54, 0.55), rgba(10, 17, 40, 0.38));
+  border: 1px solid rgba(208, 172, 117, 0.28);
+  border-radius: 2px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 24px 60px rgba(4, 8, 22, 0.45),
+    inset 0 1px 0 rgba(250, 248, 244, 0.06);
+}
+
+/* Tratto doro in alto: la citazione è cucita alla pagina */
+.sb-hero__quote::before {
+  content: "";
+  position: absolute;
+  left: clamp(22px, 2.4vw, 34px);
+  right: clamp(22px, 2.4vw, 34px);
+  top: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(208, 172, 117, 0.85), transparent);
+}
+
+.sb-hero__quote-mark {
+  display: block;
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-size: clamp(2.6rem, 3.6vw, 3.6rem);
+  line-height: 0.6;
+  color: var(--kh-gold-bright);
+  opacity: 0.85;
+  margin-bottom: 14px;
+}
+
+.sb-hero__quote-text {
+  margin: 0;
+  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-size: clamp(1rem, 1.25vw, 1.18rem);
+  line-height: 1.55;
+  color: rgba(250, 248, 244, 0.9);
+}
+
+.sb-hero__quote-author {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(208, 172, 117, 0.22);
+  font-family: var(--font-label);
+  font-size: clamp(0.68rem, 0.8vw, 0.78rem);
+  letter-spacing: var(--tracking-label, 0.14em);
+  text-transform: uppercase;
+  color: rgba(208, 172, 117, 0.75);
+}
+
+.sb-hero__quote-author strong {
+  color: var(--kh-gold-bright);
+  font-weight: 600;
+}
+
 /* ── Fascio di luce rotante ──
    Un cono di luce che parte da un punto e ruota piano, come una
    lancetta: nessun bordo, dissolvenza totale, ma visibile — è
@@ -47,9 +175,11 @@
 }
 
 /* ── Parole sparse di proposito ──
-   Ogni parola ha le sue coordinate (--wx/--wy), il suo ritardo di
-   comparsa (--wd) e il suo tempo di deriva (--wf): sparse, mai in
-   fila, e ognuna vive nel proprio tempo. */
+   Ogni parola ha le sue coordinate (--wx/--wy). L'entrata (fade +
+   defocus, in stagger) la governa Framer Motion; il posizionamento
+   è qui. Lo span interno (.sb-hero__drift) porta la deriva infinita
+   nel proprio tempo (--wf), con il suo ritardo (--wd): sparse, mai
+   in fila, e ognuna vive nel proprio tempo. */
 .sb-hero__words {
   position: absolute;
   inset: 0;
@@ -57,32 +187,21 @@
   pointer-events: none;
 }
 
-.sb-hero__words span {
+.sb-hero__word {
   position: absolute;
   left: var(--wx);
   top: var(--wy);
+}
+
+.sb-hero__drift {
+  display: inline-block;
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
   font-style: italic;
   font-size: clamp(0.95rem, 1.5vw, 1.35rem);
   letter-spacing: 0.02em;
   color: rgba(250, 248, 244, 0.46);
   text-shadow: 0 0 18px rgba(10, 37, 69, 0.8);
-  opacity: 0;
-  animation: sb-word-in 1.8s var(--ease-out-expo) var(--wd) forwards,
-    sb-word-drift var(--wf) ease-in-out calc(var(--wd) + 1.8s) infinite alternate;
-}
-
-@keyframes sb-word-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-    filter: blur(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
+  animation: sb-word-drift var(--wf) ease-in-out calc(var(--wd) + 1.8s) infinite alternate;
 }
 
 @keyframes sb-word-drift {
@@ -189,35 +308,132 @@
 }
 
 /* ── Responsive ── */
+/* Sotto 1024px il layout torna a colonna singola: la citazione scende
+   sotto il testo principale, con la sua aria, senza sovraccaricare. */
+@media (max-width: 1023px) {
+  .sb-hero__grid {
+    grid-template-columns: 1fr;
+    row-gap: clamp(28px, 5vh, 48px);
+  }
+
+  .sb-hero__quote {
+    justify-self: start;
+    max-width: min(480px, 100%);
+    transform: none;
+    align-self: auto;
+  }
+
+  /* il copy respira: non serve più spingerlo in fondo a tutto */
+  .sb-hero .kh-hero__copy {
+    max-width: 640px;
+  }
+}
+
 @media (max-width: 640px) {
-  .sb-hero__words span {
+  .sb-hero__drift {
     font-size: 0.85rem;
   }
-  /* tre parole bastano su mobile: le altre due nascono già sotto */
-  .sb-hero__words span:nth-child(4),
-  .sb-hero__words span:nth-child(5) {
+  /* tre parole bastano su mobile: le altre tre nascono già sotto,
+     dove vivono il toggle e la citazione ripiegata */
+  .sb-hero__word:nth-child(4),
+  .sb-hero__word:nth-child(5),
+  .sb-hero__word:nth-child(6) {
     display: none;
+  }
+  /* equilibrio scivola sul lede a queste proporzioni: la risaliamo
+     in una zona libera a destra, sopra il fascio */
+  .sb-hero__word:nth-child(3) {
+    --wx: 74%;
+    --wy: 31%;
   }
   .sb-hero__thread {
     right: 14px;
     height: 74vh;
   }
+  /* su mobile la trama si difende da sola: un filo più presente,
+     il velo tira meno perché il testo occupa più altezza */
+  .sb-hero__trama-img {
+    opacity: 0.22;
+  }
+
+  /* meno aria sopra e tra i blocchi: con la citazione aperta tutto
+     deve stare nella viewport, è una slide a pieno schermo */
+  .sb-hero {
+    padding-top: clamp(64px, 9vh, 110px);
+    padding-bottom: 96px;
+  }
+
+  .sb-hero .kh-hero__copy {
+    gap: 12px;
+  }
+
+  .sb-hero .kh-hero__title {
+    font-size: clamp(1.9rem, 8.4vw, 2.4rem);
+  }
+
+  /* ── Accordion citazione ──
+     La card ripiega: resta solo un toggle discreto in stile eyebrow.
+     Aperta, la card scende in flusso (niente sfalsamento). */
+  .sb-hero__quote-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: transparent;
+    border: 1px solid rgba(208, 172, 117, 0.35);
+    border-radius: 2px;
+    font-family: var(--font-label);
+    font-size: 0.7rem;
+    letter-spacing: var(--tracking-label, 0.14em);
+    text-transform: uppercase;
+    color: var(--kh-gold);
+    cursor: pointer;
+    transition: border-color 0.3s ease, color 0.3s ease;
+  }
+
+  .sb-hero__quote-toggle:hover {
+    border-color: rgba(208, 172, 117, 0.7);
+  }
+
+  /* da chiuso, l'intera card è fuori; da aperto, torna nel flusso */
+  .sb-hero__quote-zone .sb-hero__quote {
+    display: none;
+  }
+
+  .sb-hero__quote-zone .sb-hero__quote--open {
+    display: block;
+    margin-top: 16px;
+    transform: none;
+    max-width: 100%;
+    padding: 20px 20px 18px;
+  }
+
+  .sb-hero__quote-zone .sb-hero__quote--open .sb-hero__quote-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .sb-hero__quote-zone .sb-hero__quote--open .sb-hero__quote-author {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
 }
 
-/* ── Riduzione motion ── */
+/* ── Riduzione motion ──
+   Le entrate Framer Motion sono già spente da MotionConfig
+   (reducedMotion="user"): qui spenchiamo solo i loop CSS. */
 @media (prefers-reduced-motion: reduce) {
   .sb-hero__beam,
-  .sb-hero__words span,
+  .sb-hero__drift,
   .sb-hero__thread-pulse,
-  .sb-hero__thread {
+  .sb-hero__thread,
+  .sb-hero__trama-img {
     animation: none;
   }
-  .sb-hero__words span {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
   .sb-hero__thread {
     transform: none;
+  }
+  .sb-hero__trama-img {
+    transform: scale(1.14);
   }
 }
