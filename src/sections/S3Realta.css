@@ -398,6 +398,8 @@
 }
 
 .s3 .s3b__row {
+  will-change: transform, opacity;   /* disordine ↔ ordine in scrub */
+  backface-visibility: hidden;
   display: grid;
   grid-template-columns: minmax(200px, 0.85fr) 1.6fr;
   gap: clamp(20px, 3vw, 40px);

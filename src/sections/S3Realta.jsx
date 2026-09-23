@@ -20,7 +20,8 @@ gsap.registerPlugin(ScrollTrigger);
    - il filo si "srotola" con una tendina a DUE transform opposte
      (contenitore giù / contenuto su): niente stroke-dashoffset, niente
      repaint dell'SVG a ogni frame, tutto sul compositor;
-   - le schede entrano con autoAlpha + y (niente blur animato);
+   - TUTTE le animazioni sono in scrub (bidirezionali): scendendo si
+     compone, salendo si riavvolge; le schede usano autoAlpha + x/y;
    - l'effetto vetro è reso con velatura + filetto + luce interna:
      il fondo dietro è un gradiente liscio, quindi un backdrop-filter
      darebbe lo stesso risultato visivo costando un blur a ogni frame;
@@ -45,6 +46,17 @@ const ORDER_RELATIONS = [
   ["Una nuova regola", "incontra comportamenti, strumenti e relazioni."],
   ["Una riorganizzazione", "incontra equilibri costruiti nel tempo."],
   ["Una nuova opportunità", "incontra priorità, risorse e visione."],
+];
+
+// 3B · stato di "disordine" di partenza delle 5 connessioni: scarti
+// orizzontali e rotazioni fissi (non casuali a ogni render → stesso
+// disordine in andata e ritorno)
+const DISORDER = [
+  { x: -42, r: -1.2 },
+  { x: 36, r: 1.5 },
+  { x: -28, r: -0.8 },
+  { x: 48, r: 1.1 },
+  { x: -18, r: -1.5 },
 ];
 
 const MOBILE_Q = "(max-width: 900px)";
@@ -130,7 +142,10 @@ export default function S3Realta() {
     return () => ro.disconnect();
   }, [measure]);
 
-  // ── Animazioni scroll-driven (GSAP ScrollTrigger sullo scroller della slide) ──
+  // ── Animazioni scroll-driven, BIDIREZIONALI (GSAP ScrollTrigger + scrub) ──
+  // Tutto è legato allo scroll con scrub: scendendo si compone l'ordine,
+  // salendo si riavvolge esattamente. Nessun "once", nessun play() one-shot.
+  // Solo transform (x/y/scale/rotation) e opacità → 60fps in entrambi i versi.
   useEffect(() => {
     const section = sectionRef.current;
     if (!section || !geo.d) return;
@@ -141,13 +156,14 @@ export default function S3Realta() {
       const q = gsap.utils.selector(section);
 
       if (reduced) {
-        gsap.set(q(".s3-reveal, .s3-card, .s3-node"), { autoAlpha: 1, y: 0, scale: 1 });
+        gsap.set(q(".s3-reveal, .s3-card, .s3-node"), { autoAlpha: 1, y: 0, x: 0, scale: 1 });
         gsap.set(q(".s3-thread__wipe"), { y: 0, yPercent: 0 });
         gsap.set(q(".s3-thread__svg"), { y: 0, yPercent: 0 });
+        gsap.set(q(".s3b__row"), { x: 0, rotation: 0, opacity: 1 });
         return;
       }
 
-      // Header e chiusure: dissolvenza + salita, una volta sola
+      // Titoli, sottotitoli, chiusure: salgono e si dissolvono con lo scroll
       q(".s3-reveal").forEach((el) => {
         gsap.fromTo(
           el,
@@ -155,68 +171,102 @@ export default function S3Realta() {
           {
             autoAlpha: 1,
             y: 0,
-            duration: 1.1,
-            ease: "expo.out",
-            scrollTrigger: { trigger: el, scroller, start: "top 88%", once: true },
+            ease: "power2.out",
+            scrollTrigger: { trigger: el, scroller, start: "top 94%", end: "top 72%", scrub: 1 },
           }
         );
       });
 
-      // Il filo si srotola: tendina a due transform opposte, legata allo scroll
-      gsap.fromTo(
+      // ── 3A · Il filo: si srotola scendendo, si riavvolge salendo ──
+      // Tendina a due transform opposte (contenitore / SVG): scrub 1.
+      const threadST = {
+        trigger: fieldRef.current,
+        scroller,
+        start: "top 70%",
+        end: "bottom 62%",
+        scrub: 1,
+      };
+      const wipeTween = gsap.fromTo(
         q(".s3-thread__wipe"),
-        { y: 0, yPercent: -100 },  // y:0 azzera il translate iniziale del CSS
-        {
-          yPercent: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: fieldRef.current,
-            scroller,
-            start: "top 70%",
-            end: "bottom 62%",
-            scrub: 0.6,
-          },
-        }
+        { y: 0, yPercent: -100 }, // y:0 azzera il translate iniziale del CSS
+        { yPercent: 0, ease: "none", scrollTrigger: threadST }
       );
       gsap.fromTo(
         q(".s3-thread__svg"),
         { y: 0, yPercent: 100 },
-        {
-          yPercent: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: fieldRef.current,
-            scroller,
-            start: "top 70%",
-            end: "bottom 62%",
-            scrub: 0.6,
-          },
-        }
+        { yPercent: 0, ease: "none", scrollTrigger: { ...threadST } }
       );
 
-      // Schede e nodi: entrano quando il filo li raggiunge
+      // ── 3A · Nodi e schede: appaiono nel punto esatto in cui il filo li
+      // raggiunge, e svaniscono quando il filo si riavvolge oltre di loro.
+      // La finestra di scroll è calcolata dalla stessa corsa del filo.
+      const tst = wipeTween.scrollTrigger;
+      const nodes = q(".s3-node");
       cardRefs.current.forEach((card, i) => {
-        if (!card) return;
-        const node = q(".s3-node")[i];
-        const tl = gsap.timeline({
-          scrollTrigger: { trigger: card, scroller, start: "top 72%", once: true },
-        });
-        tl.fromTo(
-          node,
+        if (!card || !geo.nodes[i]) return;
+        const frac = geo.nodes[i].y / (geo.h || 1);
+        const reach = () => tst.start + frac * (tst.end - tst.start);
+
+        gsap.fromTo(
+          nodes[i],
           { autoAlpha: 0, scale: 0.2 },
-          { autoAlpha: 1, scale: 1, duration: 0.7, ease: "back.out(2.2)" }
-        ).fromTo(
+          {
+            autoAlpha: 1,
+            scale: 1,
+            ease: "back.out(2)",
+            scrollTrigger: {
+              trigger: fieldRef.current,
+              scroller,
+              start: () => reach() - 30,
+              end: () => reach() + 50,
+              scrub: 1,
+            },
+          }
+        );
+        gsap.fromTo(
           card,
           { autoAlpha: 0, y: 34, x: i % 2 === 0 ? -18 : 18 },
-          { autoAlpha: 1, y: 0, x: 0, duration: 1.1, ease: "expo.out" },
-          "-=0.45"
+          {
+            autoAlpha: 1,
+            y: 0,
+            x: 0,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: fieldRef.current,
+              scroller,
+              start: () => reach() - 10,
+              end: () => reach() + 170,
+              scrub: 1,
+            },
+          }
+        );
+      });
+
+      // ── 3B · Mettere ordine: disordine ↔ ordine, legato allo scroll ──
+      const rows = q(".s3b__row");
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: q(".s3b")[0],
+          scroller,
+          start: "top 75%",
+          end: "center center",
+          scrub: 1,
+        },
+      });
+      rows.forEach((row, i) => {
+        const d = DISORDER[i % DISORDER.length];
+        tl.fromTo(
+          row,
+          { x: d.x, rotation: d.r, opacity: 0.3 },
+          { x: 0, rotation: 0, opacity: 1, ease: "power2.out", duration: 1 },
+          i * 0.12 // leggero sfasamento: l'ordine si compone riga dopo riga
         );
       });
     }, section);
 
     ScrollTrigger.refresh();
     return () => ctx.revert();
-  }, [geo.d]);
+  }, [geo]);
 
   return (
     <section ref={sectionRef} className="s3" id="frammentazione" data-n="3" aria-labelledby="s3-title">
@@ -335,7 +385,7 @@ export default function S3Realta() {
 
           <ul className="s3b__list">
             {ORDER_RELATIONS.map(([concept, connection]) => (
-              <li className="s3b__row s3-reveal" key={concept}>
+              <li className="s3b__row" key={concept}>
                 <span className="s3b__concept">{concept}</span>
                 <span className="s3b__connection">{connection}</span>
               </li>
