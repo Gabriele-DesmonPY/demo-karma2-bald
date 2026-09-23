@@ -34,7 +34,10 @@
 /* ── ATTO 1: Una scelta incontra sempre una storia ──
    BLOCCO MONUMENTALE: occupa da solo tutta la viewport. Il contenuto
    vive centrato verticalmente e respira: il resto della sezione
-   continua sotto, dopo questo "atto d'apertura" a pieno schermo. */
+   continua sotto, dopo questo "atto d'apertura" a pieno schermo.
+   --origin-fade (0→1, guidato dallo scroll in JS) dissolve il blocco
+   mentre l'utente scende verso la tappa 03: le due tappe non si
+   toccano mai visivamente. */
 .s2-origin {
   max-width: 1000px;
   /* tutta la viewport, meno il padding-top della sezione: il blocco
@@ -45,6 +48,11 @@
   justify-content: center;
   margin-bottom: clamp(72px, 10vh, 120px);
   padding-block: clamp(24px, 4vh, 48px);
+  scroll-snap-align: start;
+  opacity: calc(1 - var(--origin-fade, 0));
+  transform: translateY(calc(var(--origin-fade, 0) * -30px));
+  filter: blur(calc(var(--origin-fade, 0) * 10px));
+  will-change: opacity, transform, filter;
 }
 
 .s2-title-large {
@@ -121,9 +129,13 @@
   filter: blur(0);
 }
 
-/* ── ATTO 2: La realtà non è frammentata ── */
+/* ── ATTO 2: La realtà non è frammentata ──
+   Tappa 03: punto di aggancio dello scroll-snap — lo scroller si
+   ferma qui quando ci si avvicina, il passaggio da 02 è netto. */
 .s2-fragmentation {
   margin-bottom: clamp(70px, 10vh, 120px);
+  scroll-snap-align: start;
+  scroll-margin-top: clamp(40px, 6vh, 80px);
 }
 
 .s2-fragmentation__header {

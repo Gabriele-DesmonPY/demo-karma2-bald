@@ -86,6 +86,7 @@ const ORDER_RELATIONS = [
 
 export default function S2Complessita() {
   const sectionRef = useRef(null);
+  const originRef = useRef(null); // Atto 01 — si dissolve uscendo verso la tappa 03
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
@@ -108,6 +109,39 @@ export default function S2Complessita() {
     return () => observer.disconnect();
   }, []);
 
+  // ── Stacco d'ingresso alla tappa 03 ──
+  // Mentre l'Atto 01 esce dal bordo alto dello scroll interno, si
+  // dissolve (fade + risalita + blur). Scriviamo direttamente la
+  // variabile CSS --origin-fade (0 = intero, 1 = dissolto) senza
+  // re-render: lo scroll resta fluido.
+  useEffect(() => {
+    const scroller = sectionRef.current?.closest(".sandbox-slide");
+    const origin = originRef.current;
+    if (!scroller || !origin) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const vh = window.innerHeight;
+      const top = origin.getBoundingClientRect().top;
+      // progresso: 0 mentre il blocco è intero in vista, 1 quando è
+      // uscito per un terzo della viewport → stacco netto ma morbido
+      const p = Math.min(1, Math.max(0, -top / (vh * 0.3)));
+      origin.style.setProperty("--origin-fade", p.toFixed(3));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    update();
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
     <section
       ref={sectionRef}
@@ -119,8 +153,9 @@ export default function S2Complessita() {
       <SilkWash a={0} b={10} c={90} d={100} />
 
       <div className="kh-col s2-container">
-        {/* ── ATTO 1: Una scelta incontra sempre una storia ── */}
-        <div className="s2-origin">
+        {/* ── ATTO 1: Una scelta incontra sempre una storia ──
+            Tappa 02: piena viewport, scroll-snap, dissolve allo stacco */}
+        <div ref={originRef} className="s2-origin">
           <Reveal as="div" className="s2-label">
             02 · Origine e Contesto
           </Reveal>

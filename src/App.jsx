@@ -25,9 +25,27 @@ const AVAILABLE_COUNT = 2; // Attualmente sezioni 1 e 2 pronte
 
 export default function App() {
   const [activeIndex, setActiveIndex] = useState(0);
+  // La Sezione 2 contiene due "tappe" (02 Origine → 03 La realtà non è
+  // frammentata): quando lo scroll interno supera la metà della viewport
+  // l'indicatore laterale passa da 02 a 03.
+  const [slide1Deep, setSlide1Deep] = useState(false);
   const isTransitioningRef = useRef(false);
   const slide1Ref = useRef(null);
   const touchStartYRef = useRef(0);
+
+  // Indicatore laterale: in slide 1 segue lo scroll interno (02 ↔ 03)
+  const activeSection = activeIndex === 1 && slide1Deep ? 3 : activeIndex + 1;
+
+  // Scroll interno della slide 2: guida il passaggio D2 → D3
+  useEffect(() => {
+    const node = slide1Ref.current;
+    if (!node) return;
+    const handleScroll = () => {
+      setSlide1Deep(node.scrollTop > window.innerHeight * 0.45);
+    };
+    node.addEventListener("scroll", handleScroll, { passive: true });
+    return () => node.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const goToSlide = useCallback((targetIndex) => {
     if (targetIndex < 0 || targetIndex >= AVAILABLE_COUNT) return;
@@ -37,8 +55,10 @@ export default function App() {
     setActiveIndex(targetIndex);
 
     // Se si torna alla sezione 2, reset dello scroll interno
+    // (e l'indicatore torna a 02)
     if (targetIndex === 1 && slide1Ref.current) {
       slide1Ref.current.scrollTop = 0;
+      setSlide1Deep(false);
     }
 
     setTimeout(() => {
@@ -134,7 +154,7 @@ export default function App() {
       {/* Indice laterale fisso interattivo */}
       <nav className="sandbox-index" aria-label="Indice sezioni">
         {SECTIONS.map((s) => {
-          const isActive = activeIndex + 1 === s.n;
+          const isActive = activeSection === s.n;
           return (
             <button
               key={s.n}
@@ -196,7 +216,7 @@ export default function App() {
 
       {/* Badge informativo di stato in basso a sinistra */}
       <div className="sandbox-badge">
-        Karma 2 Sandbox · Sezione <strong>0{activeIndex + 1}</strong> di 10
+        Karma 2 Sandbox · Sezione <strong>{String(activeSection).padStart(2, "0")}</strong> di 10
       </div>
     </div>
   );
