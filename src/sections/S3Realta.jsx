@@ -13,7 +13,8 @@ gsap.registerPlugin(ScrollTrigger);
 
    FASE A — il filo dorato scende a zig-zag (SX → DX → SX …): a ogni
    cambio di direzione un nodo luminoso aggancia la voce corrispondente.
-   FASE B — la tesi e la trama d'ordine, sul navy.
+   FASE B — blocco a tutta larghezza con fondo fotografico dark luxury
+   (solo lì): la trama d'ordine, "Il contesto dà significato alla scelta".
 
    Performance (60fps):
    - il filo si "srotola" con una tendina a DUE transform opposte
@@ -219,7 +220,8 @@ export default function S3Realta() {
 
   return (
     <section ref={sectionRef} className="s3" id="frammentazione" data-n="3" aria-labelledby="s3-title">
-      {/* ═══ FASE A ═══ */}
+      {/* ═══ FASE A (3A) — mesh gradient panna → navy, solo qui ═══ */}
+      <div className="s3a">
       <div className="s3__wrap">
         <header className="s3__head">
           <p className="s3__tag s3-reveal">
@@ -312,30 +314,35 @@ export default function S3Realta() {
             La realtà comincia proprio dove queste prospettive si incontrano.
           </p>
         </div>
+      </div>
+      </div>
 
-        {/* ═══ FASE B — Il contesto dà significato alla scelta ═══ */}
-        <div className="s3-weave">
-          <p className="s3__tag s3__tag--light s3-reveal">
+      {/* ═══ FASE B (3B) — Il contesto dà significato alla scelta ═══
+          Contenitore a tutta larghezza, separato dalla Fase A: l'immagine
+          dark luxury vive SOLO qui, su un livello di fondo con maschera che
+          la fa emergere dal navy della 3A. */}
+      <div className="s3b">
+        <div className="s3b__bg" aria-hidden="true" />
+        <div className="s3b__inner">
+          <p className="s3__tag s3__tag--light s3b__tag s3-reveal">
             <span>Mettere ordine</span>
             <span className="s3__tag-sep" aria-hidden="true">·</span>
             <span>Connessioni</span>
           </p>
-          <h3 className="s3-weave__title s3-reveal">
+          <h2 className="s3b__title s3-reveal">
             Il contesto dà significato <em>alla scelta</em>
-          </h3>
+          </h2>
 
-          <ul className="s3-weave__list">
+          <ul className="s3b__list">
             {ORDER_RELATIONS.map(([concept, connection]) => (
-              <li className="s3-weave__row s3-reveal" key={concept}>
-                <span className="s3-weave__concept">{concept}</span>
-                <span className="s3-weave__connection">{connection}</span>
+              <li className="s3b__row s3-reveal" key={concept}>
+                <span className="s3b__concept">{concept}</span>
+                <span className="s3b__connection">{connection}</span>
               </li>
             ))}
           </ul>
 
-          <p className="s3-weave__epilogue s3-reveal">
-            Ogni scelta entra nella vita dell’impresa.
-          </p>
+          <p className="s3b__epilogue s3-reveal">Ogni scelta entra nella vita dell’impresa.</p>
         </div>
       </div>
     </section>
