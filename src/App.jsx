@@ -388,16 +388,19 @@ export default function App() {
 
       {/* Badge interattivo di swipe (sulla slide 1 — Sezione 02 — nessun badge) */}
       {activeIndex === 0 ? (
+        slideScrolled ? null : (
         <button
           type="button"
           className="sandbox-swipe-hint"
-          onClick={() => goToSlide(1)}
+          // sotto la hero ora c'è la citazione: si scorre prima lì
+          onClick={() => keyStep(1)}
         >
           <span>Swipe Sezione 02</span>
           <span className="sandbox-swipe-hint__arrow" aria-hidden="true">
             ↓
           </span>
         </button>
+        )
       ) : activeIndex === 1 || slideScrolled ? null : (
         <button
           type="button"

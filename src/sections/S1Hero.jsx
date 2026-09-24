@@ -1,143 +1,317 @@
-import { useState } from "react";
-import { motion, MotionConfig, AnimatePresence } from "framer-motion";
-import Spiral from "../components/Spiral";
+import { useEffect, useRef } from "react";
+import { MotionConfig } from "framer-motion";
+import { gsap } from "gsap";
 import RibbonField from "../components/RibbonField";
 import Reveal from "../components/Reveal";
 import LineReveal from "../components/LineReveal";
 import "./S1Hero.css";
 
-// ═══ SEZIONE 1 — HERO / APERTURA ═══
-// Funzione (schema del 16/09): entrare nella spirale dall'esterno.
-// La spirale grande e lenta governa la home: il filo inizia qui.
-//
-// Richieste call integrate:
-// - sfondo di trama del bisso (navy + filamenti dorati), sfocato e
-//   a bassa opacità: sta sotto al fascio di luce e sotto alla spirale
-//   vettoriale → profondità e materia senza rubare contrasto ai testi
-// - fascio di luce rotante ("questo fascio che gira mi piace tantissimo")
-// - filo laterale che scende (il filo inizia qui, in verticale)
-// - parole comparse sparse attorno alla spirale, non allineate
-// - layout a 2 colonne: copy a sinistra (~60%), citazione De Crescenzo
-//   a destra (~35%), leggermente sfalsata; sotto 1024px la citazione
-//   scende sotto il testo principale
-// - niente CTA: l'hero è apertura, non invito (il bottone "Swipe
-//   Sezione 02 ↓" resta fisso in App.jsx)
+/* ═══════════════════════════════════════════════════════════════
+   SEZIONE 01 — HERO · SPIRALE CINETICA AUREA
+   A sinistra solo la titolazione; a destra la spirale d'oro,
+   protagonista, con le sei parole agganciate alle sue spire
+   (<textPath>). Il mouse inclina la spirale in 3D e fa scivolare
+   le parole lungo le curve. Sotto: micro-sezione citazione.
 
-// ── Varianti Framer Motion ──
-// Entrata morbida e differita: il contenitore distribuisce lo stagger,
-// ogni blocco entra con fade + leggero risalire.
-// Performance: nessun filter: blur() animato (il "defocus" costava un
-// repaint per frame): solo opacity + transform, sul compositor.
-const staggerContainer = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.28, delayChildren: 0.35 },
-  },
+   Performance:
+   - spirale (con il suo drop-shadow) e parole vivono in due SVG
+     separati, ognuno su un proprio layer: muovere le parole non
+     ricalcola mai il bagliore della spirale;
+   - un solo proxy GSAP (quickTo) per le parole, un quickTo per asse
+     di inclinazione; listener attivi solo con la hero in vista;
+   - la cometa di luce gira solo quando la hero è visibile.
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Geometria: spirale logaritmica "aurea" ──
+// r = R·e^(b(θ−θmax)), con b = ln(φ)/π: il raggio cresce di φ ogni
+// mezzo giro (φ² per giro). Rispetto alla crescita "pura" (φ ogni
+// quarto di giro) lascia 3 spire leggibili su cui far vivere le parole.
+const PHI = (1 + Math.sqrt(5)) / 2;
+const B = Math.log(PHI) / Math.PI;
+const R = 470; // raggio esterno (viewBox −500…500)
+const R0 = 2.5; // raggio del seme, al centro
+const DEG = Math.PI / 180;
+const END_DEG = 335; // dove finisce il filo esterno (in alto a destra)
+const THETA_MAX = END_DEG * DEG + 6 * 2 * Math.PI;
+const THETA_0 = THETA_MAX + Math.log(R0 / R) / B;
+const K_ARC = Math.sqrt(1 + B * B) / B; // lunghezza d'arco = K·Δr
+
+const rAt = (t) => R * Math.exp(B * (t - THETA_MAX));
+
+function spiralPath(phase = 0, step = 0.035) {
+  let d = "";
+  for (let t = THETA_0; t <= THETA_MAX + 1e-6; t += step) {
+    const r = rAt(t);
+    const x = (r * Math.cos(t + phase)).toFixed(1);
+    const y = (r * Math.sin(t + phase)).toFixed(1);
+    d += (d ? "L" : "M") + x + " " + y + " ";
+  }
+  return d;
+}
+
+const MAIN_D = spiralPath(0);
+
+// Riquadro reale del filo principale (+ margine per le parole): il
+// viewBox lo abbraccia, così la spirale riempie il suo spazio e l'occhio
+// è il centro vero di inclinazione e del fascio di luce.
+const VB = (() => {
+  let x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+  for (let t = THETA_0; t <= THETA_MAX; t += 0.02) {
+    const r = rAt(t);
+    const x = r * Math.cos(t);
+    const y = r * Math.sin(t);
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+  }
+  const pad = 56;
+  const v = { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 1.4 };
+  return { ...v, box: `${v.x.toFixed(0)} ${v.y.toFixed(0)} ${v.w.toFixed(0)} ${v.h.toFixed(0)}` };
+})();
+// Il filo espresso nel riquadro del viewBox (origine in alto a sinistra):
+// è il binario della goccia di luce (CSS offset-path, niente repaint).
+const COMET_D = (() => {
+  let d = "";
+  for (let t = THETA_0; t <= THETA_MAX + 1e-6; t += 0.05) {
+    const r = rAt(t);
+    d += (d ? "L" : "M") + (r * Math.cos(t) - VB.x).toFixed(1) + " " + (r * Math.sin(t) - VB.y).toFixed(1) + " ";
+  }
+  return d;
+})();
+
+// proporzioni e posizione dell'occhio (in %), per il CSS
+const STAGE_VARS = {
+  "--hs-ar": (VB.w / VB.h).toFixed(4),
+  "--hs-ox": `${((-VB.x / VB.w) * 100).toFixed(2)}%`,
+  "--hs-oy": `${((-VB.y / VB.h) * 100).toFixed(2)}%`,
+  "--hs-ox-n": (-VB.x / VB.w).toFixed(4),
+  "--hs-oy-n": (-VB.y / VB.h).toFixed(4),
 };
+// due bracci d'ombra, ruotati di 120°: profondità, senza rubare la scena
+const ARM_B = spiralPath((2 * Math.PI) / 3, 0.06);
+const ARM_C = spiralPath((4 * Math.PI) / 3, 0.06);
 
-// La citazione arriva da destra, con più ritardo: chiude la scena.
-const fadeFromRight = {
-  hidden: { opacity: 0, x: 34 },
-  show: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] },
-  },
-};
-
-// ── Sfondo trama: zoom-out liscio all'ingresso, poi deriva lenta ──
-// Ora è tutto CSS (S1Hero.css: sb-trama-enter / sb-trama-drift): le
-// keyframe di transform/opacity girano sul compositor, mentre Framer
-// ricalcolava la transform sul main thread a ogni frame per 46s in loop.
-
-// Le parole sparse: ogni span ha le sue coordinate CSS (--wx/--wy);
-// la deriva infinita è CSS puro (.sb-hero__drift, solo transform).
-
+// Parola → angolo sullo schermo (270° = in alto) + spira (0 = la più
+// esterna). Solo archi "alti" della spirale: le parole restano dritte.
+// amp = quanto scivolano col mouse (unità SVG), dir = verso (parallasse).
 const WORDS = [
-  // la citazione ora sale e occupa la colonna destra tra ~28% e ~70% di
-  // altezza: le parole vivono nel corridoio centrale, sopra e sotto di lei
-  { t: "senso", x: "52%", y: "8%", d: "0.9s", f: "11s" },
-  { t: "contesto", x: "80%", y: "13%", d: "1.6s", f: "13s" },
-  { t: "equilibrio", x: "52%", y: "40%", d: "2.2s", f: "10s" },
-  { t: "tempo", x: "84%", y: "82%", d: "1.2s", f: "12s" },
-  { t: "sé", x: "58%", y: "64%", d: "2.8s", f: "14s" },
-  { t: "coerenza", x: "66%", y: "90%", d: "3.1s", f: "11s" },
-];
+  { t: "coerenza", deg: 300, turn: 0, size: 30, amp: 70, dir: 1 },
+  { t: "equilibrio", deg: 238, turn: 0, size: 30, amp: 70, dir: 1 },
+  { t: "contesto", deg: 316, turn: 1, size: 24, amp: 34, dir: -1 },
+  { t: "tempo", deg: 268, turn: 1, size: 24, amp: 34, dir: -1 },
+  { t: "senso", deg: 226, turn: 1, size: 24, amp: 30, dir: -1 },
+  { t: "sé", deg: 270, turn: 2, size: 21, amp: 10, dir: 1 },
+].map((w) => {
+  const back = (((END_DEG - w.deg) % 360) + 360) % 360;
+  const t = THETA_MAX - (back * DEG + w.turn * 2 * Math.PI);
+  return { ...w, s: K_ARC * (rAt(t) - R0) };
+});
+
+const INTRO_GLIDE = 140; // le parole entrano scivolando lungo il filo
 
 function HeroInner() {
-  // Su mobile (<640px) la citazione ripiega in un accordion: chiusa
-  // all'ingresso, si apre solo su richiesta per non sovraccaricare la
-  // viewport. Da tablet in su il toggle non esiste (CSS) e la card è
-  // sempre visibile → si parte aperti.
-  const [quoteOpen, setQuoteOpen] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches
-  );
+  const heroRef = useRef(null);
+  const containerRef = useRef(null);
+  const textPathRefs = useRef([]);
+  const stageRef = useRef(null);
+  const trackRef = useRef(null);
+
+  // la pista della goccia è in unità del viewBox: la scaliamo sul riquadro
+  useEffect(() => {
+    const stage = stageRef.current;
+    const track = trackRef.current;
+    if (!stage || !track || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      track.style.setProperty("--hs-k", (stage.clientWidth / VB.w).toFixed(4));
+    });
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const hero = heroRef.current;
+    const box = containerRef.current;
+    if (!hero || !box) return;
+    const q = gsap.utils.selector(box);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+    // stato delle parole: m = mouse (−1…1), intro = 1→0 all'ingresso
+    const st = { m: 0, intro: reduced ? 0 : 1 };
+    const apply = () => {
+      WORDS.forEach((w, i) => {
+        const el = textPathRefs.current[i];
+        if (!el) return;
+        const off = w.s + w.dir * w.amp * st.m - st.intro * INTRO_GLIDE;
+        el.setAttribute("startOffset", off.toFixed(1));
+      });
+    };
+    apply();
+
+    if (reduced) {
+      gsap.set(q(".hs-word"), { opacity: 1 });
+      gsap.set(q(".hs-main"), { strokeDashoffset: 0 });
+      return;
+    }
+
+    // ── Ingresso: il filo si svolge dal seme verso l'esterno, poi le
+    //    parole si accendono scivolando al loro posto lungo le spire ──
+    const intro = gsap.timeline({ paused: true, defaults: { overwrite: "auto" } });
+    intro
+      .fromTo(q(".hs-main"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.8, ease: "power2.inOut" }, 0.2)
+      .fromTo(q(".hs-arm"), { opacity: 0 }, { opacity: 1, duration: 2, ease: "power1.out" }, 0.8)
+      .fromTo(q(".hs-word"), { opacity: 0 }, { opacity: 1, duration: 1.1, stagger: 0.14, ease: "power2.out" }, 1.7)
+      .to(st, { intro: 0, duration: 2.2, ease: "power3.out", onUpdate: apply }, 1.7)
+      .add(() => box.classList.add("is-drawn"), 2.6);
+
+    // ── Mouse: inclinazione 3D + scivolamento delle parole ──
+    const rotY = gsap.quickTo(box, "rotationY", { duration: 1, ease: "power2.out" });
+    const rotX = gsap.quickTo(box, "rotationX", { duration: 1, ease: "power2.out" });
+    const glide = gsap.quickTo(st, "m", { duration: 1.4, ease: "power3.out", onUpdate: apply });
+    const clamp = gsap.utils.clamp(-14, 14);
+    const onMove = (e) => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      rotY(clamp((e.clientX - w / 2) * 0.03));
+      rotX(clamp(-(e.clientY - h / 2) * 0.03));
+      glide(gsap.utils.clamp(-1, 1, (e.clientX / w - 0.5) * 2));
+    };
+
+    // su touch: niente mouse → le parole respirano da sole lungo il filo
+    const idle = gsap.to(st, {
+      m: 1,
+      duration: 7,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: -1,
+      paused: true,
+      onUpdate: apply,
+    });
+
+    let started = false;
+    let live = false;
+    const setLive = (on) => {
+      if (on === live) return;
+      live = on;
+      box.classList.toggle("is-live", on);
+      if (on) {
+        if (!started) {
+          started = true;
+          intro.play();
+        }
+        if (finePointer) window.addEventListener("mousemove", onMove, { passive: true });
+        else idle.play();
+      } else {
+        window.removeEventListener("mousemove", onMove);
+        idle.pause();
+      }
+    };
+
+    const io = new IntersectionObserver(([entry]) => setLive(entry.isIntersecting), {
+      threshold: 0.15,
+    });
+    io.observe(hero);
+
+    return () => {
+      io.disconnect();
+      window.removeEventListener("mousemove", onMove);
+      intro.kill();
+      idle.kill();
+    };
+  }, []);
 
   return (
-    <>
+    <div className="s1-wrap">
       <RibbonField className="kh-backdrop" flatBase intensity={0.9} />
 
-      <section className="kh-hero sb-hero" id="home" data-n="1">
-        {/* ── Sfondo: trama del bisso (navy + filamenti dorati) ──
-            Primo strato della sezione: sta sotto al fascio di luce e
-            sotto alla spirale vettoriale. Blur medio + opacità bassa +
-            velo navy: dà materia e profondità senza competere coi testi. */}
-        {/* L'immagine è già sfocata in origine (trama-bisso-soft.jpg, 512px):
-            niente filter: blur() live su un layer a tutta viewport. */}
+      <section
+        ref={heroRef}
+        className="kh-hero sb-hero hs"
+        id="home"
+        data-n="1"
+        style={STAGE_VARS}
+      >
+        {/* Sfondo: trama del bisso (già sfocata nel file) + velo navy */}
         <div className="sb-hero__trama" aria-hidden="true">
-          <img
-            src="/trama-bisso-soft.jpg"
-            alt=""
-            className="sb-hero__trama-img"
-            decoding="async"
-          />
-          {/* Velo navy per riportare il contrasto dove serve */}
+          <img src="/trama-bisso-soft.jpg" alt="" className="sb-hero__trama-img" decoding="async" />
           <div className="sb-hero__trama-veil" />
         </div>
 
-        {/* ── Fascio di luce rotante — da un punto, ruota piano ── */}
+        {/* Fascio di luce: ora ruota dall'occhio della spirale */}
         <div className="sb-hero__beam" aria-hidden="true" />
 
-        {/* ── La spirale: il filo inizia qui ── */}
-        <div className="kh-hero__spiral">
-          <div className="kh-hero__spiral-spin">
-            <Spiral armsCount={3} goldOpacity={0.75} thinOpacity={0.14} />
+        {/* ── La spirale cinetica aurea ── */}
+        <div className="hs-stage" aria-hidden="true" ref={stageRef}>
+          <div id="hero-spiral-container" className="hs-spiral" ref={containerRef}>
+            {/* Livello 1: il filo d'oro (con il bagliore) + bracci d'ombra */}
+            <svg className="hs-spiral__art" viewBox={VB.box}>
+              <defs>
+                <linearGradient id="hs-gold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#F3E5AB" />
+                  <stop offset="55%" stopColor="#E2C974" />
+                  <stop offset="100%" stopColor="#D4AF37" />
+                </linearGradient>
+                <radialGradient id="hs-arm-fade" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="500">
+                  <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="hs-core" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#F3E5AB" stopOpacity="0.55" />
+                  <stop offset="100%" stopColor="#F3E5AB" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <circle cx="0" cy="0" r="120" fill="url(#hs-core)" />
+              <path className="hs-arm" d={ARM_B} />
+              <path className="hs-arm" d={ARM_C} />
+              {/* bagliore: due tratti larghi e tenui sotto il filo (stesso
+                  effetto del drop-shadow 16px, ma nessun filtro da ricalcolare
+                  mentre il filo si disegna o la spirale si inclina) */}
+              <path className="hs-main hs-main--halo-xl" d={MAIN_D} pathLength="1" strokeDasharray="1" strokeDashoffset="1" />
+              <path className="hs-main hs-main--halo" d={MAIN_D} pathLength="1" strokeDasharray="1" strokeDashoffset="1" />
+              <path
+                className="hs-main hs-main--core"
+                d={MAIN_D}
+                pathLength="1"
+                strokeDasharray="1"
+                strokeDashoffset="1"
+              />
+            </svg>
+
+            {/* Livello 2: le parole sulle spire + la cometa di luce */}
+            <svg className="hs-spiral__words" viewBox={VB.box}>
+              <defs>
+                <path id="golden-spiral-path" d={MAIN_D} />
+              </defs>
+              {WORDS.map((w, i) => (
+                <text key={w.t} className="hs-word"
+                  style={{ fontSize: `calc(${w.size}px * var(--hs-word-k, 1))` }}
+                  dy={-w.size * 0.32}>
+                  <textPath
+                    ref={(el) => (textPathRefs.current[i] = el)}
+                    href="#golden-spiral-path"
+                    startOffset={w.s.toFixed(1)}
+                    textAnchor="middle"
+                  >
+                    {w.t}
+                  </textPath>
+                </text>
+              ))}
+            </svg>
+
+            {/* Livello 3: la goccia di luce che percorre il filo dal seme
+                all'esterno — solo transform, sul compositor */}
+            <div className="hs-comet-track" ref={trackRef} style={{ width: VB.w, height: VB.h }}>
+              <span className="hs-comet" style={{ offsetPath: `path("${COMET_D}")` }} />
+            </div>
           </div>
         </div>
 
-        {/* ── Parole sparse di proposito: compaiono attorno alla spirale,
-            ognuna nel suo punto, nessuna allineata. ── */}
-        {/* Zona libera dal blocco di testo (che occupa x 0–44%, y 12–80%):
-            le parole vivono tutte fuori da quell'area, lungo gli anelli
-            della spirale che attraversano la metà destra dello schermo. */}
-        <div className="sb-hero__words" aria-hidden="true">
-          {WORDS.map((w) => (
-            <span
-              key={w.t}
-              className="sb-hero__word"
-              style={{ "--wx": w.x, "--wy": w.y }}
-            >
-              {/* Lo span interno porta la deriva CSS: transform separato */}
-              <span className="sb-hero__drift" style={{ "--wd": w.d, "--wf": w.f }}>
-                {w.t}
-              </span>
-            </span>
-          ))}
-        </div>
-
-        {/* ── Il filo laterale che scende: la prima apparizione del filo ── */}
+        {/* Il filo laterale che scende */}
         <div className="sb-hero__thread" aria-hidden="true">
           <span className="sb-hero__thread-pulse" />
         </div>
 
-        {/* ── Layout a 2 colonne: copy (60%) + citazione (35%) ── */}
-        <motion.div
-          className="sb-hero__grid"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="show"
-        >
-          {/* Colonna di sinistra — il copy principale */}
+        {/* ── A sinistra: solo la titolazione ── */}
+        <div className="sb-hero__grid">
           <div className="kh-hero__copy sb-hero__copy">
             <Reveal as="div" className="kh-eyebrow kh-hero__eyebrow">
               Karma · Ecologia della decisione
@@ -145,58 +319,36 @@ function HeroInner() {
             <LineReveal as="h1" className="kh-hero__title" delay={120}>
               Evolviamo verso ciò che scegliamo di essere.
             </LineReveal>
-            <Reveal as="p" className="kh-lede" delay={80}>
+            <Reveal as="p" className="kh-lede hs-lede" delay={80}>
               Dal filo alla trama, accompagniamo la tua impresa nella sua evoluzione: incontrare
               ciò che cambia, riconoscere ciò che conta, scegliere ciò che vuole diventare
               continuando a riconoscersi.
             </Reveal>
-            <Reveal as="p" className="kh-body kh-body--onnavy" delay={140} style={{ maxWidth: "52ch" }}>
+            <Reveal as="p" className="kh-body kh-body--onnavy" delay={140}>
               L’identità è il filo che attraversa il cambiamento e ci permette di abitare la
               complessità senza perdere la profondità di ciò che siamo.
             </Reveal>
           </div>
-
-          {/* Colonna di destra — la citazione, leggermente sfalsata in alto.
-              Su mobile il blocco ripiega: il toggle apre/chiude la card. */}
-          <div className="sb-hero__quote-zone">
-            <button
-              type="button"
-              className="sb-hero__quote-toggle"
-              aria-expanded={quoteOpen}
-              onClick={() => setQuoteOpen((v) => !v)}
-            >
-              ❝ La citazione <span aria-hidden="true">{quoteOpen ? "↑" : "↓"}</span>
-            </button>
-            <AnimatePresence>
-              {quoteOpen && (
-                <motion.aside
-                  className="sb-hero__quote sb-hero__quote--open"
-                  variants={fadeFromRight}
-                  initial="hidden"
-                  animate="show"
-                  exit={{ opacity: 0, y: 18, transition: { duration: 0.4 } }}
-                  aria-label="Citazione"
-                >
-                <span className="sb-hero__quote-mark" aria-hidden="true">
-                  “
-                </span>
-                <blockquote className="sb-hero__quote-text">
-                  Il tempo è un’emozione ed è una grandezza bidimensionale, nel senso che lo puoi
-                  vivere in due direzioni diverse, in lunghezza e in larghezza.
-                  <br />
-                  Il guaio è che gli uomini studiano come allungare la vita, quando invece
-                  dovrebbero studiare come allargarla.
-                </blockquote>
-                <footer className="sb-hero__quote-author">
-                  — Tratto da: <strong>32 Dicembre (1988)</strong>, Luciano De Crescenzo
-                </footer>
-              </motion.aside>
-            )}
-          </AnimatePresence>
-          </div>
-        </motion.div>
+        </div>
       </section>
-    </>
+
+      {/* ── Micro-sezione citazione: pausa e respiro ── */}
+      <section className="citazione-section s1q" aria-label="Citazione">
+        <div className="s1q__inner">
+          <Reveal as="div" className="s1q__mark">
+            <span aria-hidden="true">“</span>
+          </Reveal>
+          <Reveal as="blockquote" className="s1q__text" delay={120}>
+            Il tempo è un’emozione ed è una grandezza bidimensionale, nel senso che lo puoi vivere
+            in due direzioni diverse, in lunghezza e in larghezza. Il guaio è che gli uomini
+            studiano come allungare la vita, quando invece dovrebbero studiare come allargarla.
+          </Reveal>
+          <Reveal as="p" className="s1q__author" delay={260}>
+            — Luciano De Crescenzo
+          </Reveal>
+        </div>
+      </section>
+    </div>
   );
 }
 
