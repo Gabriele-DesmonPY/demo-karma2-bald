@@ -164,14 +164,23 @@
   font-weight: 500;
   font-size: clamp(1.25rem, min(2.1vw, 3.6vh), 2.1rem);
   line-height: 1.2;
-  color: var(--s4-cream);
-  text-shadow: 0 0 22px rgba(6, 10, 20, 0.85), 0 0 2px rgba(6, 10, 20, 0.6);
+  color: #fff8e7;                   /* avorio caldo: stacca meglio dal video */
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7), 0 0 22px rgba(6, 10, 20, 0.85);
   will-change: transform, opacity;
 }
 
 /* sinistra: il testo finisce sul nodo e cresce verso sinistra */
+/* Il riquadro 16:9 sborda in larghezza sotto il 16:9 (es. 1024×768):
+   la larghezza massima del testo si ferma al bordo dello SCHERMO
+   (in coordinate del riquadro: (larghezza riquadro ± 100vw) / 2), così la
+   frase va a capo invece di finire tagliata. */
+.s4 .s4-bud {
+  --s4-stage-w: max(100vw, 177.78vh);
+}
+
 .s4 .s4-bud--sx .s4-bud__text {
   right: 0;
+  max-width: min(26vw, 340px, calc(var(--xf) * var(--s4-stage-w) - (var(--s4-stage-w) - 100vw) / 2 - 36px));
   text-align: right;
   transform-origin: 100% 50%;
 }
@@ -179,6 +188,8 @@
 /* destra: il testo parte dal nodo */
 .s4 .s4-bud--dx .s4-bud__text {
   left: 0;
+  /* a destra c'è anche l'indice delle sezioni */
+  max-width: min(26vw, 340px, calc((var(--s4-stage-w) + 100vw) / 2 - var(--xf) * var(--s4-stage-w) - 72px));
   text-align: left;
   transform-origin: 0% 50%;
 }
@@ -211,9 +222,13 @@
   list-style: none;
 }
 
+/* Quota: in % del riquadro, ma mai sotto l'header quando il riquadro
+   sborda in altezza (schermi larghi e bassi, es. 1829×820) */
 .s4 .s4-kw {
+  --s4-stage-h: max(56.25vw, 100vh);
   position: absolute;
   z-index: 2;
+  top: max(calc(var(--ky) * 100%), calc((var(--s4-stage-h) - 100vh) / 2 + 96px));
   width: 0;
   height: 0;
   display: flex;
@@ -235,10 +250,17 @@
   font-weight: 600;
   letter-spacing: 0.34em;
   text-transform: uppercase;
-  color: rgba(226, 201, 116, 0.72);
-  text-shadow: 0 0 14px rgba(6, 10, 20, 0.9);
+  color: rgba(243, 229, 171, 0.9);  /* oro chiaro, più leggibile */
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7), 0 0 14px rgba(6, 10, 20, 0.9);
   /* galleggiano piano, solo transform (in pausa fuori slide: sandbox.css) */
   animation: s4-float 7s ease-in-out infinite alternate;
+}
+
+/* molto largo e basso: la parola in cima finirebbe sui petali */
+@media (min-aspect-ratio: 2/1) {
+  .s4 .s4-kw--apex {
+    display: none;
+  }
 }
 
 @keyframes s4-float {
@@ -251,14 +273,40 @@
 }
 
 /* ═══════════ La frase che si accende sotto il fiore ═══════════ */
+/* Posizione: all'85% del riquadro 16:9, ma mai oltre il bordo dello
+   SCHERMO (su viewport larghe e basse, es. 1829×820, il riquadro sborda
+   in basso e la frase finiva tagliata). In coordinate del riquadro il
+   fondo dello schermo è (altezza riquadro + 100vh) / 2. */
 .s4 .s4__bloom {
+  --s4-stage-h: max(56.25vw, 100vh);
   position: absolute;
   z-index: 2;
   left: 50%;
-  top: 85%;
+  top: min(
+    calc(var(--s4-stage-h) * 0.85),
+    calc((var(--s4-stage-h) + 100vh) / 2 - clamp(92px, 13.5vh, 124px))
+  );
   width: min(92vw, 900px);
   transform: translate3d(-50%, -50%, 0);
   text-align: center;
+}
+
+/* Velatura di leggibilità: ombra radiale morbida dal blu-notte, più
+   densa al centro del testo e svanita ai bordi (nessuno spigolo).
+   Statica: entra solo in opacità insieme alla frase. */
+.s4 .s4__scrim {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: 150%;
+  height: 260%;
+  transform: translate3d(-50%, -46%, 0);
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(11, 15, 25, 0.9) 0%, rgba(11, 15, 25, 0.72) 30%, rgba(11, 15, 25, 0.5) 50%, rgba(11, 15, 25, 0.18) 72%, rgba(11, 15, 25, 0) 100%);
+  opacity: 0;
+  visibility: hidden;
 }
 
 .s4 .s4__bloom-line {
@@ -266,32 +314,35 @@
   font-family: var(--s4-serif);
   font-style: italic;
   font-weight: 500;
-  font-size: clamp(1.4rem, min(2.4vw, 4vh), 2.3rem);
+  font-size: clamp(1.3rem, min(2.1vw, 3.5vh), 2.05rem);
   line-height: 1.2;
-  color: var(--s4-cream);
-  text-shadow: 0 0 26px rgba(6, 10, 20, 0.85);
+  letter-spacing: 0.005em;
+  color: rgba(255, 248, 231, 0.86);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
   will-change: transform, opacity;
 }
 
+/* Frase principale: più grande e piena, avorio caldo #FFF8E7 */
 .s4 .s4__bloom-line--strong {
-  margin-top: 0.15em;
+  margin-top: 0.22em;
   font-weight: 600;
   font-size: clamp(1.9rem, min(3.6vw, 6vh), 3.5rem);
-  color: var(--s4-gold-bright);
-  text-shadow:
-    0 0 30px rgba(226, 201, 116, 0.35),
-    0 0 26px rgba(6, 10, 20, 0.85);
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  color: #fff8e7;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7), 0 0 34px rgba(11, 15, 25, 0.6);
+  text-wrap: balance;
 }
 
 /* ═══════════ "Il filo vivo" — il copy sotto il video ═══════════ */
+/* Niente più blocco blu "a vuoto" in fondo: sotto la pillola scende lo
+   stelo d'oro, che termina esattamente sul bordo della trama. */
 .s4 .s4-after {
   position: relative;
   isolation: isolate;
-  min-height: 70vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 128px clamp(20px, 6vw, 72px) clamp(160px, 24vh, 220px);   /* py-32 + spazio per i controlli */
+  padding: clamp(96px, 14vh, 128px) clamp(20px, 6vw, 72px) 0;
   overflow: hidden;
   text-align: center;
 }
@@ -304,10 +355,14 @@
   z-index: -1;
   pointer-events: none;
   /* il primo livello (in cima) salda il bordo alto al blu del video */
+  /* la vignettatura svanisce verso il fondo: il bordo basso resta del
+     blu della sezione e si salda alla trama senza linea di stacco */
   background:
     linear-gradient(180deg, var(--s4-bg) 0%, var(--s4-bg) 6%, rgba(13, 19, 32, 0) 38%),
-    radial-gradient(ellipse 46% 38% at 50% 46%, rgba(226, 201, 116, 0.13) 0%, rgba(226, 201, 116, 0.04) 45%, rgba(226, 201, 116, 0) 72%),
-    radial-gradient(ellipse 90% 80% at 50% 55%, rgba(13, 19, 32, 0) 0%, rgba(6, 9, 17, 0.45) 100%);
+    radial-gradient(ellipse 46% 34% at 50% 40%, rgba(226, 201, 116, 0.13) 0%, rgba(226, 201, 116, 0.04) 45%, rgba(226, 201, 116, 0) 72%),
+    radial-gradient(ellipse 90% 60% at 50% 40%, rgba(13, 19, 32, 0) 0%, rgba(6, 9, 17, 0.4) 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
 }
 
 .s4 .s4-after__inner {
@@ -395,6 +450,88 @@
   will-change: transform, opacity;
 }
 
+/* Stelo: il filo maestro nasce sotto la pillola e scende fino alla
+   trama. Si allunga in scaleY (solo transform); l'alone è una fascia
+   larga e tenue (niente filtri). Larghezza = filo maestro dell'SVG. */
+.s4 .s4-after__stem {
+  position: relative;
+  display: block;
+  width: 2px;
+  height: clamp(150px, 28vh, 260px);
+  margin-top: clamp(28px, 5vh, 44px);
+  background: linear-gradient(180deg, rgba(226, 201, 116, 0.25) 0%, #e2c974 28%, #e2c974 100%);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.s4 .s4-after__stem::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 6px;
+  margin-left: -3px;
+  background: rgba(212, 175, 55, 0.1);        /* = alone del filo nell'SVG */
+}
+
+/* ═══════════ Chiusura: la trama del Bisso ═══════════
+   Blocco alto con palco sticky a tutta viewport (niente pin JS): lo
+   scroll della slide fa da timeline. Il blocco parte dal blu della
+   sezione e scende verso il navy profondo, dove si posa il tessuto. */
+.s4 .s4-weave {
+  position: relative;
+  height: 220vh;
+  background: var(--s4-bg);
+}
+
+.s4 .s4-weave__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: clip;
+  background: linear-gradient(180deg, var(--s4-bg) 0%, #0b0f19 45%, #0a1128 100%);
+}
+
+/* SVG dei fili: un solo livello, pixel-matched (viewBox = misura reale) */
+.s4 .s4-weave__svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Velatura d'oro sotto i fili: sale quando il tessuto si infittisce */
+.s4 .s4-weave__sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse 55% 40% at 50% 74%, rgba(226, 201, 116, 0.09) 0%, rgba(226, 201, 116, 0.03) 55%, rgba(226, 201, 116, 0) 100%),
+    linear-gradient(180deg, rgba(10, 17, 40, 0) 50%, rgba(10, 17, 40, 0.5) 100%);
+  will-change: opacity;
+}
+
+/* Vignettatura statica ai lati: il tessuto sfuma nel blu, non si taglia */
+.s4 .s4-weave__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(10, 14, 28, 0.85) 0%, rgba(10, 14, 28, 0) 16%, rgba(10, 14, 28, 0) 84%, rgba(10, 14, 28, 0.85) 100%),
+    linear-gradient(180deg, rgba(10, 14, 28, 0) 80%, rgba(10, 14, 28, 0.35) 100%);
+  /* nulla in cima: il bordo alto del palco si salda al copy sopra */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 42%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 42%);
+}
+
 @keyframes s4-pulse {
   0%,
   100% {
@@ -467,8 +604,13 @@
     display: none;
   }
 
+  /* in verticale il riquadro non copre: quota semplice in % */
+  .s4 .s4-kw {
+    top: calc(var(--ky) * 100%);
+  }
+
   .s4 .s4-kw__float {
-    font-size: 8.5px;
+    font-size: 9.5px;
     letter-spacing: 0.22em;
   }
 
@@ -483,6 +625,23 @@
 
   .s4 .s4__bloom-line--strong {
     font-size: 1.6rem;
+  }
+
+  .s4 .s4__scrim {
+    width: 120%;
+    height: 240%;
+  }
+
+  .s4 .s4-weave {
+    height: 200vh;
+  }
+
+  .s4 .s4-after__stem {
+    width: 1.5px;
+  }
+
+  .s4 .s4-weave__vignette {
+    background: linear-gradient(90deg, rgba(10, 14, 28, 0.7) 0%, rgba(10, 14, 28, 0) 12%, rgba(10, 14, 28, 0) 88%, rgba(10, 14, 28, 0.7) 100%);
   }
 }
 
@@ -507,5 +666,14 @@
 
   .s4 .s4__media {
     opacity: 1;
+  }
+
+  .s4 .s4__scrim {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .s4 .s4-after__stem {
+    transform: none;
   }
 }

@@ -39,21 +39,23 @@
   background-image:
     radial-gradient(70% 22% at 0% 0%, var(--s3-ivory) 0%, rgba(253, 251, 247, 0) 100%),
     radial-gradient(55% 14% at 88% 24%, rgba(217, 179, 119, 0.28) 0%, rgba(217, 179, 119, 0) 100%),
-    radial-gradient(60% 16% at 12% 44%, rgba(198, 154, 87, 0.18) 0%, rgba(198, 154, 87, 0) 100%),
+    radial-gradient(60% 16% at 12% 44%, rgba(198, 154, 87, 0.07) 0%, rgba(198, 154, 87, 0) 100%),
     /* navy profondo in basso a destra, che si spegne prima del bordo:
        il fondo della 3A resta #0A1128 pieno e si salda alla 3B */
     radial-gradient(70% 15% at 92% 80%, #060b1d 0%, rgba(6, 11, 29, 0) 100%),
+    /* stop agganciati al layout (px da JS): panna fin sotto l'intestazione,
+       navy pieno prima della prima frase → tutte le frasi su fondo scuro */
     linear-gradient(
-      172deg,
-      var(--s3-cream) 0%,
-      var(--s3-cream) 9%,
-      #f0e8da 17%,
-      #dccaa9 27%,
-      #b09a7c 35%,
-      #6a6570 42%,
-      #2e3656 50%,
-      #151d3a 57%,
-      var(--s3-navy) 64%,
+      180deg,
+      var(--s3-cream) 0,
+      var(--s3-cream) calc(var(--s3-light-end, 27%) * 0.55),
+      #f0e8da calc(var(--s3-light-end, 27%) * 0.82),
+      #dccaa9 var(--s3-light-end, 27%),
+      #b09a7c calc(var(--s3-light-end, 27%) + (var(--s3-dark-start, 37%) - var(--s3-light-end, 27%)) * 0.28),
+      #6a6570 calc(var(--s3-light-end, 27%) + (var(--s3-dark-start, 37%) - var(--s3-light-end, 27%)) * 0.5),
+      #2e3656 calc(var(--s3-light-end, 27%) + (var(--s3-dark-start, 37%) - var(--s3-light-end, 27%)) * 0.72),
+      #151d3a calc(var(--s3-light-end, 27%) + (var(--s3-dark-start, 37%) - var(--s3-light-end, 27%)) * 0.88),
+      var(--s3-navy) var(--s3-dark-start, 37%),
       var(--s3-navy) 100%
     );
 }
@@ -204,7 +206,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   column-gap: clamp(80px, 12vw, 200px);   /* il corridoio del filo */
   margin: 0;
-  padding: clamp(40px, 8vh, 90px) 0 clamp(64px, 12vh, 130px);
+  padding: clamp(150px, 24vh, 240px) 0 clamp(64px, 12vh, 130px);
   list-style: none;
 }
 
@@ -280,22 +282,13 @@
   text-wrap: pretty;
 }
 
-/* inchiostro scelto dal fondo (JS): navy sul panna, avorio sul navy */
-.s3 .s3-card--dark .s3-card__text {
-  color: var(--s3-ink);
-  text-shadow: 0 0 22px rgba(253, 251, 247, 0.45);
-}
-
-.s3 .s3-card--dark .s3-card__num {
-  color: #8a6327;
-}
-
-.s3 .s3-card--light .s3-card__text {
-  color: #fbf4e2;
+/* Stesso inchiostro per TUTTE le frasi: bianco caldo / oro etereo */
+.s3 .s3-card__text {
+  color: rgba(255, 248, 231, 0.95);
   text-shadow: 0 1px 18px rgba(6, 10, 24, 0.55);
 }
 
-.s3 .s3-card--light .s3-card__num {
+.s3 .s3-card__num {
   color: #e2c974;
 }
 
@@ -590,7 +583,7 @@
   .s3 .s3-cards {
     grid-template-columns: minmax(0, 1fr);
     row-gap: 22px;
-    padding: 36px 0 64px 36px;   /* spazio per il filo a sinistra */
+    padding: 190px 0 64px 36px;   /* aria per la sfumatura + filo a sinistra */
   }
 
   .s3 .s3-card--sx,

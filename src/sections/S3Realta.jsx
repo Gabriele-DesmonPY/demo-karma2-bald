@@ -56,39 +56,6 @@ const MOBILE_Q = "(max-width: 900px)";
 // margine verticale del filo della costellazione (i nodi salgono/scendono)
 const WIRE_PAD = 220;
 
-// Il mesh della 3A va dal panna al navy: ogni frase sceglie il suo
-// inchiostro leggendo la luminanza del fondo nel punto in cui si trova
-// (stessi stop del linear-gradient a 172° in S3Realta.css).
-const MESH_STOPS = [
-  [0, "#f8f5f0"], [0.09, "#f8f5f0"], [0.17, "#f0e8da"], [0.27, "#dccaa9"],
-  [0.35, "#b09a7c"], [0.42, "#6a6570"], [0.5, "#2e3656"], [0.57, "#151d3a"],
-  [0.64, "#0a1128"], [1, "#0a1128"],
-];
-const lin = (c) => {
-  const v = c / 255;
-  return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-};
-const lum = (hex) => {
-  const n = parseInt(hex.slice(1), 16);
-  return 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
-};
-function meshLum(x, y, w, h) {
-  const a = (172 * Math.PI) / 180;
-  const sx = Math.sin(a);
-  const sy = -Math.cos(a);
-  const len = Math.abs(w * sx) + Math.abs(h * sy);
-  const t = Math.min(1, Math.max(0, ((x - w / 2) * sx + (y - h / 2) * sy) / len + 0.5));
-  let i = 0;
-  while (i < MESH_STOPS.length - 2 && t > MESH_STOPS[i + 1][0]) i++;
-  const [t0, c0] = MESH_STOPS[i];
-  const [t1, c1] = MESH_STOPS[i + 1];
-  const k = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
-  return lum(c0) * (1 - k) + lum(c1) * k;
-}
-// contrasto migliore tra inchiostro navy e avorio
-const INK_L = lum("#0d1826");
-const IVORY_L = lum("#fbf4e2");
-const toneFor = (L) => ((L + 0.05) / (INK_L + 0.05) >= (IVORY_L + 0.05) / (L + 0.05) ? "dark" : "light");
 
 // Costruisce il tracciato del filo a partire dai nodi (coordinate px
 // relative al campo). Desktop: curve a tangente orizzontale, ogni tratto
@@ -128,7 +95,7 @@ export default function S3Realta() {
   const sectionRef = useRef(null);
   const fieldRef = useRef(null);
   const cardRefs = useRef([]);
-  const [geo, setGeo] = useState({ w: 0, h: 0, d: "", nodes: [], tones: [] });
+  const [geo, setGeo] = useState({ w: 0, h: 0, d: "", nodes: [] });
   const railRef = useRef(null);
   const [wire, setWire] = useState({ w: 0, h: 0, d: "", end: null });
 
@@ -227,20 +194,26 @@ export default function S3Realta() {
       const x = i % 2 === 0 ? left + cw + GAP : left - GAP;
       return { x, y: top + ch / 2, cy: top + ch / 2, cx: left + cw / 2 };
     });
-    // inchiostro di ogni frase in base al fondo (coordinate nella 3A)
+    // Il mesh panna → navy si aggancia al layout reale: resta chiaro fin
+    // sotto l'intestazione e diventa navy PRIMA della prima frase, così
+    // tutte le frasi hanno lo stesso inchiostro chiaro e lo stesso contrasto.
     const a3 = field.closest(".s3a");
-    let fx = 0;
-    let fy = 0;
-    for (let el = field; el && el !== a3; el = el.offsetParent) {
-      fx += el.offsetLeft;
-      fy += el.offsetTop;
+    const head = a3?.querySelector(".s3__head");
+    const first = cardRefs.current[0];
+    if (a3 && head && first) {
+      const topIn = (node) => {
+        let t = 0;
+        for (let el = node; el && el !== a3; el = el.offsetParent) t += el.offsetTop;
+        return t;
+      };
+      const lightEnd = topIn(head) + head.offsetHeight + 24;
+      const darkStart = Math.max(lightEnd + 120, topIn(first) - 36);
+      a3.style.setProperty("--s3-light-end", `${Math.round(lightEnd)}px`);
+      a3.style.setProperty("--s3-dark-start", `${Math.round(darkStart)}px`);
     }
-    const tones = nodes.map((n) =>
-      a3 ? toneFor(meshLum(fx + n.cx, fy + n.cy, a3.offsetWidth, a3.offsetHeight)) : "light"
-    );
     const start = mobile ? { x: 14, y: 0 } : { x: w / 2, y: 0 };
     const end = mobile ? { x: 14, y: h } : { x: w / 2, y: h };
-    setGeo({ w, h, d: buildPath(start, nodes, end, mobile), nodes, tones });
+    setGeo({ w, h, d: buildPath(start, nodes, end, mobile), nodes });
   }, []);
 
   useLayoutEffect(() => {
@@ -490,7 +463,7 @@ export default function S3Realta() {
               <li
                 key={i}
                 ref={(el) => (cardRefs.current[i] = el)}
-                className={`s3-card ${i % 2 === 0 ? "s3-card--sx" : "s3-card--dx"} s3-card--${geo.tones[i] || "light"}`}
+                className={`s3-card ${i % 2 === 0 ? "s3-card--sx" : "s3-card--dx"}`}
                 style={{ "--row": i + 1, "--off": v.off, "--w": v.w, "--lift": v.lift }}
               >
                 {/* testo puro, senza riquadro: fluttua sul fondo */}
