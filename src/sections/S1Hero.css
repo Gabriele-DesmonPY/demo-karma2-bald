@@ -10,12 +10,9 @@
      blocco di testo (che occupa grosso modo x 0–44%, y 14–78%): qui
      resta leggibile e visivamente agganciato agli anelli esterni. */
   /* la spirale: lato del riquadro e sbordo a destra */
-  /* larghezza del riquadro della spirale (l'altezza segue --hs-ar) */
-  --hs-w: min(52vw, calc(84vh * var(--hs-ar)), 960px);
-  --hs-right: clamp(24px, 4.5vw, 80px);
-  /* il fascio nasce dall'occhio della spirale (--hs-o*-n: da JS) */
-  --beam-x: calc(100% - var(--hs-right) - var(--hs-w) * (1 - var(--hs-ox-n)));
-  --beam-y: calc(50% + var(--hs-w) / var(--hs-ar) * (var(--hs-oy-n) - 0.5));
+  /* il fascio nasce dall'occhio della spirale (valori in px da JS) */
+  --beam-x: 70%;
+  --beam-y: 60%;
 }
 
 /* ── Sfondo: trama del bisso ──
@@ -242,40 +239,27 @@
   max-width: 46ch;
 }
 
-/* ═══════════ La spirale cinetica aurea ═══════════ */
+/* ═══════════ La spirale cinetica aurea (fascio multi-filo) ═══════════ */
+/* Tutti i livelli SVG nascono invisibili: GSAP li accende solo quando
+   i tratteggi sono impostati e la pagina è pronta → niente flicker. */
+.hs-layer {
+  visibility: hidden;
+}
+
+/* A tutta scena: la spirale entra dall'angolo in basso a destra e si
+   avvolge verso il centro (composizione 16:10, riempita a "slice"). */
 .hs-stage {
   position: absolute;
+  inset: 0;
   z-index: 1;
-  top: 50%;
-  right: var(--hs-right);
-  width: var(--hs-w);
-  aspect-ratio: var(--hs-ar);
-  translate: 0 -50%;
   perspective: 1400px;
-  perspective-origin: var(--hs-ox) var(--hs-oy);
   pointer-events: none;
 }
 
 .hs-spiral {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  /* ruota attorno all'occhio della spirale */
-  transform-origin: var(--hs-ox) var(--hs-oy);
-  will-change: transform;
-  /* entrata: la spirale arriva da lontano, lenta */
-  animation: hs-enter 3s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes hs-enter {
-  from {
-    opacity: 0;
-    scale: 1.12;
-  }
-  to {
-    opacity: 1;
-    scale: 1;
-  }
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
 }
 
 /* due SVG sovrapposti, ognuno sul suo layer GPU */
@@ -290,32 +274,77 @@
   transform: translateZ(0);
 }
 
-.hs-main {
+.hs-spiral__art path {
   fill: none;
-  stroke: url(#hs-gold);
-  stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
 }
 
-/* alone del filo (sostituisce drop-shadow(0 0 16px rgba(212,175,55,.4))) */
+/* filo principale: 2.5px, pieno, bagliore dorato intenso */
+.hs-main--core {
+  stroke: url(#hs-gold);
+  stroke-width: 2.8; /* ≈ 2.5px a 1440px */
+}
+
+/* bagliore (al posto di drop-shadow: nessun filtro da ricalcolare) */
 .hs-main--halo-xl {
-  stroke: rgba(212, 175, 55, 0.07);
-  stroke-width: 22;
+  stroke: rgba(212, 175, 55, 0.08);
+  stroke-width: 26;
 }
 
 .hs-main--halo {
-  stroke: rgba(212, 175, 55, 0.16);
-  stroke-width: 8;
+  stroke: rgba(226, 201, 116, 0.2);
+  stroke-width: 9;
 }
 
-.hs-arm {
+/* fili del fascio: eco intrecciate, 1–1.5px, opacità 40–70% */
+.hs-echo--a {
+  stroke: rgba(243, 229, 171, 0.7);
+  stroke-width: 1.7;
+}
+
+.hs-echo--b {
+  stroke: rgba(212, 175, 55, 0.55);
+  stroke-width: 1.1;
+}
+
+.hs-echo--c {
+  stroke: rgba(212, 175, 55, 0.4);
+  stroke-width: 1.2;
+}
+
+/* ── Seconda spirale: alto a sinistra, metà dimensione, soffusa ── */
+.hs-second-wrap {
+  position: absolute;
+  z-index: 0;
+  left: clamp(-160px, -8vw, -40px);
+  top: clamp(-140px, -12vh, -40px);
+  width: min(50vw, 86vh);
+  aspect-ratio: 1;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.hs-second {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  will-change: transform, opacity;
+}
+
+.hs-second__strand {
   fill: none;
-  stroke: url(#hs-arm-fade);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-  opacity: 0;
+  stroke-linecap: round;
+}
+
+.hs-second__strand--0 {
+  stroke: #e2c974;
+  stroke-width: 2.2;
+}
+
+.hs-second__strand--1 {
+  stroke: rgba(243, 229, 171, 0.7);
+  stroke-width: 1.2;
 }
 
 /* la goccia di luce: percorre il filo dal seme verso l'esterno.
@@ -324,8 +353,9 @@
   position: absolute;
   left: 0;
   top: 0;
+  width: 1600px;
+  height: 1000px;
   transform-origin: 0 0;
-  transform: scale(var(--hs-k, 0.8));
   pointer-events: none;
 }
 
@@ -333,8 +363,8 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   background: radial-gradient(circle, #fffbe9 0 30%, rgba(243, 229, 171, 0.55) 55%, rgba(212, 175, 55, 0) 72%);
   offset-rotate: 0deg;
@@ -345,7 +375,7 @@
 }
 
 .hs-spiral.is-drawn .hs-comet {
-  animation: hs-comet 11s cubic-bezier(0.45, 0.05, 0.35, 1) 0.6s infinite;
+  animation: hs-comet 12s cubic-bezier(0.45, 0.05, 0.35, 1) 0.6s infinite;
   animation-play-state: paused;
 }
 
@@ -361,7 +391,7 @@
   8% {
     opacity: 1;
   }
-  88% {
+  85% {
     opacity: 0.9;
   }
   100% {
@@ -463,15 +493,21 @@
     grid-row: 1;
   }
 
+  /* la spirale scende sotto al testo, a tutta larghezza */
   .hs-stage {
     position: relative;
+    inset: auto;
     grid-row: 2;
-    top: auto;
-    right: auto;
-    translate: none;
-    width: min(100%, 600px);
-    margin: 0 auto;
+    width: calc(100% + 2 * clamp(20px, 5vw, 64px));
+    margin-inline: calc(-1 * clamp(20px, 5vw, 64px));
+    aspect-ratio: 1;
     justify-self: center;
+  }
+
+  .hs-second-wrap {
+    width: min(92vw, 520px);
+    left: -26vw;
+    top: -6vh;
   }
 }
 
@@ -497,13 +533,8 @@
     font-size: clamp(2.2rem, 10vw, 2.9rem);
   }
 
-  .hs-stage {
-    width: 100%;
-  }
-
-  /* parole più grandi: il riquadro è piccolo */
   .sb-hero {
-    --hs-word-k: 1.3;
+    --hs-word-k: 1.12;
   }
 
   .s1q {
@@ -518,7 +549,6 @@
   .sb-hero__thread,
   .sb-hero__trama,
   .sb-hero__trama-img,
-  .hs-spiral,
   .hs-spiral.is-drawn .hs-comet {
     animation: none;
     will-change: auto;
@@ -529,9 +559,6 @@
   .sb-hero__trama,
   .sb-hero__trama-img {
     transform: scale(1.14);
-  }
-  .hs-arm {
-    opacity: 1;
   }
   .hs-comet {
     display: none;
