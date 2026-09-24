@@ -213,10 +213,119 @@
   text-wrap: balance;
 }
 
-/* ═══════════ Colonna destra: atmosfera sfocata ═══════════ */
-.s2o .s2o__spacer {
-  min-width: 0;
+/* Filetto d'oro a tutta larghezza tra sottotitolo e testo */
+.s2o .s2o__hair {
+  display: block;
+  width: 100%;
+  max-width: 34rem;
+  height: 1px;
+  background: rgba(198, 154, 87, 0.28);
 }
+
+/* ═══════════ Colonna destra: l'esagono dei sei concetti ═══════════ */
+.s2o .s2o-hex {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  margin: 0;
+  /* spazio per le etichette che escono dai vertici */
+  padding: clamp(40px, 7vh, 64px) clamp(84px, 9vw, 130px);
+}
+
+.s2o .s2o-hex__box {
+  position: relative;
+  width: min(100%, 28rem, 60vh);
+  aspect-ratio: 1;
+}
+
+.s2o .s2o-hex__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.s2o .s2o-hex__path {
+  fill: none;
+  stroke: rgba(134, 96, 42, 0.55);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.s2o .s2o-hex__rays line {
+  stroke: rgba(134, 96, 42, 0.22);
+  stroke-width: 1;
+}
+
+.s2o .s2o-hex__core {
+  fill: #c69a57;
+}
+
+.s2o .s2o-hex__node {
+  transform-box: view-box;
+}
+
+.s2o .s2o-hex__node-halo {
+  fill: rgba(212, 175, 55, 0.18);
+}
+
+.s2o .s2o-hex__node-dot {
+  fill: #d4af37;
+}
+
+/* Etichette: il contenitore è un punto 0×0 sul vertice */
+.s2o .s2o-hex__label {
+  position: absolute;
+  width: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.s2o .s2o-hex__label-in {
+  flex: none;
+  white-space: nowrap;
+  font-family: var(--s2o-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--s2o-gold-ink);
+  will-change: transform, opacity;
+}
+
+/* lato dell'etichetta rispetto al vertice (margini, non transform: la
+   transform la usa GSAP per l'ingresso) */
+.s2o .s2o-hex__label--top .s2o-hex__label-in {
+  margin-bottom: 44px;
+}
+
+.s2o .s2o-hex__label--bottom .s2o-hex__label-in {
+  margin-top: 44px;
+}
+
+.s2o .s2o-hex__label--right {
+  justify-content: flex-start;
+}
+
+.s2o .s2o-hex__label--right .s2o-hex__label-in {
+  margin-left: 22px;
+}
+
+.s2o .s2o-hex__label--left {
+  justify-content: flex-end;
+}
+
+.s2o .s2o-hex__label--left .s2o-hex__label-in {
+  margin-right: 22px;
+}
+
+/* ═══════════ Atmosfera di fondo (ora solo una velatura) ═══════════ */
 
 /* Livello a pieno bordo sulla metà destra. La sfocatura è già
    nell'immagine esportata; qui c'è solo una maschera statica che la
@@ -318,7 +427,7 @@
 }
 
 .s2o.s2o--in .s2o__atmo {
-  opacity: 1;
+  opacity: 0.42;                /* tenue: il protagonista ora è l'esagono */
 }
 
 .s2o.s2o--in .s2o__line-in {
@@ -339,8 +448,12 @@
     background-image: linear-gradient(180deg, var(--s2o-ivory) 0%, #fbf8f3 50%, var(--s2o-cream) 100%);
   }
 
-  /* L'atmosfera diventa una fascia in alto che sfuma verso il basso */
+  /* su mobile l'atmosfera si ritira: resta il panna pulito */
   .s2o .s2o__atmo {
+    display: none;
+  }
+
+  .s2o .s2o__atmo--unused {
     left: 0;
     bottom: auto;
     width: 100%;
@@ -360,17 +473,40 @@
     min-height: 0;
   }
 
-  /* Spazio per la fascia d'atmosfera, poi il testo */
-  .s2o .s2o__spacer {
-    order: -1;
-    height: 34vh;
-    height: 34svh;
+  /* l'esagono scende sotto il testo */
+  .s2o .s2o-hex {
+    padding: 36px 76px 72px;
+  }
+
+  .s2o .s2o-hex__box {
+    width: min(100%, 300px);
+  }
+
+  .s2o .s2o-hex__label-in {
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+  }
+
+  .s2o .s2o-hex__label--top .s2o-hex__label-in {
+    margin-bottom: 34px;
+  }
+
+  .s2o .s2o-hex__label--bottom .s2o-hex__label-in {
+    margin-top: 34px;
+  }
+
+  .s2o .s2o-hex__label--right .s2o-hex__label-in {
+    margin-left: 14px;
+  }
+
+  .s2o .s2o-hex__label--left .s2o-hex__label-in {
+    margin-right: 14px;
   }
 
   .s2o .s2o__text {
     justify-content: flex-start;
     gap: 32px;
-    padding-block: 8px 64px;
+    padding-block: 96px 16px;   /* sotto l'header fisso */
   }
 
   .s2o .s2o__title {
@@ -412,5 +548,9 @@
 
   .s2o .s2o__atmo-img {
     animation: none;
+  }
+
+  .s2o .s2o-hex__path {
+    stroke-dashoffset: 0;
   }
 }
