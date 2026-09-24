@@ -233,6 +233,10 @@
   height: 100%;
   overflow: visible;
   pointer-events: none;
+  /* layer GPU dedicato: il disegno dei fili ridipinge solo questo livello */
+  will-change: transform;
+  transform: translateZ(0);
+  contain: paint;
 }
 
 .s2o .s2o-fili__path {
@@ -243,7 +247,20 @@
 .s2o .s2o-fili__path--main {
   stroke: url(#s2o-fili-grad);
   stroke-width: 2;
-  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.35));
+}
+
+/* alone: tratto largo e tenue, nessun filtro (costa zero in repaint) */
+.s2o .s2o-fili__path--halo {
+  stroke: rgba(212, 175, 55, 0.16);
+  stroke-width: 7;
+}
+
+#filo-main,
+#filo-halo,
+#filo-sub-1,
+#filo-sub-2,
+#filo-accent {
+  will-change: stroke-dashoffset;
 }
 
 .s2o .s2o-fili__path--sub-1 {
@@ -285,6 +302,16 @@
   width: 100%;
   height: 100%;
   overflow: visible;
+  /* layer GPU dedicato: il loop del radar ridipinge solo l'SVG */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* #radar-shape e .radar-node: niente transform CSS, altrimenti
+   sovrascriverebbe la scala che GSAP scrive come attributo SVG */
+#radar-shape,
+.s2o .radar-node {
+  will-change: opacity;
 }
 
 .s2o .s2o-hex__path {
@@ -317,7 +344,13 @@
   stroke: #d4af37;
   stroke-width: 2;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+}
+
+.s2o .s2o-hex__radar-halo {
+  fill: none;
+  stroke: rgba(212, 175, 55, 0.22);
+  stroke-width: 8;
+  stroke-linejoin: round;
 }
 
 .s2o .s2o-hex__radar-node {

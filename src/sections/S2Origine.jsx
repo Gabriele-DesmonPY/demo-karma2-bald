@@ -32,7 +32,10 @@ const HEX_POINTS = HEX.map((v) => `${v.x},${v.y}`).join(" ");
 // ── Fascio di fili d'oro ("la trama delle relazioni") ──
 // 4 percorsi paralleli e sfalsati (viewBox 1440×900): attraversano la
 // sezione, passano per il centro del radar e scendono verso la Sezione 03.
+const FILO_MAIN_D =
+  "M 0,120 C 300,220 200,660 450,700 C 680,730 850,480 1000,400 C 1150,320 1300,530 1440,820";
 const FILI = [
+  { id: "halo", d: FILO_MAIN_D }, // alone del filo principale (sostituisce il filter)
   { id: "main", d: "M 0,120 C 300,220 200,660 450,700 C 680,730 850,480 1000,400 C 1150,320 1300,530 1440,820" },
   { id: "sub-1", d: "M 0,90 C 280,190 220,630 430,670 C 660,700 830,450 980,370 C 1130,290 1280,500 1440,790" },
   { id: "sub-2", d: "M 0,150 C 320,250 180,690 470,730 C 700,760 870,510 1020,430 C 1170,350 1320,560 1440,850" },
@@ -85,10 +88,11 @@ export default function S2Origine() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) setEntered(true);
-        setLive(entry.isIntersecting);
+        const on = entry.intersectionRatio >= 0.35;
+        if (on) setEntered(true);
+        setLive(on);
       },
-      { threshold: 0.2 }
+      { threshold: [0, 0.35] }
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -98,6 +102,7 @@ export default function S2Origine() {
   //    dal centro e continua a spostarsi (indecisione) finché la sezione è
   //    in vista. Uscendo tutto si riavvolge; il loop è in pausa fuori vista.
   const radarRef = useRef(null);
+  const radarHaloRef = useRef(null);
   const nodeRefs = useRef([]);
   const morphTl = useRef(null);
 
@@ -121,16 +126,16 @@ export default function S2Origine() {
           n.setAttribute("cy", p.y.toFixed(1));
         }
       }
-      shape.setAttribute("points", pts.join(" "));
+      const str = pts.join(" ");
+      shape.setAttribute("points", str);
+      radarHaloRef.current?.setAttribute("points", str);
     };
     const asVars = (arr) => Object.fromEntries(arr.map((r, i) => [`r${i}`, r]));
 
-    if (reduced) {
-      Object.assign(v, asVars(RADAR_START));
-      render();
-      return;
-    }
+    // l'area parte già nella sua forma: l'ingresso la fa solo "accendere"
+    Object.assign(v, asVars(RADAR_START));
     render();
+    if (reduced) return;
 
     // Loop dell'indecisione: yoyo infinito tra gli stati, morbido
     const morph = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
@@ -139,51 +144,58 @@ export default function S2Origine() {
     });
     morphTl.current = morph;
 
-    // Ingresso: esagono guida → assi e anello → area che cresce → etichette
+    // Ingresso (automatico, niente scrub):
+    // A. il fascio di fili scivola verso destra (+ esagono guida)
+    // B. quando i fili raggiungono il radar, l'area si accende e "respira"
+    // C. i nodi sbocciano, poi le etichette; infine parte il loop.
     const tl = gsap.timeline({
       paused: true,
       onComplete: () => morph.play(),
       onReverseComplete: () => morph.pause(0),
     });
-    // Fascio di fili: srotolamento a cascata (stagger), insieme all'esagono
-    const fili = sectionRef.current?.querySelectorAll(".s2o-fili__path");
-    if (fili?.length) {
+    const sec = sectionRef.current;
+    const main = sec?.querySelectorAll("#filo-main, #filo-halo");
+    const subs = sec?.querySelectorAll("#filo-sub-1, #filo-sub-2, #filo-accent");
+    if (main?.length) {
+      tl.fromTo(main, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.0, ease: "power2.out" }, 0);
+    }
+    if (subs?.length) {
       tl.fromTo(
-        fili,
+        subs,
         { strokeDashoffset: 1 },
-        { strokeDashoffset: 0, duration: 1.8, stagger: 0.08, ease: "power2.out" },
-        0
+        { strokeDashoffset: 0, duration: 1.0, stagger: 0.1, ease: "power2.out" },
+        0.1
       );
     }
     tl.fromTo(
       q(".s2o-hex__path"),
       { strokeDashoffset: HEX_PERIMETER },
-      { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" },
+      { strokeDashoffset: 0, duration: 1.0, ease: "power2.inOut" },
       0
     )
       .fromTo(
         q(".s2o-hex__rays, .s2o-hex__ring"),
         { opacity: 0 },
-        { opacity: 1, duration: 0.8, ease: "power1.out" },
-        "-=0.7"
+        { opacity: 1, duration: 0.6, ease: "power1.out" },
+        0.4
       )
       .fromTo(
-        v,
-        asVars([0, 0, 0, 0, 0, 0]),
-        { ...asVars(RADAR_START), duration: 1.1, ease: "power3.out", onUpdate: render },
+        q("#radar-shape"),
+        { opacity: 0, scale: 0.85, svgOrigin: `${CX} ${CY}` },
+        { opacity: 1, scale: 1, svgOrigin: `${CX} ${CY}`, duration: 0.6, ease: "back.out(1.4)" },
         "-=0.4"
       )
       .fromTo(
-        q(".s2o-hex__radar-node"),
-        { opacity: 0 },
-        { opacity: 1, stagger: 0.06, duration: 0.3 },
-        "-=0.9"
+        q(".radar-node"),
+        { scale: 0, opacity: 0, transformOrigin: "50% 50%" },
+        { scale: 1, opacity: 1, stagger: 0.05, duration: 0.4, ease: "back.out(2)" },
+        "-=0.3"
       )
       .fromTo(
         q(".s2o-hex__label-in"),
         { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, stagger: 0.1, duration: 0.5, ease: "power2.out" },
-        "-=0.6"
+        { opacity: 1, y: 0, stagger: 0.06, duration: 0.45, ease: "power2.out" },
+        "-=0.35"
       );
     hexTl.current = tl;
     return () => {
@@ -199,8 +211,8 @@ export default function S2Origine() {
     const morph = morphTl.current;
     if (!tl) return;
     if (live) {
-      tl.timeScale(1).play();
-      if (tl.progress() === 1) morph?.play(); // già entrato: riprende il loop
+      morph?.pause(0);
+      tl.timeScale(1).restart();
     } else {
       morph?.pause();
       tl.timeScale(2).reverse();
@@ -293,13 +305,17 @@ export default function S2Origine() {
               {/* centro */}
               <circle className="s2o-hex__core" cx="200" cy="200" r="3" />
               {/* area dinamica delle priorità (radar) */}
-              <polygon ref={radarRef} className="s2o-hex__radar" points={ringPoints(0)} />
+              <g id="radar-shape" className="s2o-hex__radar-g">
+                {/* alone: tratto largo e tenue al posto del drop-shadow */}
+                <polygon ref={radarHaloRef} className="s2o-hex__radar-halo" points={ringPoints(0)} />
+                <polygon ref={radarRef} className="s2o-hex__radar" points={ringPoints(0)} />
+              </g>
               {/* nodi che seguono i punti del radar */}
               {HEX.map((h, i) => (
                 <circle
                   key={h.t}
                   ref={(el) => (nodeRefs.current[i] = el)}
-                  className="s2o-hex__radar-node"
+                  className="s2o-hex__radar-node radar-node"
                   cx={CX}
                   cy={CY}
                   r="4"
@@ -358,6 +374,7 @@ export default function S2Origine() {
         {FILI.map((f) => (
           <path
             key={f.id}
+            id={`filo-${f.id}`}
             className={`s2o-fili__path s2o-fili__path--${f.id}`}
             d={f.d}
             pathLength="1"
