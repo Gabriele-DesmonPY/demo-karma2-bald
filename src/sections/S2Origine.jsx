@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import "./S2Origine.css";
+
+gsap.registerPlugin(DrawSVGPlugin);
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 02 — ORIGINE E CONTESTO
@@ -30,17 +33,62 @@ const HEX = [
 ];
 const HEX_POINTS = HEX.map((v) => `${v.x},${v.y}`).join(" ");
 // ── Fascio di fili d'oro ("la trama delle relazioni") ──
-// 4 percorsi paralleli e sfalsati (viewBox 1440×900): attraversano la
-// sezione, passano per il centro del radar e scendono verso la Sezione 03.
-const FILO_MAIN_D =
-  "M 0,120 C 300,220 200,660 450,700 C 680,730 850,480 1000,400 C 1150,320 1300,530 1440,820";
-const FILI = [
-  { id: "halo", d: FILO_MAIN_D }, // alone del filo principale (sostituisce il filter)
-  { id: "main", d: "M 0,120 C 300,220 200,660 450,700 C 680,730 850,480 1000,400 C 1150,320 1300,530 1440,820" },
-  { id: "sub-1", d: "M 0,90 C 280,190 220,630 430,670 C 660,700 830,450 980,370 C 1130,290 1280,500 1440,790" },
-  { id: "sub-2", d: "M 0,150 C 320,250 180,690 470,730 C 700,760 870,510 1020,430 C 1170,350 1320,560 1440,850" },
-  { id: "accent", d: "M 0,110 C 350,280 150,620 440,710 C 640,780 880,430 1010,390 C 1180,310 1270,580 1440,810" },
-];
+// 4 fili sfalsati (viewBox 1440×900): entrano dal bordo sinistro (in
+// continuità con la 01), passano sotto al testo e per il centro del radar,
+// poi escono dal bordo destro curvando verso il basso, verso la 03.
+// Ogni filo è una catena di cubiche: i suoi punti di controllo sono
+// "vivi" (il mouse li sposta e il filo si deforma, poi torna a riposo).
+const BASE_D = {
+  main: "M 0,120 C 300,220 200,660 450,700 C 680,730 850,480 1000,400 C 1150,320 1300,530 1440,820",
+  "sub-1": "M 0,90 C 280,190 220,630 430,670 C 660,700 830,450 980,370 C 1130,290 1280,500 1440,790",
+  "sub-2": "M 0,150 C 320,250 180,690 470,730 C 700,760 870,510 1020,430 C 1170,350 1320,560 1440,850",
+  accent: "M 0,110 C 350,280 150,620 440,710 C 640,780 880,430 1010,390 C 1180,310 1270,580 1440,810",
+};
+
+const norm = (x, y) => {
+  const l = Math.hypot(x, y) || 1;
+  return [x / l, y / l];
+};
+
+// Prolunga il filo: entra da fuori schermo a sinistra (stessa tangente) ed
+// esce a destra oltre il bordo, piegando verso il basso.
+function extend(d) {
+  const n = d.match(/-?\d+(\.\d+)?/g).map(Number);
+  const pts = [];
+  for (let i = 0; i < n.length; i += 2) pts.push([n[i], n[i + 1]]);
+  const [p0, p1] = pts;
+  const [sx, sy] = norm(p1[0] - p0[0], p1[1] - p0[1]);
+  const S = [p0[0] - sx * 240, p0[1] - sy * 240];
+  const head = [S, [S[0] + sx * 80, S[1] + sy * 80], [p0[0] - sx * 80, p0[1] - sy * 80]];
+  const pn = pts[pts.length - 1];
+  const pc = pts[pts.length - 2];
+  const [ex, ey] = norm(pn[0] - pc[0], pn[1] - pc[1]);
+  const E = [pn[0] + ex * 170 + 40, pn[1] + ey * 170 + 190];
+  const [dx, dy] = norm(E[0] - pn[0] + 0, E[1] - pn[1] + 60);
+  const tail = [[pn[0] + ex * 90, pn[1] + ey * 90], [E[0] - dx * 90, E[1] - dy * 90], E];
+  return [...head, ...pts, ...tail];
+}
+
+const toD = (pts, off) => {
+  let d = `M${(pts[0][0] + off[0]).toFixed(1)},${(pts[0][1] + off[1]).toFixed(1)}C`;
+  for (let i = 1; i < pts.length; i++) {
+    d += `${(pts[i][0] + off[i * 2]).toFixed(1)},${(pts[i][1] + off[i * 2 + 1]).toFixed(1)} `;
+  }
+  return d;
+};
+
+// k = quanto il filo "sente" il mouse: fili diversi, risposte diverse →
+// il fascio si apre e si richiude come un nastro vivo.
+const STRANDS = [
+  { id: "halo", src: "main", k: 1 }, // alone del filo principale (niente filter)
+  { id: "main", src: "main", k: 1 },
+  { id: "sub-1", src: "sub-1", k: 0.75 },
+  { id: "sub-2", src: "sub-2", k: 1.25 },
+  { id: "accent", src: "accent", k: 1.5 },
+].map((f) => {
+  const pts = extend(BASE_D[f.src]);
+  return { ...f, pts, d: toD(pts, new Float32Array(pts.length * 2)) };
+});
 
 const CX = 200;
 const CY = 200;
@@ -103,6 +151,91 @@ export default function S2Origine() {
   //    in vista. Uscendo tutto si riavvolge; il loop è in pausa fuori vista.
   const radarRef = useRef(null);
   const radarHaloRef = useRef(null);
+  const filiRefs = useRef([]);
+  const filiSvgRef = useRef(null);
+
+  // Prima del primo paint: fili "non disegnati" (niente flash del fascio pieno)
+  useLayoutEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    gsap.set(filiRefs.current.filter(Boolean), { drawSVG: "0%" });
+  }, []);
+
+  // ── Filo vivo: il puntatore scosta i punti di controllo del fascio ──
+  // Un solo tick GSAP, attivo solo mentre il mouse si muove o i fili
+  // stanno tornando a riposo; fuori vista o su touch non gira nulla.
+  useEffect(() => {
+    const svg = filiSvgRef.current;
+    const els = filiRefs.current;
+    if (!svg || !live) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const R = 230; // raggio d'influenza (unità del viewBox)
+    const PUSH = 80; // spostamento massimo
+    const offs = STRANDS.map((f) => new Float32Array(f.pts.length * 2));
+    const mouse = { x: -9999, y: -9999, in: false };
+    let rect = svg.getBoundingClientRect();
+    let running = false;
+
+    const tick = () => {
+      let moving = false;
+      STRANDS.forEach((f, si) => {
+        const o = offs[si];
+        f.pts.forEach(([x, y], i) => {
+          let tx = 0;
+          let ty = 0;
+          if (mouse.in) {
+            const dx = x - mouse.x;
+            const dy = y - mouse.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const fall = Math.exp(-((dist / R) ** 2));
+            tx = (dx / dist) * PUSH * f.k * fall;
+            ty = (dy / dist) * PUSH * f.k * fall;
+          }
+          const j = i * 2;
+          o[j] += (tx - o[j]) * 0.09;
+          o[j + 1] += (ty - o[j + 1]) * 0.09;
+          if (Math.abs(tx - o[j]) > 0.05 || Math.abs(ty - o[j + 1]) > 0.05) moving = true;
+        });
+        const el = els[si];
+        if (el) el.setAttribute("d", toD(f.pts, o));
+      });
+      if (!moving) {
+        gsap.ticker.remove(tick);
+        running = false;
+      }
+    };
+    const wake = () => {
+      if (!running) {
+        running = true;
+        gsap.ticker.add(tick);
+      }
+    };
+    const onMove = (e) => {
+      const x = ((e.clientX - rect.left) / rect.width) * 1440;
+      const y = ((e.clientY - rect.top) / rect.height) * 900;
+      mouse.in = x > -100 && x < 1540 && y > -100 && y < 1000;
+      mouse.x = x;
+      mouse.y = y;
+      wake();
+    };
+    const onLeave = () => {
+      mouse.in = false;
+      wake();
+    };
+    const onResize = () => (rect = svg.getBoundingClientRect());
+    window.addEventListener("mousemove", onMove, { passive: true });
+    document.addEventListener("mouseleave", onLeave);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("resize", onResize);
+      gsap.ticker.remove(tick);
+      // a riposo quando si esce dalla sezione
+      STRANDS.forEach((f, si) => els[si]?.setAttribute("d", f.d));
+    };
+  }, [live]);
   const nodeRefs = useRef([]);
   const morphTl = useRef(null);
 
@@ -156,14 +289,29 @@ export default function S2Origine() {
     const sec = sectionRef.current;
     const main = sec?.querySelectorAll("#filo-main, #filo-halo");
     const subs = sec?.querySelectorAll("#filo-sub-1, #filo-sub-2, #filo-accent");
+    // DrawSVG: il fascio si disegna da sinistra a destra, morbido
+    // a disegno finito il tratteggio si toglie: il filo può deformarsi
+    // (mouse) senza che la sua lunghezza cambi il tratteggio
+    const undash = (t) => gsap.set(t, { strokeDasharray: "none" });
     if (main?.length) {
-      tl.fromTo(main, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.0, ease: "power2.out" }, 0);
+      tl.fromTo(
+        main,
+        { drawSVG: "0%" },
+        { drawSVG: "100%", duration: 1.6, ease: "power2.out", onComplete: () => undash(main) },
+        0
+      );
     }
     if (subs?.length) {
       tl.fromTo(
         subs,
-        { strokeDashoffset: 1 },
-        { strokeDashoffset: 0, duration: 1.0, stagger: 0.1, ease: "power2.out" },
+        { drawSVG: "0%" },
+        {
+          drawSVG: "100%",
+          duration: 1.6,
+          stagger: 0.12,
+          ease: "power2.out",
+          onComplete: () => undash(subs),
+        },
         0.1
       );
     }
@@ -183,7 +331,7 @@ export default function S2Origine() {
         q("#radar-shape"),
         { opacity: 0, scale: 0.85, svgOrigin: `${CX} ${CY}` },
         { opacity: 1, scale: 1, svgOrigin: `${CX} ${CY}`, duration: 0.6, ease: "back.out(1.4)" },
-        "-=0.4"
+        0.75
       )
       .fromTo(
         q(".radar-node"),
@@ -358,6 +506,7 @@ export default function S2Origine() {
       {/* ── Fascio di fili d'oro: attraversa la sezione, tocca il radar,
           prosegue verso la 03. Si srotola in ingresso, si riavvolge in uscita. */}
       <svg
+        ref={filiSvgRef}
         className="s2o-fili"
         viewBox="0 0 1440 900"
         preserveAspectRatio="none"
@@ -371,15 +520,13 @@ export default function S2Origine() {
             <stop offset="100%" stopColor="#b89343" stopOpacity="0.45" />
           </linearGradient>
         </defs>
-        {FILI.map((f) => (
+        {STRANDS.map((f, i) => (
           <path
             key={f.id}
+            ref={(el) => (filiRefs.current[i] = el)}
             id={`filo-${f.id}`}
             className={`s2o-fili__path s2o-fili__path--${f.id}`}
             d={f.d}
-            pathLength="1"
-            strokeDasharray="1"
-            strokeDashoffset="1"
           />
         ))}
       </svg>
