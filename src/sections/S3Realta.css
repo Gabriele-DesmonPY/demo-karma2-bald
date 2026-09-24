@@ -193,7 +193,7 @@
   height: 9px;
   border-radius: 50%;
   background: radial-gradient(circle, #fff 0%, #e2c974 60%, #b89343 100%);
-  box-shadow: 0 0 8px #e2c974;
+  box-shadow: 0 0 10px 1px #e2c974, 0 0 22px rgba(226, 201, 116, 0.45);
 }
 
 /* ═══════════ Le 6 schede ═══════════ */
@@ -238,40 +238,28 @@
   margin-right: var(--off, 0%);
 }
 
-/* Carta avorio traslucida, leggera */
+/* Testo puro: nessun riquadro, nessuna ombra. La frase fluttua sul
+   fondo e si aggancia al filo solo con il suo punto d'oro. */
 .s3 .s3-card__paper {
   display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  padding: clamp(28px, 4.2vh, 40px) clamp(28px, 2.9vw, 42px);   /* più respiro */
-  border-radius: 3px;
-  /* foglio avorio caldo, appena trasparente */
-  background: rgba(253, 251, 247, 0.88);
-  border: 1px solid rgba(212, 175, 55, 0.15);     /* micro-bordo dorato */
-  /* ombra soffusa ad ampio raggio + filo di luce sul bordo alto */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 20px 40px -15px rgba(10, 17, 40, 0.25);
-  transform: rotate(var(--rot, 0deg)) translateZ(0);
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
 }
 
-/* Vetro sfocato (blur 8px) dove la GPU lo regge senza fatica: desktop
-   con puntatore preciso. Sul touch resta il foglio velato allo 0.88,
-   visivamente identico (dietro c'è un gradiente liscio). */
-@media (min-width: 901px) and (pointer: fine) {
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .s3 .s3-card__paper {
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
-    }
-  }
+/* SX: la frase si allinea verso il filo (a destra) · DX: a sinistra */
+.s3 .s3-card--sx .s3-card__paper {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.s3 .s3-card--dx .s3-card__paper {
+  align-items: flex-start;
+  text-align: left;
 }
 
 .s3 .s3-card__num {
   flex: none;
-  padding-top: 0.55em;
   font-family: var(--s3-sans);
   font-size: 10px;
   font-weight: 700;
@@ -290,6 +278,25 @@
   letter-spacing: 0.006em;
   color: var(--s3-ink);
   text-wrap: pretty;
+}
+
+/* inchiostro scelto dal fondo (JS): navy sul panna, avorio sul navy */
+.s3 .s3-card--dark .s3-card__text {
+  color: var(--s3-ink);
+  text-shadow: 0 0 22px rgba(253, 251, 247, 0.45);
+}
+
+.s3 .s3-card--dark .s3-card__num {
+  color: #8a6327;
+}
+
+.s3 .s3-card--light .s3-card__text {
+  color: #fbf4e2;
+  text-shadow: 0 1px 18px rgba(6, 10, 24, 0.55);
+}
+
+.s3 .s3-card--light .s3-card__num {
+  color: #e2c974;
 }
 
 /* ═══════════ Chiusura Fase A ═══════════ */
@@ -397,10 +404,20 @@
   color: #e2c974;
 }
 
-/* Il filo d'oro: tendina orizzontale a due transform opposte */
+/* La rotta mobile: porta con sé i nodi e il filo che li unisce */
+.s3 .s3c-rail {
+  position: relative;
+  width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Il filo d'oro: tendina orizzontale a due transform opposte
+   (top/bottom negativi inline: margine per i nodi alti e bassi) */
 .s3 .s3c-wire {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
   z-index: 0;
   pointer-events: none;
 }
@@ -415,21 +432,46 @@
 
 .s3 .s3c-wire__svg {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
+  display: block;
+  overflow: visible;
   transform: translate3d(100%, 0, 0);
   will-change: transform;
-  filter: drop-shadow(0 0 5px rgba(226, 201, 116, 0.45));   /* statico, su layer */
+}
+
+.s3 .s3c-wire__path,
+.s3 .s3c-wire__halo {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .s3 .s3c-wire__path {
-  fill: none;
   stroke: url(#s3c-gold);
   stroke-width: 2;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-  opacity: 0.75;
+  opacity: 0.9;
+}
+
+/* bagliore: tratto largo e tenue (niente filtro su un livello così largo) */
+.s3 .s3c-wire__halo {
+  stroke: rgba(226, 201, 116, 0.14);
+  stroke-width: 9;
+}
+
+/* il punto finale: il filo si chiude sull'ultima frase */
+.s3 .s3c-wire__end {
+  position: absolute;
+  z-index: 3;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #f3e5ab 45%, #d4af37 100%);
+  box-shadow: 0 0 12px 2px rgba(226, 201, 116, 0.7), 0 0 30px rgba(212, 175, 55, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* La rotta dei 5 incontri */
@@ -443,8 +485,6 @@
   margin: 0;
   padding: 0 clamp(96px, 12vw, 200px);
   list-style: none;
-  will-change: transform;
-  backface-visibility: hidden;
 }
 
 .s3 .s3c-slot {
@@ -581,6 +621,12 @@
     font-size: 1.2rem;
   }
 
+  /* su mobile il filo è a sinistra: tutte le frasi si allineano lì */
+  .s3 .s3-card--sx .s3-card__paper {
+    align-items: flex-start;
+    text-align: left;
+  }
+
   .s3 .s3__axiom {
     font-size: clamp(1.8rem, 8vw, 2.4rem);
   }
@@ -617,5 +663,10 @@
   .s3 .s3c-wire__wipe,
   .s3 .s3c-wire__svg {
     transform: none;
+  }
+
+  .s3 .s3c-wire__end {
+    opacity: 1;
+    visibility: visible;
   }
 }
