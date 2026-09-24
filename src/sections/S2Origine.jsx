@@ -29,6 +29,29 @@ const HEX = [
   { t: "Responsabilità", x: 62, y: 120, pos: "left" },
 ];
 const HEX_POINTS = HEX.map((v) => `${v.x},${v.y}`).join(" ");
+const CX = 200;
+const CY = 200;
+
+// Punto sull'asse i a una frazione r (0 = centro, 1 = vertice)
+const onAxis = (i, r) => ({
+  x: CX + (HEX[i].x - CX) * r,
+  y: CY + (HEX[i].y - CY) * r,
+});
+const ringPoints = (r) =>
+  HEX.map((_, i) => onAxis(i, r))
+    .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+    .join(" ");
+
+// ── Radar dell'indecisione ──
+// Ogni stato = 6 valori (0–1) sugli assi, nell'ordine:
+// Persone, Processi, Abitudini, Relazioni, Strumenti, Responsabilità.
+// Le priorità "scivolano" da uno stato all'altro senza mai assestarsi.
+const RADAR_START = [0.8, 0.72, 0.6, 0.75, 0.72, 0.62];
+const RADAR_STATES = [
+  [0.9, 0.86, 0.55, 0.6, 0.48, 0.66], // sbilanciato su Persone / Processi
+  [0.6, 0.55, 0.92, 0.9, 0.5, 0.44], // sbilanciato su Abitudini / Relazioni
+  [0.74, 0.58, 0.45, 0.55, 0.93, 0.9], // sbilanciato su Strumenti / Responsabilità
+];
 const HEX_PERIMETER = 6 * 160; // lato ≈ 160 nel viewBox
 
 export default function S2Origine() {
@@ -61,51 +84,106 @@ export default function S2Origine() {
     return () => observer.disconnect();
   }, []);
 
-  // ── Esagono: si disegna quando la sezione è in vista, si riavvolge
-  //    quando esce (play / reverse). Tutto molto leggero: un poligono SVG.
+  // ── Radar: l'esagono guida si disegna, poi l'area delle priorità cresce
+  //    dal centro e continua a spostarsi (indecisione) finché la sezione è
+  //    in vista. Uscendo tutto si riavvolge; il loop è in pausa fuori vista.
+  const radarRef = useRef(null);
+  const nodeRefs = useRef([]);
+  const morphTl = useRef(null);
+
   useEffect(() => {
     const root = hexRef.current;
-    if (!root) return;
+    const shape = radarRef.current;
+    if (!root || !shape) return;
     const q = gsap.utils.selector(root);
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return; // resta tutto visibile (stato CSS)
 
-    const tl = gsap.timeline({ paused: true });
+    // valori correnti sui 6 assi (animati da GSAP)
+    const v = { r0: 0, r1: 0, r2: 0, r3: 0, r4: 0, r5: 0 };
+    const render = () => {
+      const pts = [];
+      for (let i = 0; i < 6; i++) {
+        const p = onAxis(i, v[`r${i}`]);
+        pts.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
+        const n = nodeRefs.current[i];
+        if (n) {
+          n.setAttribute("cx", p.x.toFixed(1));
+          n.setAttribute("cy", p.y.toFixed(1));
+        }
+      }
+      shape.setAttribute("points", pts.join(" "));
+    };
+    const asVars = (arr) => Object.fromEntries(arr.map((r, i) => [`r${i}`, r]));
+
+    if (reduced) {
+      Object.assign(v, asVars(RADAR_START));
+      render();
+      return;
+    }
+    render();
+
+    // Loop dell'indecisione: yoyo infinito tra gli stati, morbido
+    const morph = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
+    RADAR_STATES.forEach((st) => {
+      morph.to(v, { ...asVars(st), duration: 3.5, ease: "sine.inOut", onUpdate: render });
+    });
+    morphTl.current = morph;
+
+    // Ingresso: esagono guida → assi e anello → area che cresce → etichette
+    const tl = gsap.timeline({
+      paused: true,
+      onComplete: () => morph.play(),
+      onReverseComplete: () => morph.pause(0),
+    });
     tl.fromTo(
       q(".s2o-hex__path"),
       { strokeDashoffset: HEX_PERIMETER },
       { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" }
     )
       .fromTo(
-        q(".s2o-hex__rays"),
+        q(".s2o-hex__rays, .s2o-hex__ring"),
         { opacity: 0 },
         { opacity: 1, duration: 0.8, ease: "power1.out" },
         "-=0.7"
       )
       .fromTo(
-        q(".s2o-hex__node"),
-        { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, stagger: 0.1, duration: 0.5, ease: "back.out(2)" },
-        "-=0.5"
+        v,
+        asVars([0, 0, 0, 0, 0, 0]),
+        { ...asVars(RADAR_START), duration: 1.1, ease: "power3.out", onUpdate: render },
+        "-=0.4"
+      )
+      .fromTo(
+        q(".s2o-hex__radar-node"),
+        { opacity: 0 },
+        { opacity: 1, stagger: 0.06, duration: 0.3 },
+        "-=0.9"
       )
       .fromTo(
         q(".s2o-hex__label-in"),
         { opacity: 0, y: 10 },
         { opacity: 1, y: 0, stagger: 0.1, duration: 0.5, ease: "power2.out" },
-        "-=0.4"
+        "-=0.6"
       );
     hexTl.current = tl;
     return () => {
       tl.kill();
+      morph.kill();
       hexTl.current = null;
+      morphTl.current = null;
     };
   }, []);
 
   useEffect(() => {
     const tl = hexTl.current;
+    const morph = morphTl.current;
     if (!tl) return;
-    if (live) tl.timeScale(1).play();
-    else tl.timeScale(2).reverse();
+    if (live) {
+      tl.timeScale(1).play();
+      if (tl.progress() === 1) morph?.play(); // già entrato: riprende il loop
+    } else {
+      morph?.pause();
+      tl.timeScale(2).reverse();
+    }
   }, [live]);
 
   const stateClass = `${entered ? " s2o--in" : ""}${live ? " s2o--live" : ""}`;
@@ -182,6 +260,8 @@ export default function S2Origine() {
                   <line key={v.t} x1="200" y1="200" x2={v.x} y2={v.y} />
                 ))}
               </g>
+              {/* anello guida al 50% */}
+              <polygon className="s2o-hex__ring" points={ringPoints(0.5)} />
               {/* il perimetro che si disegna */}
               <polygon
                 className="s2o-hex__path"
@@ -191,12 +271,18 @@ export default function S2Origine() {
               />
               {/* centro */}
               <circle className="s2o-hex__core" cx="200" cy="200" r="3" />
-              {/* nodi dorati sui vertici */}
-              {HEX.map((v) => (
-                <g key={v.t} className="s2o-hex__node" style={{ transformOrigin: `${v.x}px ${v.y}px` }}>
-                  <circle cx={v.x} cy={v.y} r="9" className="s2o-hex__node-halo" />
-                  <circle cx={v.x} cy={v.y} r="4" className="s2o-hex__node-dot" />
-                </g>
+              {/* area dinamica delle priorità (radar) */}
+              <polygon ref={radarRef} className="s2o-hex__radar" points={ringPoints(0)} />
+              {/* nodi che seguono i punti del radar */}
+              {HEX.map((h, i) => (
+                <circle
+                  key={h.t}
+                  ref={(el) => (nodeRefs.current[i] = el)}
+                  className="s2o-hex__radar-node"
+                  cx={CX}
+                  cy={CY}
+                  r="4"
+                />
               ))}
             </svg>
 

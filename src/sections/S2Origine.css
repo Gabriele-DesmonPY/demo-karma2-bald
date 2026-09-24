@@ -264,16 +264,27 @@
   fill: #c69a57;
 }
 
-.s2o .s2o-hex__node {
-  transform-box: view-box;
+/* Anello guida al 50%, tratteggiato */
+.s2o .s2o-hex__ring {
+  fill: none;
+  stroke: rgba(134, 96, 42, 0.22);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
 }
 
-.s2o .s2o-hex__node-halo {
-  fill: rgba(212, 175, 55, 0.18);
+/* Area delle priorità: oro semitrasparente con bordo luminoso */
+.s2o .s2o-hex__radar {
+  fill: rgba(212, 175, 55, 0.25);
+  stroke: #d4af37;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
 }
 
-.s2o .s2o-hex__node-dot {
-  fill: #d4af37;
+.s2o .s2o-hex__radar-node {
+  fill: #fff;
+  stroke: #d4af37;
+  stroke-width: 2;
 }
 
 /* Etichette: il contenitore è un punto 0×0 sul vertice */
