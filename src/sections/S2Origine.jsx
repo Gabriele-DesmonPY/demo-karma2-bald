@@ -132,6 +132,8 @@ export default function S2Origine() {
   const sectionRef = useRef(null);
   const hexRef = useRef(null);
   const hexTl = useRef(null);
+  const resetRef = useRef(null);
+  const needsRestart = useRef(true);
   // `entered`: l'ingresso è avvenuto (resta vero per sempre)
   // `live`: la sezione è attualmente visibile (governa la fluttuazione)
   const [entered, setEntered] = useState(false);
@@ -152,8 +154,14 @@ export default function S2Origine() {
         const on = entry.intersectionRatio >= 0.35;
         if (on) setEntered(true);
         setLive(on);
+        // uscita COMPLETA (sezione fuori schermo, in giù o in su): reset
+        // istantaneo allo stato 0, invisibile. Al rientro l'esagono riparte
+        // pulito dal centro, senza mai mostrare lo stato finale.
+        // (a slide adiacente l'IO la dà ancora "intersecante" con ratio 0:
+        // conta il rapporto, non isIntersecting)
+        if (entry.intersectionRatio < 0.01) resetRef.current?.();
       },
-      { threshold: [0, 0.35] }
+      { threshold: [0, 0.01, 0.35] }
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -430,8 +438,15 @@ export default function S2Origine() {
       )
       .fromTo(
         q("#radar-shape"),
-        { opacity: 0, scale: 0.85, svgOrigin: `${CX} ${CY}` },
-        { opacity: 1, scale: 1, svgOrigin: `${CX} ${CY}`, duration: 0.6, ease: "back.out(1.4)" },
+        { opacity: 0, scale: 0, svgOrigin: `${CX} ${CY}` },
+        {
+          opacity: 1,
+          scale: 1,
+          svgOrigin: `${CX} ${CY}`,
+          duration: 0.8,
+          ease: "back.out(1.4)",
+          overwrite: "auto",
+        },
         0.75
       )
       .fromTo(
@@ -447,11 +462,18 @@ export default function S2Origine() {
         "-=0.35"
       );
     hexTl.current = tl;
+    // reset istantaneo (solo a sezione fuori schermo)
+    resetRef.current = () => {
+      morph.pause(0);
+      tl.pause(0);
+      needsRestart.current = true;
+    };
     return () => {
       tl.kill();
       morph.kill();
       hexTl.current = null;
       morphTl.current = null;
+      resetRef.current = null;
     };
   }, []);
 
@@ -460,14 +482,22 @@ export default function S2Origine() {
     const morph = morphTl.current;
     if (!tl) return;
     if (live) {
-      morph?.pause(0);
-      // rimisura (il viewport può essere cambiato) e ricalcola i tratteggi
-      alignFili();
-      measureLens();
-      tl.invalidate().timeScale(1).restart();
+      if (needsRestart.current) {
+        // ingresso pulito: parte da 0 (rimisura: il viewport può cambiare)
+        needsRestart.current = false;
+        morph?.pause(0);
+        alignFili();
+        measureLens();
+        tl.invalidate().timeScale(1).restart();
+      } else if (tl.progress() < 1) {
+        tl.timeScale(1).play(); // rientro rapido a metà ingresso: prosegue
+      } else {
+        morph?.play(); // mai uscita del tutto: resta com'era
+      }
     } else {
+      // in uscita resta com'è (scivola via intera): il reset avviene solo
+      // quando è del tutto fuori schermo (IntersectionObserver sopra)
       morph?.pause();
-      tl.timeScale(2).reverse();
     }
   }, [live, alignFili, measureLens]);
 
