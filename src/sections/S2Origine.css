@@ -245,13 +245,13 @@
 }
 
 .s2o .s2o-fili__path--main {
-  stroke: url(#s2o-fili-grad);
+  stroke: url(#s2o-fade-main);
   stroke-width: 2;
 }
 
 /* alone: tratto largo e tenue, nessun filtro (costa zero in repaint) */
 .s2o .s2o-fili__path--halo {
-  stroke: rgba(212, 175, 55, 0.16);
+  stroke: url(#s2o-fade-halo);
   stroke-width: 7;
 }
 
@@ -264,17 +264,17 @@
 }
 
 .s2o .s2o-fili__path--sub-1 {
-  stroke: rgba(184, 147, 67, 0.4);
+  stroke: url(#s2o-fade-sub-1);
   stroke-width: 1;
 }
 
 .s2o .s2o-fili__path--sub-2 {
-  stroke: rgba(184, 147, 67, 0.32);
+  stroke: url(#s2o-fade-sub-2);
   stroke-width: 1.2;
 }
 
 .s2o .s2o-fili__path--accent {
-  stroke: rgba(134, 96, 42, 0.28);
+  stroke: url(#s2o-fade-accent);
   stroke-width: 0.8;
 }
 
@@ -326,8 +326,37 @@
   stroke-width: 1;
 }
 
+/* Nodo d'ancoraggio: il punto focale dove il filo si aggancia al radar */
 .s2o .s2o-hex__core {
-  fill: #c69a57;
+  fill: #fffbe9;
+  stroke: #d4af37;
+  stroke-width: 1.6;
+}
+
+.s2o .s2o-hex__anchor {
+  opacity: 0;
+}
+
+.s2o .s2o-hex__anchor-glow {
+  transform-origin: 200px 200px;
+  animation: s2o-anchor-pulse 3.2s ease-in-out infinite;
+  animation-play-state: paused;
+}
+
+.s2o.s2o--live .s2o-hex__anchor-glow {
+  animation-play-state: running;
+}
+
+@keyframes s2o-anchor-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 /* Anello guida al 50%, tratteggiato */
@@ -636,5 +665,13 @@
   .s2o .s2o-hex__path,
   .s2o .s2o-fili__path {
     stroke-dashoffset: 0;
+  }
+
+  .s2o .s2o-hex__anchor {
+    opacity: 1;
+  }
+
+  .s2o .s2o-hex__anchor-glow {
+    animation: none;
   }
 }

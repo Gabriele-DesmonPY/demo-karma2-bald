@@ -1,9 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import "./S2Origine.css";
 
-gsap.registerPlugin(DrawSVGPlugin);
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 02 — ORIGINE E CONTESTO
@@ -76,6 +74,21 @@ const toD = (pts, off) => {
   }
   return d;
 };
+
+// Punto d'ancoraggio sul filo (indice nella catena prolungata): è il
+// passaggio che a runtime viene portato ESATTAMENTE sul centro del radar,
+// dove si accende il nodo d'oro. Da lì il fascio prosegue sfumando.
+const ANCHOR = 9;
+// il gradiente di ogni filo (unità del viewBox): pieno fino al nodo, poi
+// scende al ~28% verso l'angolo in basso a destra
+const FADE_X2 = 1440;
+const FILI_GRADS = [
+  { id: "halo", color: "#d4af37", a: [0.12, 0.2, 0.05] },
+  { id: "main", color: "#d4af37", a: [0.75, 1, 0.28] },
+  { id: "sub-1", color: "#b89343", a: [0.4, 0.45, 0.12] },
+  { id: "sub-2", color: "#b89343", a: [0.32, 0.36, 0.1] },
+  { id: "accent", color: "#86602a", a: [0.28, 0.3, 0.08] },
+];
 
 // k = quanto il filo "sente" il mouse: fili diversi, risposte diverse →
 // il fascio si apre e si richiude come un nastro vivo.
@@ -153,12 +166,83 @@ export default function S2Origine() {
   const radarHaloRef = useRef(null);
   const filiRefs = useRef([]);
   const filiSvgRef = useRef(null);
+  const fadeStopRefs = useRef([]);
+  // i punti dei fili, allineati al radar reale (aggiornati su resize)
+  const alignedRef = useRef(STRANDS.map((f) => f.pts.map((p) => [...p])));
+  // lunghezza a schermo di ogni filo (per il disegno a tratteggio)
+  const lensRef = useRef(new Map());
 
-  // Prima del primo paint: fili "non disegnati" (niente flash del fascio pieno)
-  useLayoutEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    gsap.set(filiRefs.current.filter(Boolean), { drawSVG: "0%" });
+  // ── Allineamento: il filo passa esattamente per il centro del radar ──
+  // Misura il centro dell'esagono nelle unità del viewBox dei fili e sposta
+  // lì il punto d'ancoraggio (con le sue maniglie: la curva resta morbida).
+  // I fili del fascio convergono sul nodo e poi si riaprono.
+  const alignFili = useCallback(() => {
+    const svg = filiSvgRef.current;
+    const hexSvg = hexRef.current?.querySelector(".s2o-hex__svg");
+    if (!svg || !hexSvg) return;
+    const r = svg.getBoundingClientRect();
+    const h = hexSvg.getBoundingClientRect();
+    if (!r.width || !r.height || !h.width) return;
+    const ux = ((h.left + h.width / 2 - r.left) / r.width) * 1440;
+    const uy = ((h.top + h.height / 2 - r.top) / r.height) * 900;
+    const mainA = STRANDS.find((f) => f.id === "main").pts[ANCHOR];
+    STRANDS.forEach((f, si) => {
+      const a = f.pts[ANCHOR];
+      const dx = ux + (a[0] - mainA[0]) * 0.25 - a[0];
+      const dy = uy + (a[1] - mainA[1]) * 0.25 - a[1];
+      const out = f.pts.map((p) => [...p]);
+      for (const k of [ANCHOR - 1, ANCHOR, ANCHOR + 1]) {
+        out[k][0] += dx;
+        out[k][1] += dy;
+      }
+      alignedRef.current[si] = out;
+      filiRefs.current[si]?.setAttribute("d", toD(out, new Float32Array(out.length * 2)));
+    });
+    // la sfumatura parte dal nodo
+    const off = Math.min(0.95, Math.max(0.05, ux / FADE_X2)).toFixed(3);
+    fadeStopRefs.current.forEach((st) => st?.setAttribute("offset", off));
   }, []);
+
+  // lunghezza a SCHERMO (il viewBox è deformato: preserveAspectRatio none
+  // + tratto non scalato → il tratteggio va misurato in px reali)
+  const measureLens = useCallback(() => {
+    const svg = filiSvgRef.current;
+    if (!svg) return;
+    const r = svg.getBoundingClientRect();
+    const sx = r.width / 1440;
+    const sy = r.height / 900;
+    filiRefs.current.forEach((el) => {
+      if (!el) return;
+      const L = el.getTotalLength();
+      let sum = 0;
+      let prev = el.getPointAtLength(0);
+      for (let i = 1; i <= 120; i++) {
+        const p = el.getPointAtLength((L * i) / 120);
+        sum += Math.hypot((p.x - prev.x) * sx, (p.y - prev.y) * sy);
+        prev = p;
+      }
+      lensRef.current.set(el, Math.ceil(sum) + 4);
+    });
+  }, []);
+
+  // Prima del primo paint: fili allineati e "non disegnati" (niente flash)
+  useLayoutEffect(() => {
+    alignFili();
+    measureLens();
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    gsap.set(filiRefs.current.filter(Boolean), { strokeDasharray: "0 100000", strokeDashoffset: 0 });
+  }, [alignFili, measureLens]);
+
+  useEffect(() => {
+    const sec = sectionRef.current;
+    if (!sec || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      alignFili();
+      measureLens();
+    });
+    ro.observe(sec);
+    return () => ro.disconnect();
+  }, [alignFili, measureLens]);
 
   // ── Filo vivo: il puntatore scosta i punti di controllo del fascio ──
   // Un solo tick GSAP, attivo solo mentre il mouse si muove o i fili
@@ -172,6 +256,7 @@ export default function S2Origine() {
 
     const R = 230; // raggio d'influenza (unità del viewBox)
     const PUSH = 80; // spostamento massimo
+    const pts = alignedRef.current;
     const offs = STRANDS.map((f) => new Float32Array(f.pts.length * 2));
     const mouse = { x: -9999, y: -9999, in: false };
     let rect = svg.getBoundingClientRect();
@@ -181,7 +266,7 @@ export default function S2Origine() {
       let moving = false;
       STRANDS.forEach((f, si) => {
         const o = offs[si];
-        f.pts.forEach(([x, y], i) => {
+        pts[si].forEach(([x, y], i) => {
           let tx = 0;
           let ty = 0;
           if (mouse.in) {
@@ -198,7 +283,7 @@ export default function S2Origine() {
           if (Math.abs(tx - o[j]) > 0.05 || Math.abs(ty - o[j + 1]) > 0.05) moving = true;
         });
         const el = els[si];
-        if (el) el.setAttribute("d", toD(f.pts, o));
+        if (el) el.setAttribute("d", toD(pts[si], o));
       });
       if (!moving) {
         gsap.ticker.remove(tick);
@@ -233,7 +318,7 @@ export default function S2Origine() {
       window.removeEventListener("resize", onResize);
       gsap.ticker.remove(tick);
       // a riposo quando si esce dalla sezione
-      STRANDS.forEach((f, si) => els[si]?.setAttribute("d", f.d));
+      pts.forEach((p, si) => els[si]?.setAttribute("d", toD(p, new Float32Array(p.length * 2))));
     };
   }, [live]);
   const nodeRefs = useRef([]);
@@ -289,24 +374,33 @@ export default function S2Origine() {
     const sec = sectionRef.current;
     const main = sec?.querySelectorAll("#filo-main, #filo-halo");
     const subs = sec?.querySelectorAll("#filo-sub-1, #filo-sub-2, #filo-accent");
-    // DrawSVG: il fascio si disegna da sinistra a destra, morbido
-    // a disegno finito il tratteggio si toglie: il filo può deformarsi
-    // (mouse) senza che la sua lunghezza cambi il tratteggio
+    // Il fascio si disegna da sinistra a destra (tratteggio sulla lunghezza
+    // a schermo: niente code staccate su schermi larghi o stretti). A disegno
+    // finito il tratteggio si toglie, così il filo può deformarsi col mouse.
     const undash = (t) => gsap.set(t, { strokeDasharray: "none" });
+    const len = (i, el) => lensRef.current.get(el) || 3000;
+    const dash = (i, el) => `${len(i, el)} ${len(i, el)}`;
     if (main?.length) {
       tl.fromTo(
         main,
-        { drawSVG: "0%" },
-        { drawSVG: "100%", duration: 1.6, ease: "power2.out", onComplete: () => undash(main) },
+        { strokeDasharray: dash, strokeDashoffset: len },
+        {
+          strokeDasharray: dash,
+          strokeDashoffset: 0,
+          duration: 1.6,
+          ease: "power2.out",
+          onComplete: () => undash(main),
+        },
         0
       );
     }
     if (subs?.length) {
       tl.fromTo(
         subs,
-        { drawSVG: "0%" },
+        { strokeDasharray: dash, strokeDashoffset: len },
         {
-          drawSVG: "100%",
+          strokeDasharray: dash,
+          strokeDashoffset: 0,
           duration: 1.6,
           stagger: 0.12,
           ease: "power2.out",
@@ -315,6 +409,13 @@ export default function S2Origine() {
         0.1
       );
     }
+    // il nodo d'oro sul centro del radar: si accende quando il filo arriva
+    tl.fromTo(
+      q(".s2o-hex__anchor"),
+      { opacity: 0, scale: 0.2, svgOrigin: `${CX} ${CY}` },
+      { opacity: 1, scale: 1, svgOrigin: `${CX} ${CY}`, duration: 0.55, ease: "back.out(2.2)" },
+      0.55
+    );
     tl.fromTo(
       q(".s2o-hex__path"),
       { strokeDashoffset: HEX_PERIMETER },
@@ -360,12 +461,15 @@ export default function S2Origine() {
     if (!tl) return;
     if (live) {
       morph?.pause(0);
-      tl.timeScale(1).restart();
+      // rimisura (il viewport può essere cambiato) e ricalcola i tratteggi
+      alignFili();
+      measureLens();
+      tl.invalidate().timeScale(1).restart();
     } else {
       morph?.pause();
       tl.timeScale(2).reverse();
     }
-  }, [live]);
+  }, [live, alignFili, measureLens]);
 
   const stateClass = `${entered ? " s2o--in" : ""}${live ? " s2o--live" : ""}`;
 
@@ -428,6 +532,11 @@ export default function S2Origine() {
           <div className="s2o-hex__box">
             <svg className="s2o-hex__svg" viewBox="0 0 400 400" aria-hidden="true">
               <defs>
+                <radialGradient id="s2o-anchor-glow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0" stopColor="#fff6d6" stopOpacity="0.95" />
+                  <stop offset="0.35" stopColor="#e2c974" stopOpacity="0.55" />
+                  <stop offset="1" stopColor="#d4af37" stopOpacity="0" />
+                </radialGradient>
                 <radialGradient id="s2o-hex-glow" cx="50%" cy="50%" r="50%">
                   <stop offset="0" stopColor="#e2c974" stopOpacity="0.22" />
                   <stop offset="1" stopColor="#e2c974" stopOpacity="0" />
@@ -450,13 +559,16 @@ export default function S2Origine() {
                 strokeDasharray={HEX_PERIMETER}
                 strokeDashoffset={HEX_PERIMETER}
               />
-              {/* centro */}
-              <circle className="s2o-hex__core" cx="200" cy="200" r="3" />
               {/* area dinamica delle priorità (radar) */}
               <g id="radar-shape" className="s2o-hex__radar-g">
                 {/* alone: tratto largo e tenue al posto del drop-shadow */}
                 <polygon ref={radarHaloRef} className="s2o-hex__radar-halo" points={ringPoints(0)} />
                 <polygon ref={radarRef} className="s2o-hex__radar" points={ringPoints(0)} />
+              </g>
+              {/* nodo d'ancoraggio: il filo d'oro si aggancia qui */}
+              <g className="s2o-hex__anchor">
+                <circle className="s2o-hex__anchor-glow" cx="200" cy="200" r="34" fill="url(#s2o-anchor-glow)" />
+                <circle className="s2o-hex__core" cx="200" cy="200" r="6" />
               </g>
               {/* nodi che seguono i punti del radar */}
               {HEX.map((h, i) => (
@@ -514,11 +626,27 @@ export default function S2Origine() {
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id="s2o-fili-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#b89343" stopOpacity="0.35" />
-            <stop offset="50%" stopColor="#d4af37" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#b89343" stopOpacity="0.45" />
-          </linearGradient>
+          {/* pieno fino al nodo sul radar, poi sfuma al ~28% verso l'angolo */}
+          {FILI_GRADS.map((g, i) => (
+            <linearGradient
+              key={g.id}
+              id={`s2o-fade-${g.id}`}
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1="0"
+              x2={FADE_X2}
+              y2="0"
+            >
+              <stop offset="0" stopColor={g.color} stopOpacity={g.a[0]} />
+              <stop
+                ref={(el) => (fadeStopRefs.current[i] = el)}
+                offset="0.66"
+                stopColor={g.color}
+                stopOpacity={g.a[1]}
+              />
+              <stop offset="1" stopColor={g.color} stopOpacity={g.a[2]} />
+            </linearGradient>
+          ))}
         </defs>
         {STRANDS.map((f, i) => (
           <path
