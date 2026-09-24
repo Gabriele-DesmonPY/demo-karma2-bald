@@ -29,6 +29,16 @@ const HEX = [
   { t: "Responsabilità", x: 62, y: 120, pos: "left" },
 ];
 const HEX_POINTS = HEX.map((v) => `${v.x},${v.y}`).join(" ");
+// ── Fascio di fili d'oro ("la trama delle relazioni") ──
+// 4 percorsi paralleli e sfalsati (viewBox 1440×900): attraversano la
+// sezione, passano per il centro del radar e scendono verso la Sezione 03.
+const FILI = [
+  { id: "main", d: "M 0,120 C 300,220 200,660 450,700 C 680,730 850,480 1000,400 C 1150,320 1300,530 1440,820" },
+  { id: "sub-1", d: "M 0,90 C 280,190 220,630 430,670 C 660,700 830,450 980,370 C 1130,290 1280,500 1440,790" },
+  { id: "sub-2", d: "M 0,150 C 320,250 180,690 470,730 C 700,760 870,510 1020,430 C 1170,350 1320,560 1440,850" },
+  { id: "accent", d: "M 0,110 C 350,280 150,620 440,710 C 640,780 880,430 1010,390 C 1180,310 1270,580 1440,810" },
+];
+
 const CX = 200;
 const CY = 200;
 
@@ -135,10 +145,21 @@ export default function S2Origine() {
       onComplete: () => morph.play(),
       onReverseComplete: () => morph.pause(0),
     });
+    // Fascio di fili: srotolamento a cascata (stagger), insieme all'esagono
+    const fili = sectionRef.current?.querySelectorAll(".s2o-fili__path");
+    if (fili?.length) {
+      tl.fromTo(
+        fili,
+        { strokeDashoffset: 1 },
+        { strokeDashoffset: 0, duration: 1.8, stagger: 0.08, ease: "power2.out" },
+        0
+      );
+    }
     tl.fromTo(
       q(".s2o-hex__path"),
       { strokeDashoffset: HEX_PERIMETER },
-      { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" }
+      { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" },
+      0
     )
       .fromTo(
         q(".s2o-hex__rays, .s2o-hex__ring"),
@@ -317,6 +338,34 @@ export default function S2Origine() {
           />
         </picture>
       </div>
+
+      {/* ── Fascio di fili d'oro: attraversa la sezione, tocca il radar,
+          prosegue verso la 03. Si srotola in ingresso, si riavvolge in uscita. */}
+      <svg
+        className="s2o-fili"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="none"
+        fill="none"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id="s2o-fili-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#b89343" stopOpacity="0.35" />
+            <stop offset="50%" stopColor="#d4af37" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#b89343" stopOpacity="0.45" />
+          </linearGradient>
+        </defs>
+        {FILI.map((f) => (
+          <path
+            key={f.id}
+            className={`s2o-fili__path s2o-fili__path--${f.id}`}
+            d={f.d}
+            pathLength="1"
+            strokeDasharray="1"
+            strokeDashoffset="1"
+          />
+        ))}
+      </svg>
     </section>
   );
 }

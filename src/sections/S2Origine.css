@@ -222,6 +222,45 @@
   background: rgba(198, 154, 87, 0.28);
 }
 
+/* ═══════════ Fascio di fili d'oro (sottofondo della sezione) ═══════════
+   Sopra l'atmosfera, sotto il testo. Colori calibrati per il panna: i
+   bianchi e gli ori chiarissimi sparirebbero sull'avorio. */
+.s2o .s2o-fili {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.s2o .s2o-fili__path {
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+}
+
+.s2o .s2o-fili__path--main {
+  stroke: url(#s2o-fili-grad);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.35));
+}
+
+.s2o .s2o-fili__path--sub-1 {
+  stroke: rgba(184, 147, 67, 0.4);
+  stroke-width: 1;
+}
+
+.s2o .s2o-fili__path--sub-2 {
+  stroke: rgba(184, 147, 67, 0.32);
+  stroke-width: 1.2;
+}
+
+.s2o .s2o-fili__path--accent {
+  stroke: rgba(134, 96, 42, 0.28);
+  stroke-width: 0.8;
+}
+
 /* ═══════════ Colonna destra: l'esagono dei sei concetti ═══════════ */
 .s2o .s2o-hex {
   position: relative;
@@ -561,7 +600,8 @@
     animation: none;
   }
 
-  .s2o .s2o-hex__path {
+  .s2o .s2o-hex__path,
+  .s2o .s2o-fili__path {
     stroke-dashoffset: 0;
   }
 }
