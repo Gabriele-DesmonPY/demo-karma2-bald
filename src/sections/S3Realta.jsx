@@ -48,15 +48,9 @@ const ORDER_RELATIONS = [
   ["Una nuova opportunità", "incontra priorità, risorse e visione."],
 ];
 
-// 3B · stato di "disordine" di partenza delle 5 connessioni (valori fissi:
-// stesso disordine all'andata e al ritorno)
-const DISORDER = [
-  { x: -60, y: -20, r: -2 },
-  { x: 70, y: 15, r: 1.8 },
-  { x: -45, y: -10, r: -1.2 },
-  { x: 55, y: 25, r: 2 },
-  { x: -30, y: 10, r: -1.5 },
-];
+// 3B · costellazione: scarto verticale di ogni nodo (px) — alto, basso,
+// centro-alto, basso, centro: una rotta viva, non una riga
+const CONSTELLATION_Y = [-80, 96, -48, 80, 0];
 
 const MOBILE_Q = "(max-width: 900px)";
 
@@ -158,7 +152,8 @@ export default function S3Realta() {
         gsap.set(q(".s3-reveal, .s3-card, .s3-node"), { autoAlpha: 1, y: 0, x: 0, scale: 1 });
         gsap.set(q(".s3-thread__wipe"), { y: 0, yPercent: 0 });
         gsap.set(q(".s3-thread__svg"), { y: 0, yPercent: 0 });
-        gsap.set(q(".s3b__row"), { x: 0, y: 0, rotation: 0, opacity: 1, filter: "none" });
+        gsap.set(q(".s3c-node"), { opacity: 1, scale: 1 });
+        gsap.set(q(".s3c-wire__wipe, .s3c-wire__svg"), { x: 0, xPercent: 0 });
         return;
       }
 
@@ -241,43 +236,55 @@ export default function S3Realta() {
         );
       });
 
-      // ── 3B · Mettere ordine: disordine ↔ ordine, legato allo scroll ──
-      // Il trigger è la lista delle 5 righe (non tutto il blocco dark):
-      // così l'intero riallineamento avviene mentre le righe sono in vista.
-      const rows = q(".s3b__row");
-      const disorder = {
-        // Partenza: disordine
-        x: (i) => DISORDER[i % DISORDER.length].x,
-        y: (i) => DISORDER[i % DISORDER.length].y,
-        rotation: (i) => DISORDER[i % DISORDER.length].r,
-        opacity: 0.2,
-        filter: "blur(4px)",
-      };
-      // stato di partenza applicato subito a TUTTE le righe (anche a quelle
-      // il cui tratto di stagger non è ancora iniziato)
-      gsap.set(rows, disorder);
-      gsap.fromTo(
-        rows,
-        disorder,
-        {
-          // Arrivo: allineamento perfetto
-          x: 0,
-          y: 0,
-          rotation: 0,
-          opacity: 1,
-          filter: "blur(0px)",
-          stagger: 0.1,
-          ease: "power2.out",
+      // ── 3B · Costellazione del contesto: scroll orizzontale "appeso" ──
+      // Il blocco resta fermo (sticky = pin) mentre lo scroll verticale fa
+      // scorrere in orizzontale la rotta dei 5 nodi e traccia il filo.
+      const pinEl = q(".s3c")[0];
+      const track = q(".s3c-track")[0];
+      if (pinEl && track) {
+        const tlC = gsap.timeline({
+          defaults: { ease: "none" },
           scrollTrigger: {
-            trigger: q(".s3b__list")[0],
+            trigger: pinEl,
             scroller,
-            start: "top 88%",
-            end: "center center",
-            scrub: 1.2,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 1,
             invalidateOnRefresh: true,
           },
-        }
-      );
+        });
+        // A. il filo d'oro si traccia (tendina a due transform: niente
+        //    stroke-dashoffset ridisegnato a ogni frame)
+        tlC.fromTo(q(".s3c-wire__wipe"), { x: 0, xPercent: -100 }, { xPercent: 0 }, 0); // x:0 azzera il translate del CSS
+        tlC.fromTo(q(".s3c-wire__svg"), { x: 0, xPercent: 100 }, { xPercent: 0 }, 0);
+        // B. la rotta trasla in orizzontale
+        tlC.fromTo(
+          track,
+          { x: 0 },
+          { x: () => -Math.max(0, track.scrollWidth - window.innerWidth + 200) },
+          0
+        );
+        // C. ogni nodo si accende quando arriva verso il centro
+        q(".s3c-node").forEach((node) => {
+          gsap.fromTo(
+            node,
+            { scale: 0.8, opacity: 0.3 },
+            {
+              scale: 1,
+              opacity: 1,
+              ease: "none",
+              scrollTrigger: {
+                trigger: node,
+                scroller,
+                containerAnimation: tlC,
+                start: "left 80%",
+                end: "left 40%",
+                scrub: true,
+              },
+            }
+          );
+        });
+      }
     }, section);
 
     ScrollTrigger.refresh();
@@ -383,32 +390,63 @@ export default function S3Realta() {
       </div>
       </div>
 
-      {/* ═══ FASE B (3B) — Il contesto dà significato alla scelta ═══
-          Contenitore a tutta larghezza, separato dalla Fase A: l'immagine
-          dark luxury vive SOLO qui, su un livello di fondo con maschera che
-          la fa emergere dal navy della 3A. */}
-      <div className="s3b">
-        <div className="s3b__bg" aria-hidden="true" />
-        <div className="s3b__inner">
-          <p className="s3__tag s3__tag--light s3b__tag s3-reveal">
-            <span>Mettere ordine</span>
-            <span className="s3__tag-sep" aria-hidden="true">·</span>
-            <span>Connessioni</span>
-          </p>
-          <h2 className="s3b__title s3-reveal">
-            Il contesto dà significato <em>alla scelta</em>
-          </h2>
+      {/* ═══ FASE B (3B) — "Sinfonia liquida del contesto" ═══
+          Traccia alta (durata dello scroll) con un palco appeso: il fondo
+          dark luxury, il titolo fisso in alto a sinistra, il filo d'oro e la
+          costellazione dei 5 incontri che scorre in orizzontale. */}
+      <div className="s3b s3c">
+        <div className="s3c__stage">
+          <div className="s3b__bg" aria-hidden="true" />
 
-          <ul className="s3b__list">
-            {ORDER_RELATIONS.map(([concept, connection]) => (
-              <li className="s3b__row" key={concept}>
-                <span className="s3b__concept">{concept}</span>
-                <span className="s3b__connection">{connection}</span>
+          <header className="s3c__head">
+            <p className="s3__tag s3__tag--light s3c__tag">
+              <span>03</span>
+              <span className="s3__tag-sep" aria-hidden="true">·</span>
+              <span>Il contesto</span>
+            </p>
+            <h2 className="s3c__title">
+              Il contesto dà significato <em>alla scelta</em>
+            </h2>
+          </header>
+
+          {/* il filo d'oro che attraversa lo schermo */}
+          <div className="s3c-wire" aria-hidden="true">
+            <div className="s3c-wire__wipe">
+              <svg className="s3c-wire__svg" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="s3c-gold" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stopColor="#B89343" />
+                    <stop offset="0.25" stopColor="#E2C974" />
+                    <stop offset="0.5" stopColor="#B89343" />
+                    <stop offset="0.75" stopColor="#E2C974" />
+                    <stop offset="1" stopColor="#B89343" />
+                  </linearGradient>
+                </defs>
+                <path
+                  className="s3c-wire__path"
+                  d="M 100,500 C 400,200 700,800 1000,400 C 1300,100 1600,700 1900,500"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* la costellazione dei 5 incontri */}
+          <ol className="s3c-track">
+            {ORDER_RELATIONS.map(([concept, connection], i) => (
+              <li className="s3c-slot" key={concept} style={{ "--dy": `${CONSTELLATION_Y[i]}px` }}>
+                <div className="s3c-node">
+                  <h3 className="s3c-node__title">
+                    <span className="s3c-node__dot" aria-hidden="true" />
+                    {concept}
+                  </h3>
+                  <p className="s3c-node__text">{connection}</p>
+                </div>
               </li>
             ))}
-          </ul>
-
-          <p className="s3b__epilogue s3-reveal">Ogni scelta entra nella vita dell’impresa.</p>
+            <li className="s3c-slot s3c-slot--end">
+              <p className="s3c-epilogue">Ogni scelta entra nella vita dell’impresa.</p>
+            </li>
+          </ol>
         </div>
       </div>
     </section>

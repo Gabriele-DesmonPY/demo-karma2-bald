@@ -22,7 +22,7 @@
   position: relative;
   isolation: isolate;
   min-height: 100vh;
-  overflow: hidden;
+  overflow: clip;               /* clip, non hidden: lascia funzionare lo sticky della 3B */
   color: var(--s3-ink);
 
   background-color: var(--s3-navy);
@@ -321,19 +321,25 @@
   color: rgba(253, 251, 247, 0.82);
 }
 
-/* ═══════════ 3B — "Il contesto dà significato alla scelta" ═══════════
-   Contenitore a tutta larghezza: il fondo fotografico vive SOLO qui. */
-.s3 .s3b {
+/* ═══════════ 3B — "Sinfonia liquida del contesto" ═══════════
+   Traccia alta = durata dello scroll orizzontale (100vh di palco + 250vh
+   di corsa, come l'end "+=250%"). Il palco resta appeso (sticky = pin). */
+.s3 .s3c {
   position: relative;
-  isolation: isolate;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
+  height: 350vh;
   background-color: var(--s3-navy);
+}
+
+.s3 .s3c__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
 }
 
 /* Livello immagine, statico, senza filtri. La maschera in alto la fa
@@ -360,84 +366,161 @@
   transform: translateZ(0);
 }
 
-.s3 .s3b__inner {
-  position: relative;
-  width: 100%;
-  max-width: 980px;
-  margin-inline: auto;
-  padding: clamp(120px, 20vh, 200px) clamp(20px, 6vw, 72px) 128px;   /* pb-32 */
+/* Titolo fisso in alto a sinistra (sotto l'header del sito) */
+.s3 .s3c__head {
+  position: absolute;
+  z-index: 3;
+  top: clamp(96px, 13vh, 132px);
+  left: clamp(20px, 6vw, 96px);
+  max-width: min(88vw, 760px);
+  pointer-events: none;
 }
 
-.s3 .s3b__tag {
-  justify-content: center;
+.s3 .s3c__tag {
+  margin-bottom: 10px;
 }
 
-.s3 .s3b__title {
-  margin: 0 0 clamp(40px, 7vh, 72px);
+.s3 .s3c__title {
+  margin: 0;
   font-family: var(--s3-serif);
   font-weight: 500;
-  font-size: clamp(2.3rem, min(4.8vw, 8vh), 4.6rem);
-  line-height: 1.02;
-  letter-spacing: -0.015em;
-  text-align: center;
+  font-size: clamp(1.9rem, min(3.8vw, 6.4vh), 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.012em;
   color: var(--s3-ivory);
-  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(6, 10, 20, 0.6);
 }
 
-.s3 .s3b__title em {
+.s3 .s3c__title em {
   font-style: italic;
-  letter-spacing: -0.01em;
-}
-
-/* Le 5 connessioni, incolonnate al centro */
-.s3 .s3b__list {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
-}
-
-.s3 .s3b__row {
-  will-change: transform, opacity;   /* disordine ↔ ordine in scrub */
-  backface-visibility: hidden;
-  display: grid;
-  grid-template-columns: minmax(200px, 0.85fr) 1.6fr;
-  gap: clamp(20px, 3vw, 40px);
-  align-items: baseline;
-  padding: clamp(18px, 2.8vh, 26px) 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.s3 .s3b__row:first-child {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.s3 .s3b__concept {
-  font-family: var(--s3-serif);
-  font-style: italic;
-  font-weight: 500;
-  font-size: clamp(1.4rem, 2vw, 1.85rem);
-  line-height: 1.2;
+  font-weight: 400;
   color: #e2c974;
-  text-shadow: 0 0 18px rgba(226, 201, 116, 0.25);   /* luce statica */
 }
 
-.s3 .s3b__connection {
-  font-family: var(--s3-sans);
-  font-size: clamp(0.98rem, 1.12vw, 1.08rem);
-  font-weight: 500;
-  line-height: 1.65;
-  color: rgba(253, 251, 247, 0.9);
+/* Il filo d'oro: tendina orizzontale a due transform opposte */
+.s3 .s3c-wire {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.s3 .s3b__epilogue {
-  margin: clamp(64px, 11vh, 112px) 0 0;
+.s3 .s3c-wire__wipe {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translate3d(-100%, 0, 0);
+  will-change: transform;
+}
+
+.s3 .s3c-wire__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: translate3d(100%, 0, 0);
+  will-change: transform;
+  filter: drop-shadow(0 0 5px rgba(226, 201, 116, 0.45));   /* statico, su layer */
+}
+
+.s3 .s3c-wire__path {
+  fill: none;
+  stroke: url(#s3c-gold);
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.75;
+}
+
+/* La rotta dei 5 incontri */
+.s3 .s3c-track {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: clamp(128px, 16vw, 256px);            /* space-x-32 → md:space-x-64 */
+  width: max-content;
+  margin: 0;
+  padding: 0 clamp(96px, 12vw, 200px);
+  list-style: none;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.s3 .s3c-slot {
+  flex: none;
+  transform: translate3d(0, var(--dy, 0px), 0);   /* alto / basso: costellazione */
+}
+
+.s3 .s3c-node {
+  max-width: 21rem;
+  will-change: transform, opacity;
+  transform-origin: 0% 50%;
+}
+
+.s3 .s3c-node__title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 10px;
   font-family: var(--s3-serif);
   font-style: italic;
   font-weight: 500;
-  font-size: clamp(1.9rem, min(3.6vw, 6vh), 3.2rem);
-  line-height: 1.15;
-  text-align: center;
+  font-size: clamp(1.9rem, min(2.8vw, 5vh), 2.6rem);
+  line-height: 1.1;
+  white-space: nowrap;
+  color: #ecd9a3;
+  transition: color 400ms ease;
+}
+
+.s3 .s3c-node__dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #e2c974 55%, #b89343 100%);
+  box-shadow: 0 0 12px #d4af37;
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.s3 .s3c-node__text {
+  margin: 0;
+  max-width: 20rem;
+  padding-left: 28px;
+  font-family: var(--s3-sans);
+  font-size: clamp(0.92rem, 1.05vw, 1.05rem);
+  font-weight: 300;
+  line-height: 1.65;
+  color: rgba(214, 216, 222, 0.85);
+  transition: color 400ms ease;
+}
+
+/* reattività al passaggio del mouse */
+.s3 .s3c-node:hover .s3c-node__dot {
+  transform: scale(1.5);
+}
+
+.s3 .s3c-node:hover .s3c-node__title {
+  color: #e2c974;
+}
+
+.s3 .s3c-node:hover .s3c-node__text {
+  color: #fff;
+}
+
+/* Chiusura in fondo alla rotta */
+.s3 .s3c-slot--end {
+  padding-right: 6vw;
+}
+
+.s3 .s3c-epilogue {
+  margin: 0;
+  max-width: 16ch;
+  font-family: var(--s3-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(2rem, min(3.4vw, 6vh), 3.2rem);
+  line-height: 1.12;
   color: var(--s3-ivory);
 }
 
@@ -502,13 +585,21 @@
     font-size: clamp(1.8rem, 8vw, 2.4rem);
   }
 
-  .s3 .s3b__inner {
-    padding: 96px 20px 128px;
+  .s3 .s3c-track {
+    gap: 22vw;
+    padding: 0 14vw;
   }
 
-  .s3 .s3b__row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+  .s3 .s3c-slot {
+    transform: translate3d(0, calc(var(--dy, 0px) * 0.6), 0);
+  }
+
+  .s3 .s3c-node {
+    max-width: 72vw;
+  }
+
+  .s3 .s3c-node__title {
+    font-size: 1.7rem;
   }
 }
 
@@ -522,7 +613,9 @@
   }
 
   .s3 .s3-thread__wipe,
-  .s3 .s3-thread__svg {
+  .s3 .s3-thread__svg,
+  .s3 .s3c-wire__wipe,
+  .s3 .s3c-wire__svg {
     transform: none;
   }
 }
