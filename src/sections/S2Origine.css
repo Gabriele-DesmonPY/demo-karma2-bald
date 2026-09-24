@@ -309,11 +309,13 @@
 
 /* #radar-shape e .radar-node: origine al centro; niente transform CSS, altrimenti
    sovrascriverebbe la scala che GSAP scrive come attributo SVG */
-#radar-shape,
-.s2o .radar-node {
+#radar-shape {
   transform-origin: center center;
-  transform-box: fill-box;
   will-change: transform, opacity;
+}
+
+.s2o .radar-node {
+  will-change: opacity;
 }
 
 .s2o .s2o-hex__path {

@@ -449,10 +449,13 @@ export default function S2Origine() {
         },
         0.75
       )
+      // i nodi sbocciano sul raggio (attr r), NON in scala: sono punti che
+      // il loop sposta di continuo (cx/cy) e una scala con origine fissata
+      // lascerebbe una traslazione residua al rientro → nodi fuori dai vertici
       .fromTo(
         q(".radar-node"),
-        { scale: 0, opacity: 0, transformOrigin: "50% 50%" },
-        { scale: 1, opacity: 1, stagger: 0.05, duration: 0.4, ease: "back.out(2)" },
+        { attr: { r: 0 }, opacity: 0 },
+        { attr: { r: 4 }, opacity: 1, stagger: 0.05, duration: 0.4, ease: "back.out(2)" },
         "-=0.3"
       )
       .fromTo(
