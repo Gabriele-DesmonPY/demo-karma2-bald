@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import SiteFooter from "../components/SiteFooter";
 import "./S4Seme.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -65,230 +66,58 @@ const KEYWORDS = [
   { t: "Direzione", x: 50, y: 9, d: "-3.2s" },
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   CHIUSURA — LA TRAMA DEL BISSO
-   Il filo d'oro che scende dalla pillola "Poi la scelta comincia a
-   vivere" non si interrompe: entra in un palco sticky a tutta viewport
-   e, con lo scroll (scrub bidirezionale), se ne staccano micro-fili
-   (orditi) che si aprono a ventaglio fino ai bordi; poi le trame (fili
-   orizzontali) partono dal filo maestro e attraversano gli orditi. Il
-   risultato è un tessuto d'oro fluido, come la seta marina.
-
-   Geometria procedurale (seed fisso: sempre lo stesso disegno) generata
-   in coordinate PIXEL: il viewBox coincide con la misura reale del palco
-   (ResizeObserver), quindi le lunghezze misurate con getTotalLength
-   sono esatte e lo stroke-dashoffset rivela i fili senza errori.
-   Un unico SVG sul suo livello; si anima solo stroke-dashoffset (fili)
-   e opacity (velatura d'oro finale). Nessun filtro.
-   ═══════════════════════════════════════════════════════════════ */
-
-// Tavolozza oro (dal più chiaro al più brunito)
-const GOLD = ["#F3E5AB", "#E2C974", "#D4AF37", "#B89343"];
-
-// Generatore pseudo-casuale deterministico (mulberry32)
-const rng = (seed) => () => {
-  seed |= 0;
-  seed = (seed + 0x6d2b79f5) | 0;
-  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-};
-
-// Punti → path (polilinea fitta: a questa scala è una curva morbida)
-const toD = (pts) => pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("");
-
-/**
- * Disegna la trama per un palco W×H (pixel). Restituisce i fili con i
- * loro tempi sulla timeline, espressi in "viewport di scroll":
- * 0 → 0.75 il palco sta entrando (la punta del filo resta al 75% dello
- * schermo, in continuità con lo stelo sopra); da 0.75 a `total` il palco
- * è fermo (sticky) e il tessuto si compone.
- */
-function buildWeave(W, H, total, mainW) {
-  const rand = rng(1729);
-  const r = (a, b) => a + rand() * (b - a);
-  const mobile = W < 700;
-  const cx = W / 2;
-  const P = total - 0.75; // durata della fase ferma
-  const p = (x) => 0.75 + x * P;
-
-  // Drappeggio comune: lo stesso campo di spostamento deforma orditi e
-  // trame, così la griglia ondeggia come un unico tessuto.
-  // Onde lunghe e diagonali (seta che scorre) + un'increspatura fine.
-  const dX = (x, y) => 11 * Math.sin(y / 230 + x / 560) + 3 * Math.sin(y / 91 + x / 400 + 1.3);
-  const dY = (x, y) => 17 * Math.sin(x / 310 + y / 380) + 6 * Math.sin(x / 150 - y / 260 + 0.7);
-
-  // Filo maestro: parte verticale al centro (tangente verticale, come lo
-  // stelo sopra) e ondeggia appena scendendo.
-  const mainX = (y) => cx + 5 * (1 - Math.cos((2 * Math.PI * y) / (H * 0.9))) * 0.5 * Math.sin(y / 260);
-  const mainPts = [];
-  for (let y = 0; y <= H + 2; y += 8) mainPts.push([mainX(y), y]);
-  const mainD = toD(mainPts);
-
-  // tempo in cui la punta del filo maestro raggiunge la quota y
-  const tipAt = (y) => (y <= 0.75 * H ? y / H : 0.75 + ((y / H - 0.75) / 0.25) * 0.12 * P);
-
-  const threads = [];
-  threads.push({ d: mainD, w: 6, c: "#D4AF37", o: 0.1, t0: 0, t1: 0.75, t2: p(0.12), main: true });
-  // stesso spessore dello stelo CSS (misurato): il raccordo non si vede
-  threads.push({ d: mainD, w: mainW, c: "#E2C974", o: 1, t0: 0, t1: 0.75, t2: p(0.12), main: true });
-
-  // Compagni: fili sottili accostati al maestro che se ne staccano piano
-  const nComp = mobile ? 4 : 6;
-  for (let i = 0; i < nComp; i++) {
-    const side = i % 2 ? 1 : -1;
-    const off = side * r(2.5, 6);
-    const peel = r(0.18, 0.42) * H; // quota in cui si allontanano
-    const drift = side * r(0.05, 0.16) * W;
-    const pts = [];
-    const y0 = r(0.02, 0.08) * H;
-    for (let y = y0; y <= H + 2; y += 8) {
-      // nasce SUL filo maestro e se ne scosta piano (nessun inizio a vuoto)
-      const a = Math.min(1, (y - y0) / 90);
-      const k = y < peel ? 0 : Math.min(1, (y - peel) / (0.45 * H));
-      const e = k * k * (3 - 2 * k); // smoothstep
-      pts.push([mainX(y) + a * a * (off + 2 * Math.sin(y / 70 + i)) + drift * e + e * dX(cx, y), y]);
-    }
-    const t0 = tipAt(pts[0][1]) + 0.04;
-    threads.push({ d: toD(pts), w: r(0.6, 0.9), c: GOLD[i % 2 ? 0 : 1], o: r(0.35, 0.55), t0, dur: r(0.7, 0.95) });
-  }
-
-  // Orditi: si staccano dal maestro e si aprono a ventaglio fino alla
-  // loro colonna, poi scendono (i più esterni partono più in alto).
-  const nWarp = mobile ? 16 : 30;
-  const span = W * (mobile ? 1.04 : 0.98);
-  const step = span / nWarp;
-  const maxDx = span / 2;
-  const warpY0 = [];
-  const warps = []; // per le diramazioni fini dell'ultima fase
-  for (let i = 0; i < nWarp; i++) {
-    const xi = cx - span / 2 + step * (i + 0.5) + r(-0.12, 0.12) * step;
-    const dx = xi - cx;
-    const f = Math.abs(dx) / maxDx; // 0 al centro → 1 ai bordi
-    // in verticale (mobile) il ventaglio è più raccolto: il tessuto ha spazio
-    const yb = (0.05 + (1 - f) * (mobile ? 0.2 : 0.3) + r(0, 0.05)) * H; // punto di distacco
-    const dy = Math.max((mobile ? 0.1 : 0.12) * H, Math.abs(dx) * (mobile ? 0.75 : 0.5)); // lunghezza del ventaglio
-    const ya = Math.min((mobile ? 0.48 : 0.62) * H, yb + dy); // arrivo sulla colonna
-    warpY0.push(ya);
-    const pts = [];
-    // tratto a S: tangente verticale sia al distacco sia all'arrivo
-    for (let s = 0; s <= 1.0001; s += 1 / 36) {
-      const u = 1 - s;
-      const x0 = mainX(yb);
-      const bx = u * u * u * x0 + 3 * u * u * s * x0 + 3 * u * s * s * xi + s * s * s * xi;
-      const by = u * u * u * yb + 3 * u * u * s * (yb + (ya - yb) * 0.55) + 3 * u * s * s * (yb + (ya - yb) * 0.45) + s * s * s * ya;
-      pts.push([bx, by]);
-    }
-    // discesa: il drappeggio entra gradualmente (nessuno spigolo)
-    const amp = r(1.5, 4);
-    const lam = r(170, 320);
-    const ph = r(0, 6.28);
-    for (let y = ya + 8; y <= H + 4; y += 8) {
-      const k = Math.min(1, (y - ya) / 140);
-      pts.push([xi + k * (dX(xi, y) + amp * Math.sin((y - ya) / lam * 6.28 + ph) - amp * Math.sin(ph)), y]);
-    }
-    const t0 = tipAt(yb) + 0.03;
-    warps.push({ xi, ya, amp, lam, ph });
-    threads.push({
-      d: toD(pts),
-      w: r(0.6, 1.15) * (1 - f * 0.25),
-      c: GOLD[Math.floor(r(0, 4))],
-      o: r(0.42, 0.72) * (1 - f * 0.35),
-      t0,
-      dur: r(0.5, 0.65) + f * 0.3,
-    });
-  }
-
-  // Fili vaganti: pochi, diagonali, attraversano l'ordito
-  const nStray = mobile ? 2 : 4;
-  for (let i = 0; i < nStray; i++) {
-    const side = i % 2 ? 1 : -1;
-    const y0 = r(0.22, 0.4) * H;
-    const x1 = cx + side * r(0.28, 0.46) * W;
-    const pts = [];
-    for (let s = 0; s <= 1.0001; s += 1 / 60) {
-      const e = s * s * (3 - 2 * s);
-      const y = y0 + s * (H + 4 - y0);
-      // curva a S che ondeggia col drappeggio: un filo di seta sciolto
-      pts.push([mainX(y) + (x1 - mainX(y0)) * e + (dX(cx + (x1 - cx) * e, y) + 14 * Math.sin(s * 5 + i)) * s, y]);
-    }
-    threads.push({ d: toD(pts), w: 0.6, c: GOLD[0], o: 0.2, t0: p(0.04 + i * 0.07), dur: 0.45 * P });
-  }
-
-  // Trame: righe orizzontali dal filo maestro verso i due bordi, sempre
-  // più fitte verso il basso; piccola ondulazione alternata (sopra/sotto
-  // l'ordito) + lo stesso drappeggio degli orditi.
-  const nWeft = mobile ? 17 : 18;
-  const yTop = Math.max((mobile ? 0.42 : 0.5) * H, Math.max(...warpY0) - 0.04 * H);
-  const yBot = 0.975 * H;
-  for (let j = 0; j < nWeft; j++) {
-    const u = j / (nWeft - 1);
-    const yj = yTop + (yBot - yTop) * (1 - Math.pow(1 - u, 1.45));
-    const phase = j % 2 ? Math.PI : 0;
-    const wy = (x) => yj + dY(x, yj) + 1.3 * Math.sin((Math.PI * (x - cx)) / step + phase);
-    const w = r(0.6, 1.0);
-    // le prime righe sono appena accennate, poi il tessuto si fa pieno
-    const o = r(0.45, 0.8) * (0.4 + 0.6 * Math.pow(u, 0.6));
-    const t0 = p(0.1 + 0.56 * u);
-    // un terzo delle righe ha un secondo capo accostato (filato doppio)
-    const plies = rand() < 0.35 ? [0, r(2.2, 3.2)] : [0];
-    for (const off of plies) {
-      for (const side of [-1, 1]) {
-        const pts = [];
-        const x0 = mainX(yj);
-        for (let x = x0; side < 0 ? x >= -4 : x <= W + 4; x += side * 6) pts.push([x, wy(x) + off]);
-        threads.push({
-          d: toD(pts),
-          w: off ? 0.55 : w,
-          o: off ? o * 0.5 : o,
-          t0: t0 + (side > 0 ? 0.015 : 0) + (off ? 0.03 : 0),
-          dur: 0.26 * P,
-          grad: side < 0 ? "l" : "r",
-        });
-      }
-    }
-  }
-
-  // Moltiplicazione: nell'ultima fase molti orditi si sdoppiano e un
-  // filo più sottile scivola a metà strada verso il vicino: il tessuto
-  // si infittisce senza fili che nascono dal nulla.
-  for (let i = 0; i < warps.length - 1; i++) {
-    if (rand() < (mobile ? 0.45 : 0.25)) continue;
-    const a = warps[i];
-    const b = warps[i + 1];
-    const ys = Math.max(a.ya + 40, r(0.52, 0.7) * H); // punto di sdoppiamento
-    const xm = (a.xi + b.xi) / 2 + r(-0.12, 0.12) * (b.xi - a.xi);
-    const warpX = (y) => a.xi + Math.min(1, (y - a.ya) / 140) * (dX(a.xi, y) + a.amp * Math.sin((y - a.ya) / a.lam * 6.28 + a.ph) - a.amp * Math.sin(a.ph));
-    const pts = [];
-    for (let y = ys; y <= H + 4; y += 8) {
-      const k = Math.min(1, (y - ys) / 120);
-      const e = k * k * (3 - 2 * k);
-      const target = xm + dX(xm, y);
-      pts.push([warpX(y) + (target - warpX(y)) * e, y]);
-    }
-    const f = Math.abs(xm - cx) / maxDx;
-    threads.push({
-      d: toD(pts),
-      w: 0.55,
-      c: GOLD[i % 2 ? 0 : 1],
-      o: r(0.28, 0.45) * (1 - f * 0.35),
-      t0: p(0.45 + 0.3 * rand()),
-      dur: 0.3 * P,
-    });
-  }
-
-  return threads;
-}
-
 export default function S4Seme() {
   const sectionRef = useRef(null);
   const screenRef = useRef(null);
   const videoRef = useRef(null);
   const revRef = useRef(null);
   const mediaRef = useRef(null);
-  const weaveRef = useRef(null);
-  const weaveStageRef = useRef(null);
-  const weaveSvgRef = useRef(null);
+  const magnetRef = useRef(null);
+  const btnRef = useRef(null);
+
+  // Il bottone della CTA porta ai contatti: scorrimento morbido fino al
+  // footer, dentro la slide (la finestra non scorre).
+  const toFooter = (e) => {
+    const footer = document.getElementById("contatti");
+    const scroller = footer?.closest(".sandbox-slide");
+    if (!footer || !scroller) return;
+    e.preventDefault();
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    scroller.scrollTo({ top: footer.offsetTop, behavior: reduced ? "auto" : "smooth" });
+  };
+
+  // Bottone "magnetico": segue il puntatore di pochi px (solo transform),
+  // poi torna al suo posto con un ritorno elastico. Solo mouse/trackpad.
+  useEffect(() => {
+    const area = magnetRef.current;
+    const btn = btnRef.current;
+    if (!area || !btn) return;
+    const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!fine || reduced) return;
+
+    const MAX = 10; // spostamento massimo (px)
+    const xTo = gsap.quickTo(btn, "x", { duration: 0.5, ease: "power3.out" });
+    const yTo = gsap.quickTo(btn, "y", { duration: 0.5, ease: "power3.out" });
+    const onMove = (e) => {
+      const r = btn.getBoundingClientRect();
+      const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2 + 40);
+      const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2 + 40);
+      xTo(gsap.utils.clamp(-1, 1, dx) * MAX);
+      yTo(gsap.utils.clamp(-1, 1, dy) * MAX * 0.6);
+    };
+    const onLeave = () => {
+      gsap.to(btn, { x: 0, y: 0, duration: 0.9, ease: "elastic.out(1, 0.45)", overwrite: true });
+    };
+    area.addEventListener("pointermove", onMove);
+    area.addEventListener("pointerleave", onLeave);
+    return () => {
+      area.removeEventListener("pointermove", onMove);
+      area.removeEventListener("pointerleave", onLeave);
+      gsap.killTweensOf(btn);
+      gsap.set(btn, { clearProps: "transform" });
+    };
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -317,7 +146,6 @@ export default function S4Seme() {
         gsap.set(q(".s4-anim"), { autoAlpha: 1, scale: 1, y: 0, filter: "none" });
         gsap.set(q(".s4-bud__text"), { yPercent: -50 });
         gsap.set(q(".s4__scrim"), { autoAlpha: 1 });
-        gsap.set(q(".s4-after__stem"), { scaleY: 1 });
       };
 
       if (reduced) {
@@ -351,6 +179,15 @@ export default function S4Seme() {
       const run = () => {
         if (running) return;
         running = true;
+        // La sequenza parte con la schermata già al 90% in vista, ma uno
+        // scroll può essere ancora in corso (es. scroll morbido dal footer).
+        // Il blocco mette la slide in overflow: clip (Lenis) e scrollTop
+        // leggerebbe 0 mentre l'offset reale resta, desincronizzando Lenis:
+        // allo sblocco la slide resterebbe a pochi px dalla cima e la rotella
+        // non tornerebbe più alla 03. La portiamo esattamente in cima.
+        if (scroller && scroller.scrollTop > 0 && scroller.scrollTop < scroller.clientHeight * 0.25) {
+          scroller.scrollTop = 0;
+        }
         lock();
 
         // 1. Video dall'inizio, accelerato
@@ -495,9 +332,9 @@ export default function S4Seme() {
       };
       window.addEventListener("deck:slide", onSlide);
 
-      // Il copy sotto il video: dissolvenza leggera legata allo scroll
+      // La CTA sopra la texture del Bisso: dissolvenza leggera legata allo scroll
       if (scroller) {
-        q(".s4-after__item").forEach((el) => {
+        q(".s4-cta__item").forEach((el) => {
           gsap.fromTo(
             el,
             { autoAlpha: 0, y: 28 },
@@ -510,18 +347,6 @@ export default function S4Seme() {
           );
         });
 
-        // Lo stelo d'oro sotto la pillola: si allunga con lo scroll e la
-        // sua punta resta al 75% dello schermo, dove la raccoglie il filo
-        // maestro della trama (stessa regola: continuità senza stacchi).
-        gsap.fromTo(
-          q(".s4-after__stem"),
-          { scaleY: 0 },
-          {
-            scaleY: 1,
-            ease: "none",
-            scrollTrigger: { trigger: q(".s4-after__stem")[0], scroller, start: "top 75%", end: "bottom 75%", scrub: true },
-          }
-        );
       }
     }, section);
 
@@ -536,121 +361,8 @@ export default function S4Seme() {
     };
   }, []);
 
-  // ── Chiusura: la trama del Bisso (scrub bidirezionale) ──
-  useEffect(() => {
-    const block = weaveRef.current;
-    const stage = weaveStageRef.current;
-    const svg = weaveSvgRef.current;
-    if (!block || !stage || !svg) return;
-    const scroller = block.closest(".sandbox-slide");
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const NS = "http://www.w3.org/2000/svg";
-
-    let ctx;
-    let lastW = 0;
-    let lastH = 0;
-    let timer;
-
-    const build = () => {
-      const W = Math.round(stage.clientWidth);
-      const H = Math.round(stage.clientHeight);
-      if (!W || !H || (W === lastW && H === lastH)) return;
-      lastW = W;
-      lastH = H;
-
-      // progresso attuale: dopo un resize la trama riparte dallo stesso punto
-      ctx?.revert();
-
-      // durata in "viewport di scroll": entrata (0.75) + fase ferma
-      const blockVh = block.offsetHeight / H;
-      const total = 0.75 + Math.max(0.6, blockVh - 1);
-      const stem = block.parentElement?.querySelector(".s4-after__stem");
-      const mainW = stem ? stem.getBoundingClientRect().width || 2 : 2;
-      const threads = buildWeave(W, H, total, mainW);
-
-      // viewBox = pixel reali: lunghezze esatte, niente preserveAspectRatio
-      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.setAttribute("width", W);
-      svg.setAttribute("height", H);
-      svg.replaceChildren();
-
-      // sfumature delle trame: più luminose sul filo maestro, brunite ai bordi
-      const defs = document.createElementNS(NS, "defs");
-      defs.innerHTML =
-        `<linearGradient id="s4w-l" gradientUnits="userSpaceOnUse" x1="${W / 2}" y1="0" x2="0" y2="0">` +
-        `<stop offset="0" stop-color="#F3E5AB"/><stop offset="0.55" stop-color="#E2C974" stop-opacity="0.8"/>` +
-        `<stop offset="1" stop-color="#B89343" stop-opacity="0.35"/></linearGradient>` +
-        `<linearGradient id="s4w-r" gradientUnits="userSpaceOnUse" x1="${W / 2}" y1="0" x2="${W}" y2="0">` +
-        `<stop offset="0" stop-color="#F3E5AB"/><stop offset="0.55" stop-color="#E2C974" stop-opacity="0.8"/>` +
-        `<stop offset="1" stop-color="#B89343" stop-opacity="0.35"/></linearGradient>`;
-      svg.appendChild(defs);
-
-      // prima trame e orditi, in cima il filo maestro (alone + filo)
-      const order = [...threads.filter((t) => !t.main), ...threads.filter((t) => t.main)];
-      const els = order.map((t) => {
-        const el = document.createElementNS(NS, "path");
-        el.setAttribute("d", t.d);
-        el.setAttribute("fill", "none");
-        el.setAttribute("stroke", t.grad ? `url(#s4w-${t.grad})` : t.c);
-        el.setAttribute("stroke-width", t.w.toFixed(2));
-        el.setAttribute("stroke-opacity", t.o.toFixed(2));
-        el.setAttribute("stroke-linecap", "butt");
-        svg.appendChild(el);
-        return el;
-      });
-
-      ctx = gsap.context(() => {
-        const sheen = stage.querySelector(".s4-weave__sheen");
-        if (reduced || !scroller) {
-          gsap.set(sheen, { opacity: 1 });
-          return; // stato finale statico: tessuto completo
-        }
-
-        const tl = gsap.timeline({
-          defaults: { ease: "none" },
-          scrollTrigger: { trigger: block, scroller, start: "top 75%", end: "bottom bottom", scrub: true },
-        });
-
-        order.forEach((t, i) => {
-          const el = els[i];
-          // +2 / +1: a riposo il bordo del tratto cade dentro la pausa,
-          // così non resta nessun puntino all'inizio del filo
-          const len = el.getTotalLength() + 2;
-          gsap.set(el, { strokeDasharray: `${len} ${len}`, strokeDashoffset: len + 1 });
-          if (t.main) {
-            // la punta segue lo schermo mentre il palco entra, poi completa
-            tl.to(el, { strokeDashoffset: len * 0.25, duration: t.t1 - t.t0 }, t.t0);
-            tl.to(el, { strokeDashoffset: 0, duration: t.t2 - t.t1 }, t.t1);
-          } else {
-            tl.to(el, { strokeDashoffset: 0, duration: t.dur, ease: "sine.inOut" }, t.t0);
-          }
-        });
-
-        // la velatura d'oro sale quando il tessuto si infittisce
-        tl.fromTo(sheen, { opacity: 0 }, { opacity: 1, duration: (total - 0.75) * 0.5 }, 0.75 + (total - 0.75) * 0.5);
-        tl.set({}, {}, total); // la timeline dura esattamente quanto lo scroll
-      }, block);
-
-      ScrollTrigger.refresh();
-    };
-
-    build();
-    // ricalcolo solo quando il palco cambia misura (debounce)
-    const ro = new ResizeObserver(() => {
-      clearTimeout(timer);
-      timer = setTimeout(build, 160);
-    });
-    ro.observe(stage);
-
-    return () => {
-      ro.disconnect();
-      clearTimeout(timer);
-      ctx?.revert();
-      svg.replaceChildren();
-    };
-  }, []);
-
   return (
+    <div className="s4-root">
     <section ref={sectionRef} className="s4" id="seme" data-n="4" aria-labelledby="s4-title">
       {/* Schermata del seme: una viewport, il video e i testi a tempo */}
       <div ref={screenRef} className="s4__screen">
@@ -740,36 +452,30 @@ export default function S4Seme() {
           </header>
       </div>
 
-      {/* ── "Il filo vivo": il copy continua sotto, in scroll normale ── */}
-      <div className="s4-after">
-        <div className="s4-after__glow" aria-hidden="true" />
-        <div className="s4-after__inner">
-          <p className="s4-after__item s4-after__intro">
-            Cresce, cambia, incontra nuove condizioni. Il filo che l’ha generata continua a offrire
-            un punto da cui leggere ciò che accade e orientare ciò che verrà.
-          </p>
-          <p className="s4-after__item s4-after__statement">
+      {/* ── CTA "Il filo che diventa trama": subito dopo il seme, sulla
+          texture fotografica del Bisso ── */}
+      <div className="s4-cta" role="group" aria-labelledby="s4-cta-title">
+        <div className="s4-cta__texture" aria-hidden="true" />
+        <div className="s4-cta__inner">
+          <p className="s4-cta__item s4-cta__kicker">La scelta prende forma da qui</p>
+          <h3 id="s4-cta-title" className="s4-cta__item s4-cta__title">
             La coerenza è un <em>filo vivo</em> che permette all’impresa di evolvere continuando a
             riconoscersi.
-          </p>
-          <span className="s4-after__item s4-after__rule" aria-hidden="true" />
-          <p className="s4-after__item s4-after__close">
-            <span className="s4-after__pill">Poi la scelta comincia a vivere.</span>
-          </p>
-          {/* il filo maestro nasce qui e scende nella trama */}
-          <span className="s4-after__stem" aria-hidden="true" />
-        </div>
-      </div>
-
-      {/* ── Chiusura: il filo diventa tessuto (trama del Bisso) ── */}
-      <div ref={weaveRef} className="s4-weave" aria-hidden="true">
-        <div ref={weaveStageRef} className="s4-weave__stage">
-          <div className="s4-weave__sheen" />
-          <svg ref={weaveSvgRef} className="s4-weave__svg" xmlns="http://www.w3.org/2000/svg" />
-          <div className="s4-weave__vignette" />
+          </h3>
+          {/* area del magnete: un po' più ampia del bottone */}
+          <div ref={magnetRef} className="s4-cta__item s4-cta__action">
+            <a ref={btnRef} href="#contatti" className="s4-cta__btn" onClick={toFooter}>
+              <span className="s4-cta__btn-label">Poi la scelta comincia a vivere.</span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
+
+    {/* Footer & contatti: in coda alla slide, dentro lo stesso contenuto
+        scorrevole (Lenis usa il primo figlio della slide come contenuto) */}
+    <SiteFooter />
+    </div>
   );
 }
 
