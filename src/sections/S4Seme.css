@@ -20,9 +20,17 @@
   color: var(--s4-ivory);
 }
 
-/* La schermata del seme: esattamente una viewport */
-.s4 .s4__screen {
+/* Traccia di scroll: 100vh di palco + 200% di corsa per la sequenza */
+.s4 .s4__track {
   position: relative;
+  height: 300vh;
+  height: 300svh;
+}
+
+/* Il palco del seme: esattamente una viewport, appeso (sticky) */
+.s4 .s4__screen {
+  position: sticky;
+  top: 0;
   height: 100vh;
   height: 100svh;
   overflow: hidden;
@@ -52,21 +60,17 @@
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
-  will-change: transform;
-  filter: contrast(1.08) brightness(1.02);
+  will-change: transform, opacity;
 }
 
-/* Contenitore dei video: invisibile finché la sequenza non parte;
-   l'opacità la governa GSAP (dissolvenze di ingresso e uscita) */
+/* Contenitore dei due video (dito → stelo), sempre visibile */
 .s4 .s4__media {
   position: absolute;
   inset: 0;
-  opacity: 0;
-  will-change: opacity;
 }
 
-/* La copia al contrario resta invisibile finché non serve */
-.s4 .s4__video--rev {
+/* Il secondo video (stelo) entra in dissolvenza sul filo che vibra */
+.s4 .s4__video--stelo {
   opacity: 0;
 }
 
@@ -631,10 +635,6 @@
   .s4 .s4-cta__btn,
   .s4 .s4-cta__btn::after {
     transition: none;
-  }
-
-  .s4 .s4__media {
-    opacity: 1;
   }
 
   .s4 .s4__scrim {
