@@ -8,37 +8,38 @@ gsap.registerPlugin(ScrollTrigger);
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 04 — IL SEME: DAL DITO ALLO STELO (riproduzione autonoma)
-   Due soli video, montati in sequenza, riprodotti da soli (niente scrub):
-   1. DITO  — il dito rilascia la goccia, la goccia cade sul filo d'oro
-      e lo fa vibrare;
-   2. STELO — dal filo vibrante nasce e cresce solo lo stelo dorato, poi
-      si FERMA sull'ultimo fotogramma (freeze frame: niente loop, niente
-      fioritura).
-   Innesco: la schermata del seme entra in vista con la slide attiva.
-   Il passaggio DITO → STELO è una dissolvenza incrociata sul filo che
-   vibra (i due fotogrammi coincidono). I testi seguono il tempo REALE dei
-   video (se un video rallenta per il buffering, i testi aspettano).
-   Rientro: se si risale alla 03 e si torna giù, la sequenza si azzera e
-   riparte pulita dall'inizio. Tornando su dal copy sotto (stessa slide)
-   resta ferma sullo stelo.
+   Un unico video montato (niente cambi di file a metà → niente salti):
+   il dito rilascia la goccia → la goccia colpisce il filo (qui i due
+   girati si fondono in dissolvenza, allineati sull'impatto) → il filo
+   vibra → nasce e cresce lo stelo → FERMO sull'ultimo fotogramma (freeze
+   frame: niente loop, niente fioritura).
+   - Innesco: la schermata del seme entra in vista con la slide attiva.
+   - I testi seguono il tempo REALE del video (se rallenta, aspettano).
+   - Risalendo alla 03 (rotella/swipe in cima alla sezione) il passaggio
+     viene trattenuto: il video si RIAVVOLGE (copia codificata al
+     contrario: i browser non supportano playbackRate negativo), i testi
+     si richiudono in sincrono, poi il deck sale. Rientrando riparte da 0.
    ═══════════════════════════════════════════════════════════════ */
 
-// Video: VP9/WebM (Chrome, Edge, Firefox) e H.264/MP4 (Safari), ~2,5 MB
-const DITO = { webm: "/seme-dito.webm", mp4: "/seme-dito.mp4", poster: "/seme-dito-poster.jpg" };
-const STELO = { webm: "/seme-stelo.webm", mp4: "/seme-stelo.mp4", fine: "/seme-stelo-fine.jpg" };
-
-// Velocità di riproduzione (1 = naturale): ~9,6 s di girato → ~7,4 s
-const RATE = 1.3;
-// Durate delle clip (s, tempo del video) — lette dai file quando pronti
-const D1 = 5.25;
-const D2 = 4.42;
-// Regia dei testi, in secondi di SEQUENZA (dito 0→D1, poi stelo D1→D1+D2)
+// Video: VP9/WebM (Chrome, Edge, Firefox) e H.264/MP4 (Safari)
+const SEQ = {
+  webm: "/seme-seq.webm",
+  mp4: "/seme-seq.mp4",
+  revWebm: "/seme-seq-rev.webm",
+  revMp4: "/seme-seq-rev.mp4",
+  poster: "/seme-seq-poster.jpg",
+  fine: "/seme-seq-fine.jpg",
+};
+const DUR = 9.58; // durata del montaggio (s) — letta dal file quando pronto
+const RATE = 1.5; // velocità della riproduzione in avanti
+const REV_RATE = 2.6; // riavvolgimento: più svelto
+// Regia dei testi, in secondi del video
 const AT = {
   low: 4.5, // impatto della goccia sul filo
-  headOut: D1 + 0.5, // il titolo lascia spazio allo stelo
-  high: D1 + 1.6, // lo stelo sale
-  kws: D1 + 2.9, // parole chiave attorno alle foglie
-  bloom: D1 + 3.5, // la frase finale
+  headOut: 5.3, // il titolo lascia spazio allo stelo
+  high: 6.4, // lo stelo sale
+  kws: 7.7, // parole chiave attorno alle foglie
+  bloom: 8.4, // la frase finale
 };
 
 // Frasi-germoglio: coordinate in % del riquadro video, accanto ai nodi
@@ -65,8 +66,8 @@ const KEYWORDS = [
 export default function S4Seme() {
   const sectionRef = useRef(null);
   const screenRef = useRef(null);
-  const ditoRef = useRef(null);
-  const steloRef = useRef(null);
+  const videoRef = useRef(null);
+  const revRef = useRef(null);
   const magnetRef = useRef(null);
   const btnRef = useRef(null);
 
@@ -117,28 +118,41 @@ export default function S4Seme() {
   useEffect(() => {
     const section = sectionRef.current;
     const screen = screenRef.current;
-    const v1 = ditoRef.current;
-    const v2 = steloRef.current;
-    if (!section || !screen || !v1 || !v2) return;
+    const video = videoRef.current;
+    const rev = revRef.current;
+    if (!section || !screen || !video || !rev) return;
     const scroller = section.closest(".sandbox-slide");
     const SLIDE_INDEX = scroller ? Number(scroller.dataset.slide) : -1;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const d1 = () => (Number.isFinite(v1.duration) && v1.duration > 0 ? v1.duration : D1);
+    const dur = () => (Number.isFinite(video.duration) && video.duration > 0 ? video.duration : DUR);
 
-    let phase = "idle"; // idle → dito → stelo → done
+    let phase = "idle"; // idle → play → done · rewind
     let io;
     let onSlide;
+    let onBeforeLeave;
     let tl;
-    let fades = [];
+
+    const lock = () => {
+      scroller?.classList.add("is-locked");
+      window.dispatchEvent(new Event("deck:lock"));
+    };
+    const unlock = () => {
+      scroller?.classList.remove("is-locked");
+      window.dispatchEvent(new Event("deck:unlock"));
+    };
+    // quale dei due video si vede (avanti / al contrario)
+    const showRev = (on) => {
+      rev.style.opacity = on ? "1" : "0";
+      video.style.opacity = on ? "0" : "1";
+    };
 
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(section);
 
       if (reduced) {
         // stato finale statico: lo stelo cresciuto, tutti i testi visibili
-        v1.style.opacity = "0";
-        v2.style.opacity = "1";
-        v2.poster = STELO.fine;
+        video.poster = SEQ.fine;
+        video.preload = "none";
         gsap.set(q(".s4-anim"), { autoAlpha: 1, scale: 1, y: 0 });
         gsap.set(q(".s4-bud__text"), { yPercent: -50 });
         gsap.set(q(".s4__head"), { autoAlpha: 0 });
@@ -146,82 +160,103 @@ export default function S4Seme() {
         return;
       }
 
-      // Testi: timeline in pausa, la sua testina segue il tempo dei video
+      // Testi: timeline in pausa, la sua testina segue il tempo del video
       gsap.set(q(".s4-anim"), { autoAlpha: 0, scale: 0.92, y: 14 });
       gsap.set(q(".s4-bud__text"), { yPercent: -50 });
       gsap.set(q(".s4__head .s4-anim"), { autoAlpha: 1, scale: 1, y: 0 });
       const grow = { autoAlpha: 1, scale: 1, y: 0, duration: 0.8, ease: "power2.out" };
       tl = gsap.timeline({ paused: true });
-      tl.set({}, {}, D1 + D2);
+      tl.set({}, {}, DUR);
       tl.to(q(".s4__head"), { autoAlpha: 0, duration: 0.6 }, AT.headOut);
       q(".s4-bud__text").forEach((el, i) => tl.to(el, { ...grow, yPercent: -50 }, BUDS[i].at));
       tl.to(q(".s4-kw__inner"), { ...grow, stagger: 0.18 }, AT.kws);
       tl.to(q(".s4__scrim"), { autoAlpha: 1, duration: 0.9 }, AT.bloom - 0.2);
       tl.to(q(".s4__bloom .s4-anim"), { ...grow, stagger: 0.3 }, AT.bloom);
 
-      const crossfade = (toStelo, dur) => {
-        fades.forEach((f) => f.kill());
-        fades = [
-          gsap.to(v1, { opacity: toStelo ? 0 : 1, duration: dur, ease: "power1.inOut" }),
-          gsap.to(v2, { opacity: toStelo ? 1 : 0, duration: dur, ease: "power1.inOut" }),
-        ];
-      };
-
-      // la testina dei testi segue il tempo reale della sequenza
       const tick = () => {
-        if (phase === "dito") {
-          tl.time(Math.min(v1.currentTime, d1()));
-          if (v1.ended || v1.currentTime >= d1() - 0.05) {
-            // DITO → STELO sul filo che vibra
-            phase = "stelo";
-            v2.playbackRate = RATE;
-            v2.play().catch(() => {});
-            crossfade(true, 0.5);
-          }
-        } else if (phase === "stelo") {
-          tl.time(Math.min(D1 + v2.currentTime, tl.duration()));
-          if (v2.ended) {
-            // freeze frame: resta sullo stelo, niente loop
-            v2.pause();
+        if (phase === "play") {
+          tl.time(Math.min(video.currentTime, tl.duration()));
+          if (video.ended) {
+            video.pause(); // freeze frame sullo stelo, niente loop
             phase = "done";
             tl.progress(1);
             gsap.ticker.remove(tick);
           }
+        } else if (phase === "rewind") {
+          // stesso istante in avanti = durata − tempo del video al contrario
+          tl.time(Math.max(0, dur() - rev.currentTime));
         }
       };
 
       const start = () => {
         if (phase !== "idle") return;
-        phase = "dito";
+        phase = "play";
+        showRev(false);
         try {
-          v1.currentTime = 0;
-          v2.currentTime = 0;
+          video.currentTime = 0;
         } catch {
-          /* metadata non pronti: partono comunque da 0 */
+          /* metadata non pronti: parte comunque da 0 */
         }
-        crossfade(false, 0.01);
-        v1.playbackRate = RATE;
-        v1.play().catch(() => {});
+        video.playbackRate = RATE;
+        video.play().catch(() => {});
         // alcuni browser azzerano la velocità al primo play: la riapplichiamo
-        v1.addEventListener("playing", () => (v1.playbackRate = RATE), { once: true });
+        video.addEventListener("playing", () => (video.playbackRate = RATE), { once: true });
         gsap.ticker.add(tick);
       };
 
-      // azzeramento pulito (la slide non è più attiva: invisibile)
+      // azzeramento pulito (a slide non attiva: invisibile)
       const reset = () => {
         gsap.ticker.remove(tick);
-        v1.pause();
-        v2.pause();
+        video.pause();
+        rev.pause();
         try {
-          v1.currentTime = 0;
-          v2.currentTime = 0;
+          video.currentTime = 0;
         } catch {
           /* nulla da riavvolgere */
         }
-        crossfade(false, 0.01);
+        showRev(false);
         tl.time(0);
         phase = "idle";
       };
+
+      // Risalita alla 03: riavvolgimento visibile, poi il deck sale
+      const rewindOut = () => {
+        phase = "rewind";
+        lock();
+        video.pause();
+        const from = Math.min(video.currentTime, dur());
+        const go = () => {
+          showRev(true);
+          rev.playbackRate = REV_RATE;
+          rev.play().catch(() => {});
+          gsap.ticker.add(tick);
+        };
+        try {
+          rev.currentTime = Math.max(0, dur() - from);
+          rev.addEventListener("seeked", go, { once: true });
+        } catch {
+          go();
+        }
+        const finish = () => {
+          reset();
+          unlock();
+          window.dispatchEvent(
+            new CustomEvent("deck:goto", { detail: { index: SLIDE_INDEX - 1, fromBelow: true } })
+          );
+        };
+        rev.addEventListener("ended", finish, { once: true });
+        // rete di sicurezza: se "ended" non arriva, chiude comunque
+        setTimeout(() => phase === "rewind" && finish(), (from / REV_RATE) * 1000 + 1200);
+      };
+
+      onBeforeLeave = (e) => {
+        const d = e.detail;
+        if (d.from !== SLIDE_INDEX || d.dir >= 0 || phase === "idle" || phase === "rewind") return;
+        if (video.currentTime < 0.15) return; // niente da riavvolgere
+        e.preventDefault(); // il passaggio lo chiediamo noi a fine riavvolgimento
+        rewindOut();
+      };
+      window.addEventListener("deck:beforeleave", onBeforeLeave);
 
       // Innesco: slide attiva + schermata del seme in vista
       let visible = false;
@@ -234,10 +269,11 @@ export default function S4Seme() {
       );
       io.observe(screen);
 
-      // Il deck cambia slide: fuori da questa → azzera; dentro → parti
+      // Il deck cambia slide (menu, indice…): fuori da questa → azzera
       onSlide = (e) => {
-        if (e.detail.index !== SLIDE_INDEX) reset();
-        else if (visible) start();
+        if (e.detail.index !== SLIDE_INDEX) {
+          if (phase !== "rewind") reset();
+        } else if (visible) start();
       };
       window.addEventListener("deck:slide", onSlide);
 
@@ -263,7 +299,8 @@ export default function S4Seme() {
     return () => {
       io?.disconnect();
       if (onSlide) window.removeEventListener("deck:slide", onSlide);
-      fades.forEach((f) => f.kill());
+      if (onBeforeLeave) window.removeEventListener("deck:beforeleave", onBeforeLeave);
+      if (phase === "rewind") unlock();
       ctx.revert();
     };
   }, []);
@@ -276,33 +313,33 @@ export default function S4Seme() {
           {/* Riquadro 16:9 del video: tutto ciò che deve "seguire i rami"
               vive qui dentro, in coordinate percentuali */}
           <div className="s4__stage">
-            {/* i due video montati in sequenza: DITO → STELO (dissolvenza incrociata),
-                riprodotti da soli; lo stelo si ferma sull'ultimo fotogramma */}
+            {/* il montaggio DITO → STELO, riprodotto da solo; si ferma sullo stelo */}
             <div className="s4__media">
               <video
-                ref={ditoRef}
-                className="s4__video s4__video--dito"
-                poster={DITO.poster}
+                ref={videoRef}
+                className="s4__video"
+                poster={SEQ.poster}
                 muted
                 playsInline
                 preload="auto"
                 aria-hidden="true"
                 tabIndex={-1}
               >
-                <source src={DITO.webm} type="video/webm" />
-                <source src={DITO.mp4} type="video/mp4" />
+                <source src={SEQ.webm} type="video/webm" />
+                <source src={SEQ.mp4} type="video/mp4" />
               </video>
+              {/* copia al contrario, usata solo per il riavvolgimento */}
               <video
-                ref={steloRef}
-                className="s4__video s4__video--stelo"
+                ref={revRef}
+                className="s4__video s4__video--rev"
                 muted
                 playsInline
                 preload="auto"
                 aria-hidden="true"
                 tabIndex={-1}
               >
-                <source src={STELO.webm} type="video/webm" />
-                <source src={STELO.mp4} type="video/mp4" />
+                <source src={SEQ.revWebm} type="video/webm" />
+                <source src={SEQ.revMp4} type="video/mp4" />
               </video>
             </div>
             <div className="s4__veil" aria-hidden="true" />

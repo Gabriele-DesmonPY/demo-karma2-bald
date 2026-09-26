@@ -55,14 +55,14 @@
   will-change: transform, opacity;
 }
 
-/* Contenitore dei due video (dito → stelo), sempre visibile */
+/* Contenitore del video (e della sua copia al contrario) */
 .s4 .s4__media {
   position: absolute;
   inset: 0;
 }
 
-/* Il secondo video (stelo) entra in dissolvenza sul filo che vibra */
-.s4 .s4__video--stelo {
+/* La copia al contrario resta invisibile finché non serve */
+.s4 .s4__video--rev {
   opacity: 0;
 }
 
