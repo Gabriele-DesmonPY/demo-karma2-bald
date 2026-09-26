@@ -7,38 +7,38 @@ import "./S4Seme.css";
 gsap.registerPlugin(ScrollTrigger);
 
 /* ═══════════════════════════════════════════════════════════════
-   SEZIONE 04 — IL SEME: DAL DITO ALLO STELO (sequenza in scroll)
-   Due soli video, montati in sequenza e guidati dallo scroll (scrub,
-   bidirezionale):
+   SEZIONE 04 — IL SEME: DAL DITO ALLO STELO (riproduzione autonoma)
+   Due soli video, montati in sequenza, riprodotti da soli (niente scrub):
    1. DITO  — il dito rilascia la goccia, la goccia cade sul filo d'oro
-      e lo fa vibrare (clip tagliata prima di ogni sviluppo);
-   2. STELO — dal filo vibrante nasce e cresce solo lo stelo dorato
-      (clip tagliata prima della fioritura).
-   Scendendo: dito → goccia → vibrazione → stelo. Risalendo: lo stelo si
-   ritrae, il filo vibra, la goccia risale verso il dito.
-
-   Il palco è "appeso" con position: sticky (niente pin: il sito è un deck
-   e scorre la slide, non la finestra) dentro una traccia di 300vh
-   (= 100vh + 200% di corsa). Un'unica timeline GSAP in scrub governa
-   testi e tempo dei video; i due video sono codificati tutti a
-   fotogrammi chiave (seek istantaneo in entrambi i versi) e si passano
-   il testimone con una dissolvenza incrociata sul filo che vibra.
+      e lo fa vibrare;
+   2. STELO — dal filo vibrante nasce e cresce solo lo stelo dorato, poi
+      si FERMA sull'ultimo fotogramma (freeze frame: niente loop, niente
+      fioritura).
+   Innesco: la schermata del seme entra in vista con la slide attiva.
+   Il passaggio DITO → STELO è una dissolvenza incrociata sul filo che
+   vibra (i due fotogrammi coincidono). I testi seguono il tempo REALE dei
+   video (se un video rallenta per il buffering, i testi aspettano).
+   Rientro: se si risale alla 03 e si torna giù, la sequenza si azzera e
+   riparte pulita dall'inizio. Tornando su dal copy sotto (stessa slide)
+   resta ferma sullo stelo.
    ═══════════════════════════════════════════════════════════════ */
 
 // Video: VP9/WebM (Chrome, Edge, Firefox) e H.264/MP4 (Safari), ~2,5 MB
-// ciascuno, tutti i fotogrammi sono chiave (seek fluido avanti/indietro)
 const DITO = { webm: "/seme-dito.webm", mp4: "/seme-dito.mp4", poster: "/seme-dito-poster.jpg" };
 const STELO = { webm: "/seme-stelo.webm", mp4: "/seme-stelo.mp4", fine: "/seme-stelo-fine.jpg" };
 
-// Regia sulla corsa di scroll (0 → 1)
-const SPLIT = 0.5; // prima metà: dito · seconda: stelo
-const XFADE = 0.06; // ampiezza della dissolvenza incrociata attorno a SPLIT
+// Velocità di riproduzione (1 = naturale): ~9,6 s di girato → ~7,4 s
+const RATE = 1.3;
+// Durate delle clip (s, tempo del video) — lette dai file quando pronti
+const D1 = 5.25;
+const D2 = 4.42;
+// Regia dei testi, in secondi di SEQUENZA (dito 0→D1, poi stelo D1→D1+D2)
 const AT = {
-  headOut: 0.54, // il titolo lascia spazio allo stelo
-  low: 0.44, // impatto della goccia sul filo
-  high: 0.62, // lo stelo sale
-  kws: 0.74, // parole chiave attorno alle foglie
-  bloom: 0.85, // la frase finale
+  low: 4.5, // impatto della goccia sul filo
+  headOut: D1 + 0.5, // il titolo lascia spazio allo stelo
+  high: D1 + 1.6, // lo stelo sale
+  kws: D1 + 2.9, // parole chiave attorno alle foglie
+  bloom: D1 + 3.5, // la frase finale
 };
 
 // Frasi-germoglio: coordinate in % del riquadro video, accanto ai nodi
@@ -48,9 +48,9 @@ const AT = {
 // centrato sopra/sotto la pianta, dove c'è spazio).
 const BUDS = [
   { text: "Per questa impresa.", x: 30, y: 62, mx: 29, my: 86, side: "sx", at: AT.low },
-  { text: "Con questa storia.", x: 70, y: 62, mx: 71, my: 86, side: "dx", at: AT.low + 0.03 },
+  { text: "Con questa storia.", x: 70, y: 62, mx: 71, my: 86, side: "dx", at: AT.low + 0.3 },
   { text: "Con queste persone.", x: 26, y: 47, mx: 29, my: 7, side: "sx", at: AT.high },
-  { text: "Con queste possibilità.", x: 74, y: 47, mx: 71, my: 7, side: "dx", at: AT.high + 0.03 },
+  { text: "Con queste possibilità.", x: 74, y: 47, mx: 71, my: 7, side: "dx", at: AT.high + 0.3 },
 ];
 
 // Parole chiave che galleggiano attorno allo stelo cresciuto
@@ -64,7 +64,7 @@ const KEYWORDS = [
 
 export default function S4Seme() {
   const sectionRef = useRef(null);
-  const trackRef = useRef(null);
+  const screenRef = useRef(null);
   const ditoRef = useRef(null);
   const steloRef = useRef(null);
   const magnetRef = useRef(null);
@@ -116,53 +116,20 @@ export default function S4Seme() {
 
   useEffect(() => {
     const section = sectionRef.current;
-    const track = trackRef.current;
+    const screen = screenRef.current;
     const v1 = ditoRef.current;
     const v2 = steloRef.current;
-    if (!section || !track || !v1 || !v2) return;
+    if (!section || !screen || !v1 || !v2) return;
     const scroller = section.closest(".sandbox-slide");
+    const SLIDE_INDEX = scroller ? Number(scroller.dataset.slide) : -1;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const clamp01 = gsap.utils.clamp(0, 1);
+    const d1 = () => (Number.isFinite(v1.duration) && v1.duration > 0 ? v1.duration : D1);
 
-    // ── Seek senza code: un solo seek alla volta, l'ultimo tempo vince ──
-    const want = new Map();
-    const seek = (v, t) => {
-      want.set(v, t);
-      if (v.readyState < 1 || v.seeking) return;
-      if (Math.abs(v.currentTime - t) > 0.012) v.currentTime = t;
-    };
-    const onSeeked = (e) => {
-      const v = e.currentTarget;
-      const t = want.get(v);
-      if (t != null && Math.abs(v.currentTime - t) > 0.02) v.currentTime = t;
-    };
-    // durata utile (un soffio prima della fine: niente fotogramma vuoto)
-    const dur = (v, fallback) => (Number.isFinite(v.duration) && v.duration > 0 ? v.duration : fallback) - 0.04;
-    const onMeta = (e) => {
-      const v = e.currentTarget;
-      seek(v, want.get(v) ?? 0);
-      // Safari/iOS: un play/pausa muto "sveglia" il decoder per i seek
-      v.play()
-        .then(() => v.pause())
-        .catch(() => {});
-    };
-    [v1, v2].forEach((v) => {
-      v.addEventListener("seeked", onSeeked);
-      v.addEventListener("loadedmetadata", onMeta);
-    });
-
-    // ── Stato della sequenza a un punto p della corsa (0 → 1) ──
-    let lastFade = -1;
-    const drive = (p) => {
-      const f = clamp01((p - (SPLIT - XFADE / 2)) / XFADE); // 0 = dito, 1 = stelo
-      if (f !== lastFade) {
-        lastFade = f;
-        v1.style.opacity = String(1 - f);
-        v2.style.opacity = String(f);
-      }
-      if (f < 1) seek(v1, clamp01(p / SPLIT) * dur(v1, 5.25));
-      if (f > 0) seek(v2, clamp01((p - SPLIT) / (1 - SPLIT)) * dur(v2, 4.42));
-    };
+    let phase = "idle"; // idle → dito → stelo → done
+    let io;
+    let onSlide;
+    let tl;
+    let fades = [];
 
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(section);
@@ -172,7 +139,6 @@ export default function S4Seme() {
         v1.style.opacity = "0";
         v2.style.opacity = "1";
         v2.poster = STELO.fine;
-        want.set(v2, dur(v2, 4.42));
         gsap.set(q(".s4-anim"), { autoAlpha: 1, scale: 1, y: 0 });
         gsap.set(q(".s4-bud__text"), { yPercent: -50 });
         gsap.set(q(".s4__head"), { autoAlpha: 0 });
@@ -180,32 +146,100 @@ export default function S4Seme() {
         return;
       }
 
-      // Stati di partenza: titolo già presente, il resto chiuso
+      // Testi: timeline in pausa, la sua testina segue il tempo dei video
       gsap.set(q(".s4-anim"), { autoAlpha: 0, scale: 0.92, y: 14 });
       gsap.set(q(".s4-bud__text"), { yPercent: -50 });
       gsap.set(q(".s4__head .s4-anim"), { autoAlpha: 1, scale: 1, y: 0 });
-      drive(0);
-
-      // ── Un'unica timeline in scrub: testi + tempo dei video ──
-      const grow = { autoAlpha: 1, scale: 1, y: 0, duration: 0.06, ease: "power2.out" };
-      const tl = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: track,
-          scroller: scroller || window,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.5, // fluido anche a ritroso
-          invalidateOnRefresh: true,
-        },
-        onUpdate: () => drive(tl.progress()),
-      });
-      tl.set({}, {}, 1); // lunghezza della timeline = 1 (corsa intera)
-      tl.to(q(".s4__head"), { autoAlpha: 0, duration: 0.05 }, AT.headOut);
+      const grow = { autoAlpha: 1, scale: 1, y: 0, duration: 0.8, ease: "power2.out" };
+      tl = gsap.timeline({ paused: true });
+      tl.set({}, {}, D1 + D2);
+      tl.to(q(".s4__head"), { autoAlpha: 0, duration: 0.6 }, AT.headOut);
       q(".s4-bud__text").forEach((el, i) => tl.to(el, { ...grow, yPercent: -50 }, BUDS[i].at));
-      tl.to(q(".s4-kw__inner"), { ...grow, stagger: 0.025 }, AT.kws);
-      tl.to(q(".s4__scrim"), { autoAlpha: 1, duration: 0.07 }, AT.bloom - 0.02);
-      tl.to(q(".s4__bloom .s4-anim"), { ...grow, stagger: 0.04 }, AT.bloom);
+      tl.to(q(".s4-kw__inner"), { ...grow, stagger: 0.18 }, AT.kws);
+      tl.to(q(".s4__scrim"), { autoAlpha: 1, duration: 0.9 }, AT.bloom - 0.2);
+      tl.to(q(".s4__bloom .s4-anim"), { ...grow, stagger: 0.3 }, AT.bloom);
+
+      const crossfade = (toStelo, dur) => {
+        fades.forEach((f) => f.kill());
+        fades = [
+          gsap.to(v1, { opacity: toStelo ? 0 : 1, duration: dur, ease: "power1.inOut" }),
+          gsap.to(v2, { opacity: toStelo ? 1 : 0, duration: dur, ease: "power1.inOut" }),
+        ];
+      };
+
+      // la testina dei testi segue il tempo reale della sequenza
+      const tick = () => {
+        if (phase === "dito") {
+          tl.time(Math.min(v1.currentTime, d1()));
+          if (v1.ended || v1.currentTime >= d1() - 0.05) {
+            // DITO → STELO sul filo che vibra
+            phase = "stelo";
+            v2.playbackRate = RATE;
+            v2.play().catch(() => {});
+            crossfade(true, 0.5);
+          }
+        } else if (phase === "stelo") {
+          tl.time(Math.min(D1 + v2.currentTime, tl.duration()));
+          if (v2.ended) {
+            // freeze frame: resta sullo stelo, niente loop
+            v2.pause();
+            phase = "done";
+            tl.progress(1);
+            gsap.ticker.remove(tick);
+          }
+        }
+      };
+
+      const start = () => {
+        if (phase !== "idle") return;
+        phase = "dito";
+        try {
+          v1.currentTime = 0;
+          v2.currentTime = 0;
+        } catch {
+          /* metadata non pronti: partono comunque da 0 */
+        }
+        crossfade(false, 0.01);
+        v1.playbackRate = RATE;
+        v1.play().catch(() => {});
+        // alcuni browser azzerano la velocità al primo play: la riapplichiamo
+        v1.addEventListener("playing", () => (v1.playbackRate = RATE), { once: true });
+        gsap.ticker.add(tick);
+      };
+
+      // azzeramento pulito (la slide non è più attiva: invisibile)
+      const reset = () => {
+        gsap.ticker.remove(tick);
+        v1.pause();
+        v2.pause();
+        try {
+          v1.currentTime = 0;
+          v2.currentTime = 0;
+        } catch {
+          /* nulla da riavvolgere */
+        }
+        crossfade(false, 0.01);
+        tl.time(0);
+        phase = "idle";
+      };
+
+      // Innesco: slide attiva + schermata del seme in vista
+      let visible = false;
+      io = new IntersectionObserver(
+        ([entry]) => {
+          visible = entry.intersectionRatio >= 0.6;
+          if (visible && scroller?.classList.contains("is-active")) start();
+        },
+        { threshold: [0, 0.6] }
+      );
+      io.observe(screen);
+
+      // Il deck cambia slide: fuori da questa → azzera; dentro → parti
+      onSlide = (e) => {
+        if (e.detail.index !== SLIDE_INDEX) reset();
+        else if (visible) start();
+      };
+      window.addEventListener("deck:slide", onSlide);
 
       // La CTA sopra la texture del Bisso: dissolvenza leggera legata allo scroll
       if (scroller) {
@@ -222,13 +256,14 @@ export default function S4Seme() {
           );
         });
       }
+
+      return () => gsap.ticker.remove(tick);
     }, section);
 
     return () => {
-      [v1, v2].forEach((v) => {
-        v.removeEventListener("seeked", onSeeked);
-        v.removeEventListener("loadedmetadata", onMeta);
-      });
+      io?.disconnect();
+      if (onSlide) window.removeEventListener("deck:slide", onSlide);
+      fades.forEach((f) => f.kill());
       ctx.revert();
     };
   }, []);
@@ -236,13 +271,13 @@ export default function S4Seme() {
   return (
     <div className="s4-root">
     <section ref={sectionRef} className="s4" id="seme" data-n="4" aria-labelledby="s4-title">
-      {/* Traccia di scroll (300vh) con il palco appeso: video e testi in scrub */}
-      <div ref={trackRef} className="s4__track">
-      <div className="s4__screen">
+      {/* Schermata del seme: una viewport, i due video e i testi a tempo */}
+      <div ref={screenRef} className="s4__screen">
           {/* Riquadro 16:9 del video: tutto ciò che deve "seguire i rami"
               vive qui dentro, in coordinate percentuali */}
           <div className="s4__stage">
-            {/* i due video montati in sequenza: DITO → STELO (dissolvenza incrociata) */}
+            {/* i due video montati in sequenza: DITO → STELO (dissolvenza incrociata),
+                riprodotti da soli; lo stelo si ferma sull'ultimo fotogramma */}
             <div className="s4__media">
               <video
                 ref={ditoRef}
@@ -322,7 +357,6 @@ export default function S4Seme() {
               Tenere insieme significa riconoscere ciò che conta.
             </h2>
           </header>
-      </div>
       </div>
 
       {/* ── CTA "Il filo che diventa trama": subito dopo il seme, sulla

@@ -20,17 +20,9 @@
   color: var(--s4-ivory);
 }
 
-/* Traccia di scroll: 100vh di palco + 200% di corsa per la sequenza */
-.s4 .s4__track {
-  position: relative;
-  height: 300vh;
-  height: 300svh;
-}
-
-/* Il palco del seme: esattamente una viewport, appeso (sticky) */
+/* La schermata del seme: esattamente una viewport */
 .s4 .s4__screen {
-  position: sticky;
-  top: 0;
+  position: relative;
   height: 100vh;
   height: 100svh;
   overflow: hidden;

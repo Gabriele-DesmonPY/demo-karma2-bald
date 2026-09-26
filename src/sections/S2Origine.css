@@ -373,7 +373,7 @@
 
 /* Area delle priorità: oro semitrasparente con bordo luminoso */
 .s2o .s2o-hex__radar {
-  fill: rgba(212, 175, 55, 0.25);
+  fill: rgba(212, 175, 55, 0.42);
   stroke: #d4af37;
   stroke-width: 2;
   stroke-linejoin: round;

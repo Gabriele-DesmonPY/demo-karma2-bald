@@ -330,7 +330,7 @@ export default function S2Origine() {
     };
   }, [live]);
   const nodeRefs = useRef([]);
-  const morphTl = useRef(null);
+  const radarRef2 = useRef(null);
 
   useEffect(() => {
     const root = hexRef.current;
@@ -358,27 +358,82 @@ export default function S2Origine() {
     };
     const asVars = (arr) => Object.fromEntries(arr.map((r, i) => [`r${i}`, r]));
 
-    // l'area parte già nella sua forma: l'ingresso la fa solo "accendere"
-    Object.assign(v, asVars(RADAR_START));
-    render();
-    if (reduced) return;
+    if (reduced) {
+      Object.assign(v, asVars(RADAR_START));
+      render();
+      return;
+    }
 
-    // Loop dell'indecisione: yoyo infinito tra gli stati, morbido
-    const morph = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
-    RADAR_STATES.forEach((st) => {
-      morph.to(v, { ...asVars(st), duration: 3.5, ease: "sine.inOut", onUpdate: render });
-    });
-    morphTl.current = morph;
+    // ── Radar: nasce dal CENTRO ESATTO e si espande ai valori reali ──
+    // I 6 vertici e i 6 pallini partono tutti da (cx, cy) e viaggiano
+    // insieme lungo i loro assi (stessi valori → sempre allineati).
+    // Espansione e contrazione sono tween sui valori, interrompibili e
+    // ripresi dal punto in cui si trovano: nessuno scatto, in entrambi i
+    // versi. A espansione finita parte il loop dell'indecisione.
+    const nodes = nodeRefs.current.filter(Boolean);
+    const radarG = root.querySelector("#radar-shape");
+    const ZERO = asVars([0, 0, 0, 0, 0, 0]);
+    let morph = null;
+    let radarTw = [];
+    const stopRadar = () => {
+      morph?.kill();
+      morph = null;
+      radarTw.forEach((t) => t.kill());
+      radarTw = [];
+    };
+    const startMorph = () => {
+      morph?.kill();
+      morph = gsap.timeline({ repeat: -1, yoyo: true });
+      RADAR_STATES.forEach((st) => {
+        morph.to(v, { ...asVars(st), duration: 3.5, ease: "sine.inOut", onUpdate: render });
+      });
+    };
+    const radar = {
+      expand(delay = 0) {
+        stopRadar();
+        radarTw = [
+          gsap.to(v, {
+            ...asVars(RADAR_START),
+            duration: 1.25,
+            delay,
+            ease: "power3.out",
+            onUpdate: render,
+            onComplete: startMorph,
+          }),
+          gsap.to(radarG, { opacity: 1, duration: 0.9, delay, ease: "power2.out" }),
+          gsap.to(nodes, { opacity: 1, duration: 0.5, delay: delay + 0.1, stagger: 0.04, ease: "power1.out" }),
+        ];
+      },
+      collapse() {
+        stopRadar();
+        radarTw = [
+          gsap.to(v, { ...ZERO, duration: 0.6, ease: "power2.in", onUpdate: render }),
+          gsap.to(radarG, { opacity: 0, duration: 0.6, ease: "power2.in" }),
+          gsap.to(nodes, { opacity: 0, duration: 0.45, ease: "power1.in" }),
+        ];
+      },
+      reset() {
+        stopRadar();
+        Object.assign(v, ZERO);
+        render();
+        gsap.set(radarG, { opacity: 0 });
+        gsap.set(nodes, { opacity: 0 });
+      },
+      pause() {
+        morph?.pause();
+      },
+      resume() {
+        if (morph) morph.resume();
+      },
+    };
+    radar.reset();
+    radarRef2.current = radar;
 
     // Ingresso (automatico, niente scrub):
     // A. il fascio di fili scivola verso destra (+ esagono guida)
     // B. quando i fili raggiungono il radar, l'area si accende e "respira"
     // C. i nodi sbocciano, poi le etichette; infine parte il loop.
-    const tl = gsap.timeline({
-      paused: true,
-      onComplete: () => morph.play(),
-      onReverseComplete: () => morph.pause(0),
-    });
+    const tl = gsap.timeline({ paused: true });
     const sec = sectionRef.current;
     const main = sec?.querySelectorAll("#filo-main, #filo-halo");
     const subs = sec?.querySelectorAll("#filo-sub-1, #filo-sub-2, #filo-accent");
@@ -437,70 +492,47 @@ export default function S2Origine() {
         0.4
       )
       .fromTo(
-        q("#radar-shape"),
-        { opacity: 0, scale: 0, svgOrigin: `${CX} ${CY}` },
-        {
-          opacity: 1,
-          scale: 1,
-          svgOrigin: `${CX} ${CY}`,
-          duration: 0.8,
-          ease: "back.out(1.4)",
-          overwrite: "auto",
-        },
-        0.75
-      )
-      // i nodi sbocciano sul raggio (attr r), NON in scala: sono punti che
-      // il loop sposta di continuo (cx/cy) e una scala con origine fissata
-      // lascerebbe una traslazione residua al rientro → nodi fuori dai vertici
-      .fromTo(
-        q(".radar-node"),
-        { attr: { r: 0 }, opacity: 0 },
-        { attr: { r: 4 }, opacity: 1, stagger: 0.05, duration: 0.4, ease: "back.out(2)" },
-        "-=0.3"
-      )
-      .fromTo(
         q(".s2o-hex__label-in"),
         { opacity: 0, y: 10 },
         { opacity: 1, y: 0, stagger: 0.06, duration: 0.45, ease: "power2.out" },
-        "-=0.35"
+        1.3
       );
     hexTl.current = tl;
     // reset istantaneo (solo a sezione fuori schermo)
     resetRef.current = () => {
-      morph.pause(0);
+      radar.reset();
       tl.pause(0);
       needsRestart.current = true;
     };
     return () => {
       tl.kill();
-      morph.kill();
+      stopRadar();
       hexTl.current = null;
-      morphTl.current = null;
+      radarRef2.current = null;
       resetRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     const tl = hexTl.current;
-    const morph = morphTl.current;
+    const radar = radarRef2.current;
     if (!tl) return;
     if (live) {
       if (needsRestart.current) {
         // ingresso pulito: parte da 0 (rimisura: il viewport può cambiare)
         needsRestart.current = false;
-        morph?.pause(0);
         alignFili();
         measureLens();
         tl.invalidate().timeScale(1).restart();
-      } else if (tl.progress() < 1) {
-        tl.timeScale(1).play(); // rientro rapido a metà ingresso: prosegue
+        radar?.expand(0.75); // quando i fili raggiungono il radar
       } else {
-        morph?.play(); // mai uscita del tutto: resta com'era
+        if (tl.progress() < 1) tl.timeScale(1).play(); // rientro rapido: prosegue
+        radar?.expand(0); // riparte dal punto in cui si trova, verso i valori
       }
     } else {
-      // in uscita resta com'è (scivola via intera): il reset avviene solo
-      // quando è del tutto fuori schermo (IntersectionObserver sopra)
-      morph?.pause();
+      // in uscita il radar si ritrae verso il centro (l'inverso esatto
+      // dell'espansione); il reset completo avviene a sezione fuori schermo
+      radar?.collapse();
     }
   }, [live, alignFili, measureLens]);
 
