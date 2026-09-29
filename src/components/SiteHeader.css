@@ -29,15 +29,45 @@
   }
 }
 
+/* Marchio (immagine): K a spirale + KARMA, alto 40px */
 .site-header__logo {
-  font-family: "Cormorant Garamond", "Cormorant", Garamond, serif;
-  font-size: 1.35rem;
-  font-weight: 600;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
+  position: relative;
+  display: block;
+  flex: none;
+  width: 150px;
+  height: 40px;
   text-decoration: none;
-  color: var(--sh-gold);
   transition: opacity 300ms ease;
+}
+
+.site-header__mark {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  transition: opacity 500ms ease;
+}
+
+/* variante avorio sulle sezioni scure, navy su quelle chiare */
+.site-header__mark--light {
+  opacity: 0;
+}
+
+.site-header--light .site-header__mark--dark {
+  opacity: 0;
+}
+
+.site-header--light .site-header__mark--light {
+  opacity: 1;
+}
+
+.site-header__logo:focus-visible {
+  outline: 2px solid var(--sh-gold-bright);
+  outline-offset: 6px;
+  border-radius: 2px;
 }
 
 .site-header__logo:hover {

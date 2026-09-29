@@ -21,8 +21,26 @@ export default function SiteHeader({ active, tone = "dark", onNavigate }) {
 
   return (
     <header className={`site-header site-header--${tone}`}>
-      <a href="#home" className="site-header__logo" onClick={handle("home")}>
-        Karma
+      {/* Marchio: K con spirale d'oro + KARMA. Due varianti sovrapposte
+          (avorio per le sezioni scure, navy per quelle chiare): cambia in
+          dissolvenza insieme al tono dell'header. */}
+      <a href="#home" className="site-header__logo" onClick={handle("home")} aria-label="Karma — torna all'inizio">
+        <img
+          className="site-header__mark site-header__mark--dark"
+          src="/brand/logo-karma-dark.png"
+          alt=""
+          width="150"
+          height="40"
+          decoding="async"
+        />
+        <img
+          className="site-header__mark site-header__mark--light"
+          src="/brand/logo-karma-light.png"
+          alt=""
+          width="150"
+          height="40"
+          decoding="async"
+        />
       </a>
 
       <nav className="site-header__nav" aria-label="Navigazione principale">
