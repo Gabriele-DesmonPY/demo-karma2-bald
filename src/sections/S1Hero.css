@@ -57,18 +57,19 @@
 
 /* Sfumatura graduale: from-[#0B0F19] via-[#0B0F19]/80 to-transparent */
 .hsx__shade {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  
   background: linear-gradient(
     90deg, 
-    rgba(11, 15, 25, 0.65) 0%, 
-    rgba(11, 15, 25, 0.25) 30%, 
-    rgba(11, 15, 25, 0) 60%
+    #162540 0%,            /* Navy chiaro e visibile */
+    #162540 38%, 
+    rgba(22, 37, 64, 0.7) 52%, 
+    rgba(22, 37, 64, 0) 70%
   ) !important;
 }
-
 /* Contenitore fluido a sinistra (max-w-2xl, pl-12 → lg:pl-24) */
 .hsx__content {
   position: relative;
