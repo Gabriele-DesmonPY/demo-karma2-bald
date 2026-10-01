@@ -1,160 +1,171 @@
-/* ═══ 1. CARICAMENTO REALE BAUHAUS 93 (Inserisci il file nella cartella /public/fonts/) ═══ */
-@font-face {
-  font-family: "Bauhaus 93";
-  src: local("Bauhaus 93"), local("Bauhaus93"),
-       url("/fonts/bauhaus93.woff2") format("woff2"),
-       url("/fonts/bauhaus93.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* ═══ SEZIONE 01 — HERO · SPLIT SCREEN SULLA TRAMA D'ORO ═══ */
 
-/* ═══ 2. STRUTTURA HERO FULLSCREEN ═══ */
 .hsx {
   position: relative;
   display: flex;
   align-items: center;
   min-height: 100vh;
   min-height: 100svh;
-  overflow: hidden;
+  overflow: clip;
   isolation: isolate;
-  background-color: #0b0f19;
+  background: #0b0f19;
   color: #f6efe0;
 }
 
-/* ═══ 3. IMMAGINE DI SFONDO (ZOOM RIDOTTO & POSIZIONAMENTO CORRETTO) ═══ */
-.hsx__bg {
+/* Foto a tutto schermo, poco zoomata: ancorata a destra a piena altezza,
+   la trama si vede intera; il bordo sinistro si scioglie nel buio */
+.hsx__media {
   position: absolute;
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background-color: #0b0f19;
-  background-image: url("/hero-trama-oro.jpg");
-  background-image: image-set(url("/hero-trama-oro.webp") type("image/webp"), url("/hero-trama-oro.jpg") type("image/jpeg"));
-  /* Regola lo zoom: 'cover' con position 'right center' mantiene la trama nitida e non troppo ingrandita */
-  background-size: cover;
-  background-position: right 25% center;
-  background-repeat: no-repeat;
-  transition: transform 0.5s ease-out;
 }
 
-/* ═══ 4. SFUMATURA FLUIDA & TRASPARENTE (NON TROPPO SCURA) ═══ */
+.hsx__img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  aspect-ratio: 1;
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 26%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 26%);
+  animation: hsx-bg-in 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* quando lo schermo è più "quadrato" della foto, la foto lo copre tutto */
+@media (max-aspect-ratio: 5/4) {
+  .hsx__img {
+    width: 100%;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+@keyframes hsx-bg-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Sfumatura graduale: from-[#0B0F19] via-[#0B0F19]/80 to-transparent */
 .hsx__shade {
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  /* La sfumatura protegge il testo a sinistra ma lascia passare la luce dei fili d'oro sotto */
-  background: linear-gradient(
-    90deg,
-    rgba(11, 15, 25, 0.92) 0%,
-    rgba(11, 15, 25, 0.55) 35%,
-    rgba(11, 15, 25, 0.15) 65%,
-    rgba(11, 15, 25, 0) 100%
-  );
+  background: linear-gradient(90deg, rgba(11, 15, 25, 0.92) 0%, rgba(11, 15, 25, 0.6) 38%, rgba(11, 15, 25, 0) 68%);
 }
 
-/* ═══ 5. BLOCCO TESTI ═══ */
+/* Contenitore fluido a sinistra (max-w-2xl, pl-12 → lg:pl-24) */
 .hsx__content {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 44rem;
-  padding-left: clamp(2rem, 6vw, 6rem);
-  padding-right: 2rem;
+  max-width: calc(42rem + clamp(48px, 6.7vw, 96px));
+  padding: calc(72px + clamp(16px, 4vh, 56px)) 24px clamp(72px, 10vh, 110px) clamp(48px, 6.7vw, 96px);
 }
 
 .hsx__eyebrow {
-  margin: 0 0 1rem 0;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 0.75rem;
+  margin: 0;
+  font-family: var(--font-label), sans-serif;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(252, 211, 77, 0.95);
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  color: #e2c974;
 }
 
-/* Titolo forzato in Bauhaus 93 */
+/* Titolo: Bauhaus 93 (text-5xl → lg:text-7xl, amber-100, tracking-wide) */
 .hsx__title {
-  margin: 0;
-  font-family: "Bauhaus 93", sans-serif;
+  margin: 22px 0 0;
+  font-family: "Bauhaus 93", "Baumans", "Futura", sans-serif;
   font-weight: 400;
-  font-size: clamp(2.5rem, 5vw, 4.2rem);
-  line-height: 1.08;
-  letter-spacing: 0.02em;
+  font-size: clamp(2.6rem, min(1.6rem + 3.6vw, 7.8vh), 4.5rem);
+  line-height: 1.1;
+  letter-spacing: 0.025em;
   text-transform: uppercase;
   color: #fef3c7;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 4px 3px rgba(0, 0, 0, 0.07), 0 2px 2px rgba(0, 0, 0, 0.06), 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 
+/* Payoff: serif corsivo, arioso, ben leggibile sulla sfumatura */
 .hsx__lede {
-  margin-top: 1.5rem;
-  max-width: 42ch;
+  margin: clamp(18px, 3vh, 28px) 0 0;
+  max-width: 46ch;
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
   font-style: italic;
-  font-size: clamp(1.1rem, 1.2vw, 1.35rem);
-  line-height: 1.6;
-  color: rgba(246, 236, 200, 0.9);
+  font-size: clamp(1.15rem, 1.3vw, 1.4rem);
+  line-height: 1.65;
+  letter-spacing: 0.012em;
+  color: rgba(243, 229, 171, 0.9);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
 }
 
 .hsx__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 2.5rem;
+  align-items: center;
+  gap: 14px 18px;
+  margin-top: clamp(24px, 4.5vh, 48px);
 }
 
 .hsx__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.85rem 2rem;
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 30px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-family: var(--font-label), sans-serif;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: all 300ms ease;
+  transition: background-color 400ms ease, border-color 400ms ease, color 400ms ease, box-shadow 400ms ease;
 }
 
 .hsx__btn--primary {
-  background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
+  background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 55%, #b89343 100%);
   color: #0b0f19;
-  box-shadow: 0 8px 25px -8px rgba(212, 175, 55, 0.5);
+  box-shadow: 0 10px 30px -12px rgba(212, 175, 55, 0.55);
 }
 
 .hsx__btn--primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px -6px rgba(212, 175, 55, 0.7);
+  box-shadow: 0 12px 36px -10px rgba(212, 175, 55, 0.8);
 }
 
 .hsx__btn--ghost {
-  border: 1px solid rgba(226, 201, 116, 0.4);
+  border: 1px solid rgba(226, 201, 116, 0.45);
   color: #f3e5ab;
-  background: rgba(11, 15, 25, 0.3);
-  backdrop-filter: blur(4px);
+  background: rgba(11, 15, 25, 0.25);
 }
 
 .hsx__btn--ghost:hover {
   border-color: #e2c974;
-  background: rgba(226, 201, 116, 0.15);
+  background: rgba(226, 201, 116, 0.08);
 }
 
-/* Responsive Mobile */
-@media (max-width: 768px) {
-  .hsx__bg {
-    background-position: center;
-  }
-  .hsx__shade {
-    background: linear-gradient(0deg, rgba(11, 15, 25, 0.95) 0%, rgba(11, 15, 25, 0.6) 60%, rgba(11, 15, 25, 0.2) 100%);
-  }
-  .hsx__content {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
+.hsx__btn span {
+  transition: transform 400ms ease;
+}
+
+.hsx__btn--ghost:hover span {
+  transform: translateX(4px);
+}
+
+.hsx__btn:focus-visible {
+  outline: 2px solid #e2c974;
+  outline-offset: 4px;
 }
 
 /* ═══════════ Micro-sezione citazione: pausa e respiro ═══════════ */
@@ -215,9 +226,36 @@
 }
 
 
+/* ═══════════ Responsive ═══════════ */
+/* Schermi stretti: la foto copre tutto, la sfumatura sale dal basso */
+@media (max-width: 767px) {
+  .hsx {
+    align-items: flex-end;
+  }
 
-@media (max-width: 768px) {
+  .hsx__shade {
+    background: linear-gradient(0deg, rgba(11, 15, 25, 0.92) 0%, rgba(11, 15, 25, 0.65) 55%, rgba(11, 15, 25, 0.15) 100%);
+  }
+
+  .hsx__content {
+    padding: calc(68px + 24px) 20px 96px;
+  }
+
+  .hsx__title {
+    font-size: clamp(2.3rem, 10.5vw, 3rem);
+  }
+
+  .hsx__btn {
+    width: 100%;
+  }
+
   .s1q {
     padding: 5rem 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hsx__img {
+    animation: none;
   }
 }
