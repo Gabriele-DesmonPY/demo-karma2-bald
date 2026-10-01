@@ -1,16 +1,11 @@
 import { MotionConfig } from "framer-motion";
 import Reveal from "../components/Reveal";
-import LineReveal from "../components/LineReveal";
 import "./S1Hero.css";
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 01 — HERO · TRAMA D'ORO A TUTTO SCHERMO
-   - La foto dei fili d'oro occupa tutto lo schermo, poco zoomata: è
-     ancorata a destra a piena altezza, così la trama si vede intera.
-   - Nessun box: una sfumatura da sinistra (#0B0F19 → trasparente) fa da
-     fondo al testo e si scioglie nella trama, senza divisioni verticali.
-   - Titolo in Bauhaus 93 (se installato sul dispositivo; altrimenti
-     Baumans, la sua controparte libera di ispirazione Bauhaus).
+   Immagine unica + sfumatura da sinistra + testi. Titolo in Bauhaus 93
+   (file in /public/fonts/bauhaus93.woff2|.ttf, o font installato).
    ═══════════════════════════════════════════════════════════════ */
 
 const goTo = (index) => window.dispatchEvent(new CustomEvent("deck:goto", { detail: { index } }));
@@ -29,45 +24,32 @@ function HeroInner() {
   return (
     <div className="s1-wrap">
       <section className="hsx" id="home" data-n="1" aria-labelledby="hsx-title">
-        {/* Sfondo a tutto schermo: la trama d'oro */}
-        <picture className="hsx__media" aria-hidden="true">
-          <source srcSet="/hero-trama-oro.webp" type="image/webp" />
-          <img
-            className="hsx__img"
-            src="/hero-trama-oro.jpg"
-            alt=""
-            width="1024"
-            height="1024"
-            decoding="async"
-            fetchPriority="high"
-            draggable="false"
-          />
-        </picture>
-        {/* Sfumatura graduale da sinistra: protegge il testo, nessun box */}
+        {/* Immagine Unica & Sfumatura Fluida */}
+        <div className="hsx__bg" aria-hidden="true" />
         <div className="hsx__shade" aria-hidden="true" />
 
-        {/* Contenuti: blocco fluido a sinistra */}
+        {/* Contenuto della Hero */}
         <div className="hsx__content">
-          <Reveal as="p" className="hsx__eyebrow">
-            Karma · Ecologia della decisione
-          </Reveal>
-          <LineReveal as="h1" className="hsx__title" delay={120}>
-            Evolviamo verso ciò che scegliamo di essere.
-          </LineReveal>
-          <Reveal as="p" className="hsx__lede" delay={80}>
+          <p className="hsx__eyebrow">KARMA · LET’S WORK TOGETHER</p>
+
+          <h1 className="hsx__title" id="hsx-title">
+            EVOLVIAMO VERSO CIÒ CHE SCEGLIAMO DI ESSERE.
+          </h1>
+
+          <p className="hsx__lede">
             Dal filo alla trama, accompagniamo la tua impresa nella sua evoluzione: incontrare ciò
             che cambia, riconoscere ciò che conta, scegliere ciò che vuole diventare continuando a
             riconoscersi.
-          </Reveal>
-          <Reveal as="div" className="hsx__actions" delay={160}>
+          </p>
+
+          <div className="hsx__actions">
             <a href="#contatti" className="hsx__btn hsx__btn--primary" onClick={toContacts}>
-              Inizia ora
+              INIZIA ORA
             </a>
             <a href="#karmaround" className="hsx__btn hsx__btn--ghost" onClick={toPath}>
-              Scopri il percorso
-              <span aria-hidden="true">→</span>
+              SCOPRI IL PERCORSO <span aria-hidden="true">→</span>
             </a>
-          </Reveal>
+          </div>
         </div>
       </section>
 
