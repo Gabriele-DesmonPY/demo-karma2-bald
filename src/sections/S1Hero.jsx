@@ -4,17 +4,13 @@ import LineReveal from "../components/LineReveal";
 import "./S1Hero.css";
 
 /* ═══════════════════════════════════════════════════════════════
-   SEZIONE 01 — HERO · SPLIT SCREEN SULLA TRAMA D'ORO
-   - Sfondo a tutto schermo: fili d'oro intrecciati su tessuto scuro.
-   - Sinistra: fascia overlay (velo navy + vetro smerigliato) con la card
-     dei contenuti: H1, payoff e i pulsanti d'azione.
-   - Destra: la texture pulita, senza ostacoli.
-   Niente più spirale, canvas o 3D.
-
-   Performance: il "vetro" della fascia NON è un backdrop-filter (che il
-   browser ricalcolerebbe a ogni frame di scroll e di cambio slide): è la
-   stessa immagine già sfocata nel file, ritagliata sulla metà sinistra con
-   un clip-path statico. Stesso effetto, costo zero.
+   SEZIONE 01 — HERO · TRAMA D'ORO A TUTTO SCHERMO
+   - La foto dei fili d'oro occupa tutto lo schermo, poco zoomata: è
+     ancorata a destra a piena altezza, così la trama si vede intera.
+   - Nessun box: una sfumatura da sinistra (#0B0F19 → trasparente) fa da
+     fondo al testo e si scioglie nella trama, senza divisioni verticali.
+   - Titolo in Bauhaus 93 (se installato sul dispositivo; altrimenti
+     Baumans, la sua controparte libera di ispirazione Bauhaus).
    ═══════════════════════════════════════════════════════════════ */
 
 const goTo = (index) => window.dispatchEvent(new CustomEvent("deck:goto", { detail: { index } }));
@@ -34,39 +30,44 @@ function HeroInner() {
     <div className="s1-wrap">
       <section className="hsx" id="home" data-n="1" aria-labelledby="hsx-title">
         {/* Sfondo a tutto schermo: la trama d'oro */}
-        <div className="hsx__bg" aria-hidden="true" />
-        {/* Vetro smerigliato della fascia: la stessa foto, già sfocata */}
-        <div className="hsx__frost" aria-hidden="true" />
+        <picture className="hsx__media" aria-hidden="true">
+          <source srcSet="/hero-trama-oro.webp" type="image/webp" />
+          <img
+            className="hsx__img"
+            src="/hero-trama-oro.jpg"
+            alt=""
+            width="1024"
+            height="1024"
+            decoding="async"
+            fetchPriority="high"
+            draggable="false"
+          />
+        </picture>
+        {/* Sfumatura graduale da sinistra: protegge il testo, nessun box */}
+        <div className="hsx__shade" aria-hidden="true" />
 
-        <div className="hsx__grid">
-          {/* ── Sinistra: fascia overlay con la card ── */}
-          <div className="hsx__band">
-            <div className="hsx__card">
-              <Reveal as="p" className="hsx__eyebrow">
-                Karma · Ecologia della decisione
-              </Reveal>
-              <LineReveal as="h1" className="hsx__title" delay={120}>
-                Evolviamo verso ciò che scegliamo di essere.
-              </LineReveal>
-              <Reveal as="p" className="hsx__lede" delay={80}>
-                Dal filo alla trama, accompagniamo la tua impresa nella sua evoluzione: incontrare
-                ciò che cambia, riconoscere ciò che conta, scegliere ciò che vuole diventare
-                continuando a riconoscersi.
-              </Reveal>
-              <Reveal as="div" className="hsx__actions" delay={160}>
-                <a href="#contatti" className="hsx__btn hsx__btn--primary" onClick={toContacts}>
-                  Inizia ora
-                </a>
-                <a href="#karmaround" className="hsx__btn hsx__btn--ghost" onClick={toPath}>
-                  Scopri il percorso
-                  <span aria-hidden="true">→</span>
-                </a>
-              </Reveal>
-            </div>
-          </div>
-
-          {/* ── Destra: la texture, pulita ── */}
-          <div className="hsx__view" aria-hidden="true" />
+        {/* Contenuti: blocco fluido a sinistra */}
+        <div className="hsx__content">
+          <Reveal as="p" className="hsx__eyebrow">
+            Karma · Ecologia della decisione
+          </Reveal>
+          <LineReveal as="h1" className="hsx__title" delay={120}>
+            Evolviamo verso ciò che scegliamo di essere.
+          </LineReveal>
+          <Reveal as="p" className="hsx__lede" delay={80}>
+            Dal filo alla trama, accompagniamo la tua impresa nella sua evoluzione: incontrare ciò
+            che cambia, riconoscere ciò che conta, scegliere ciò che vuole diventare continuando a
+            riconoscersi.
+          </Reveal>
+          <Reveal as="div" className="hsx__actions" delay={160}>
+            <a href="#contatti" className="hsx__btn hsx__btn--primary" onClick={toContacts}>
+              Inizia ora
+            </a>
+            <a href="#karmaround" className="hsx__btn hsx__btn--ghost" onClick={toPath}>
+              Scopri il percorso
+              <span aria-hidden="true">→</span>
+            </a>
+          </Reveal>
         </div>
       </section>
 

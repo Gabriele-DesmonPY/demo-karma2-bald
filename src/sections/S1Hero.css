@@ -2,6 +2,8 @@
 
 .hsx {
   position: relative;
+  display: flex;
+  align-items: center;
   min-height: 100vh;
   min-height: 100svh;
   overflow: clip;
@@ -10,29 +12,42 @@
   color: #f6efe0;
 }
 
-/* Sfondo a tutto schermo (bg-cover bg-center) */
-.hsx__bg,
-.hsx__frost {
+/* Foto a tutto schermo, poco zoomata: ancorata a destra a piena altezza,
+   la trama si vede intera; il bordo sinistro si scioglie nel buio */
+.hsx__media {
   position: absolute;
   inset: 0;
   z-index: -2;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
   pointer-events: none;
 }
 
-.hsx__bg {
-  background-image: url("/hero-trama-oro.jpg");
-  background-image: image-set(url("/hero-trama-oro.webp") type("image/webp"), url("/hero-trama-oro.jpg") type("image/jpeg"));
-  /* ingresso lento: la trama emerge dal buio */
+.hsx__img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  aspect-ratio: 1;
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 34%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 34%);
   animation: hsx-bg-in 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* quando lo schermo è più "quadrato" della foto, la foto lo copre tutto */
+@media (max-aspect-ratio: 5/4) {
+  .hsx__img {
+    width: 100%;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 @keyframes hsx-bg-in {
   from {
     opacity: 0;
-    transform: scale(1.06);
+    transform: scale(1.04);
   }
   to {
     opacity: 1;
@@ -40,61 +55,22 @@
   }
 }
 
-/* Vetro della fascia: la foto già sfocata (≈ backdrop-blur-md),
-   ritagliata sulla metà sinistra. Statica: nessun blur calcolato. */
-.hsx__frost {
+/* Sfumatura graduale: from-[#0B0F19] via-[#0B0F19]/80 to-transparent */
+.hsx__shade {
+  position: absolute;
+  inset: 0;
   z-index: -1;
-  background-image: url("/hero-trama-oro-blur.jpg");
-  background-image: image-set(url("/hero-trama-oro-blur.webp") type("image/webp"), url("/hero-trama-oro-blur.jpg") type("image/jpeg"));
-  clip-path: inset(0 50% 0 0);
-  animation: hsx-bg-in 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+  background: linear-gradient(90deg, #0b0f19 0%, rgba(11, 15, 25, 0.8) 42%, rgba(11, 15, 25, 0) 78%);
 }
 
-/* Griglia a split screen */
-.hsx__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 100vh;
-  min-height: 100svh;
-}
-
-/* Sinistra: fascia overlay (bg-[#0B0F19]/60 + bordo oro tenue) */
-.hsx__band {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 100vh;
-  min-height: 100svh;
-  padding: calc(72px + clamp(24px, 4vh, 48px)) clamp(32px, 4.4vw, 64px) clamp(56px, 8vh, 88px);
-  background: rgba(11, 15, 25, 0.6);
-  border-right: 1px solid rgba(212, 175, 55, 0.1);
-}
-
-/* Card principale: rettangolo navy, angoli arrotondati */
-.hsx__card {
+/* Contenitore fluido a sinistra (max-w-2xl, pl-12 → lg:pl-24) */
+.hsx__content {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 640px;
-  margin-left: auto;
-  padding: clamp(32px, 3.4vw, 48px);
-  background: rgba(18, 24, 38, 0.9);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 24px;
-  box-shadow:
-    0 30px 60px -20px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
-    0 1px 0 rgba(243, 229, 171, 0.06) inset;
-  animation: hsx-card-in 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
-}
-
-@keyframes hsx-card-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
+  max-width: calc(42rem + clamp(48px, 6.7vw, 96px));
+  padding: calc(72px + clamp(16px, 4vh, 56px)) 24px clamp(72px, 10vh, 110px) clamp(48px, 6.7vw, 96px);
 }
 
 .hsx__eyebrow {
@@ -102,30 +78,35 @@
   font-family: var(--font-label), sans-serif;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   color: #e2c974;
 }
 
+/* Titolo: Bauhaus 93 (text-5xl → lg:text-7xl, amber-100, tracking-wide) */
 .hsx__title {
-  margin: 20px 0 0;
-  font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
+  margin: 22px 0 0;
+  font-family: "Bauhaus 93", "Baumans", "Futura", sans-serif;
   font-weight: 400;
-  font-size: clamp(2.4rem, min(3.6vw, 7.4vh), 4.4rem);
-  line-height: 1.04;
-  letter-spacing: -0.005em;
+  font-size: clamp(2.6rem, min(1.6rem + 3.6vw, 7.8vh), 4.5rem);
+  line-height: 1.1;
+  letter-spacing: 0.025em;
   text-transform: uppercase;
-  color: #fbf6ea;
+  color: #fef3c7;
+  text-shadow: 0 4px 3px rgba(0, 0, 0, 0.07), 0 2px 2px rgba(0, 0, 0, 0.06), 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 
+/* Payoff: serif corsivo, arioso, ben leggibile sulla sfumatura */
 .hsx__lede {
-  margin: 22px 0 0;
-  max-width: 44ch;
+  margin: clamp(18px, 3vh, 28px) 0 0;
+  max-width: 46ch;
   font-family: var(--font-accent), "Instrument Serif", Georgia, serif;
   font-style: italic;
-  font-size: clamp(1.1rem, 1.25vw, 1.32rem);
-  line-height: 1.5;
-  color: rgba(226, 201, 116, 0.92);
+  font-size: clamp(1.15rem, 1.3vw, 1.4rem);
+  line-height: 1.65;
+  letter-spacing: 0.012em;
+  color: rgba(243, 229, 171, 0.9);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
 }
 
 .hsx__actions {
@@ -133,7 +114,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 14px 18px;
-  margin-top: clamp(28px, 4vh, 40px);
+  margin-top: clamp(24px, 4.5vh, 48px);
 }
 
 .hsx__btn {
@@ -164,8 +145,9 @@
 }
 
 .hsx__btn--ghost {
-  border: 1px solid rgba(226, 201, 116, 0.4);
+  border: 1px solid rgba(226, 201, 116, 0.45);
   color: #f3e5ab;
+  background: rgba(11, 15, 25, 0.25);
 }
 
 .hsx__btn--ghost:hover {
@@ -184,12 +166,6 @@
 .hsx__btn:focus-visible {
   outline: 2px solid #e2c974;
   outline-offset: 4px;
-}
-
-/* Destra: la texture pulita */
-.hsx__view {
-  min-height: 100vh;
-  min-height: 100svh;
 }
 
 /* ═══════════ Micro-sezione citazione: pausa e respiro ═══════════ */
@@ -251,44 +227,22 @@
 
 
 /* ═══════════ Responsive ═══════════ */
-/* Sotto 1024px le colonne si impilano: fascia a tutta larghezza, poi la
-   texture pulita (più bassa: un respiro, non un'altra schermata vuota) */
-@media (max-width: 1023px) {
-  .hsx__grid {
-    grid-template-columns: 1fr;
+/* Schermi stretti: la foto copre tutto, la sfumatura sale dal basso */
+@media (max-width: 767px) {
+  .hsx {
+    align-items: flex-end;
   }
 
-  .hsx__frost {
-    clip-path: inset(0 0 45svh 0);
+  .hsx__shade {
+    background: linear-gradient(0deg, #0b0f19 0%, rgba(11, 15, 25, 0.8) 55%, rgba(11, 15, 25, 0.25) 100%);
   }
 
-  .hsx__band {
-    border-right: 0;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-  }
-
-  .hsx__card {
-    margin: 0 auto;
-  }
-
-  .hsx__view {
-    min-height: 45vh;
-    min-height: 45svh;
-  }
-}
-
-@media (max-width: 640px) {
-  .hsx__band {
-    padding: calc(68px + 20px) 16px 40px;
-  }
-
-  .hsx__card {
-    padding: 28px 22px;
-    border-radius: 20px;
+  .hsx__content {
+    padding: calc(68px + 24px) 20px 96px;
   }
 
   .hsx__title {
-    font-size: clamp(2rem, 9vw, 2.6rem);
+    font-size: clamp(2.3rem, 10.5vw, 3rem);
   }
 
   .hsx__btn {
@@ -301,9 +255,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hsx__bg,
-  .hsx__frost,
-  .hsx__card {
+  .hsx__img {
     animation: none;
   }
 }
