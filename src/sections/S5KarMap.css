@@ -846,3 +846,34 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* ═══════════ Stacking & scale (motion/react) ═══════════
+   Desktop con altezza sufficiente: la KarMAP resta ferma in cima alla
+   slide (sticky) mentre lo strato successivo — oggi il footer, domani la
+   Sezione 06 — le scorre sopra con un'ombra profonda. Scala/opacità/blur
+   arrivano da motion (style inline), qui solo struttura. */
+.s5-root {
+  position: relative;
+  background: #070a11;
+}
+
+.s5-root.is-stacked .s5 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 100vh;
+  height: 100svh;
+  min-height: 0;
+  padding-top: clamp(88px, 11vh, 124px);
+  padding-bottom: clamp(32px, 5vh, 64px);
+  transform-origin: 50% 40%;
+  will-change: transform, opacity, filter;
+}
+
+/* lo strato che sale sopra la KarMAP */
+.s5-next {
+  position: relative;
+  z-index: 2;
+  background: #070a11;
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.8);
+}

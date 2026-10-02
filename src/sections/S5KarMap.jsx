@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import SiteFooter from "../components/SiteFooter";
 import "./S5KarMap.css";
 
-gsap.registerPlugin(ScrollTrigger);
+// Impilamento "stacking & scale": la KarMAP resta ferma (sticky) e si
+// allontana — scala 1 → 0.92, opacità 1 → 0.3, blur 0 → 8px — mentre lo
+// strato successivo le scorre sopra. Solo dove la sezione sta tutta in
+// una schermata (desktop): altrove scorre normale, con scala/opacità lievi.
+const STACK_MQ = "(min-width: 1280px) and (min-height: 720px)";
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 05 — KarMAP: CIÒ CHE TI RESTITUIAMO
@@ -149,9 +152,11 @@ export default function S5KarMap() {
     const place = () => {
       const sr = section.getBoundingClientRect();
       const mr = stage.getBoundingClientRect();
-      const cx = mr.left + mr.width / 2 - sr.left;
-      const cy = mr.top + mr.height / 2 - sr.top;
-      const w = Math.max(sr.width * 1.25, mr.width * 2.6, 1200);
+      // la sezione può essere già scalata dallo scroll: misure riportate a 1
+      const k = section.offsetWidth ? sr.width / section.offsetWidth : 1;
+      const cx = (mr.left + mr.width / 2 - sr.left) / k;
+      const cy = (mr.top + mr.height / 2 - sr.top) / k;
+      const w = Math.max((sr.width / k) * 1.25, (mr.width / k) * 2.6, 1200);
       const h = w * BG.ratio;
       section.style.setProperty("--s5-bgw", `${w.toFixed(0)}px`);
       section.style.setProperty("--s5-bgx", `${(cx - w * BG.fx).toFixed(0)}px`);
@@ -165,40 +170,37 @@ export default function S5KarMap() {
     return () => ro.disconnect();
   }, []);
 
-  // Dissolvenza legata allo scroll (scrub 0.5 → segue le dita, con un
-  // filo di morbidezza): scendendo verso il footer la KarMAP si fa eterea
-  // (opacità 0.2, scale 0.98, sale appena) e il footer emerge dal basso.
-  // Solo transform/opacity: niente blur in scrub, che costerebbe un
-  // ridisegno della spirale a ogni fotogramma di scroll.
-  useEffect(() => {
-    const section = sectionRef.current;
-    const scroller = section?.closest(".sandbox-slide");
-    if (!section || !scroller) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const footer = section.parentElement?.querySelector(".site-footer__grid");
-    const ctx = gsap.context(() => {
-      gsap.to(section.querySelector(".s5__inner"), {
-        opacity: 0.2,
-        scale: 0.98,
-        y: -30,
-        ease: "none",
-        scrollTrigger: { trigger: section, scroller, start: "bottom 85%", end: "bottom 20%", scrub: 0.5 },
-      });
-      if (footer) {
-        gsap.fromTo(
-          footer,
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            ease: "none",
-            scrollTrigger: { trigger: footer, scroller, start: "top 98%", end: "top 55%", scrub: 0.5 },
-          }
-        );
-      }
-    }, section);
-    return () => ctx.revert();
+  // ── Scroll "stacking & scale" (motion/react) ──
+  // Nel deck la finestra non scorre: scorre la slide (.sandbox-slide),
+  // quindi useScroll la usa come container. Il ref va valorizzato PRIMA
+  // che useScroll si agganci: layout effect dichiarato prima dell'hook.
+  const rootRef = useRef(null);
+  const scrollerRef = useRef(null);
+  useLayoutEffect(() => {
+    scrollerRef.current = rootRef.current?.closest(".sandbox-slide") ?? null;
   }, []);
+  const [stack, setStack] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(STACK_MQ).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(STACK_MQ);
+    const on = () => setStack(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const reduceMotion = useReducedMotion();
+
+  const { scrollYProgress } = useScroll({
+    container: scrollerRef,
+    target: rootRef,
+    offset: ["start start", "end end"],
+  });
+  const scale = useTransform(scrollYProgress, [0, 1], [1, stack ? 0.92 : 0.97]);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, stack ? 0.3 : 0.5]);
+  const blurPx = useTransform(scrollYProgress, [0, 0.8], [0, 8]);
+  // a riposo "none" (nessun livello di filtro); il blur solo in modalità stack
+  const filter = useTransform(blurPx, (v) => (v < 0.05 ? "none" : `blur(${v.toFixed(2)}px)`));
+  const stackStyle = reduceMotion ? undefined : { scale, opacity, ...(stack ? { filter } : null) };
 
   // Props condivise da etichette e voci di legenda
   const bind = (i) => ({
@@ -212,9 +214,10 @@ export default function S5KarMap() {
   });
 
   return (
-    <div className="s5-root">
-      <section
+    <div className={"s5-root" + (stack ? " is-stacked" : "")} ref={rootRef}>
+      <motion.section
         ref={sectionRef}
+        style={stackStyle}
         className={"s5" + (drawn ? " is-drawn" : "") + (active !== null ? " has-active" : "")}
         id="karmap"
         data-n="5"
@@ -453,10 +456,12 @@ export default function S5KarMap() {
             </article>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Footer & contatti in coda all'ultima slide del deck */}
-      <SiteFooter />
+      <div className="s5-next">
+        <SiteFooter />
+      </div>
     </div>
   );
 }
