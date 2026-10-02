@@ -52,7 +52,10 @@ function HeroInner() {
                 Ci sono diversi modi di essere al servizio delle imprese.
               </span>
               <span className="hsx__title-b">
-                <em>Noi abbiamo scelto di</em> <strong>essere cura.</strong>
+                <em>Noi abbiamo scelto</em>{" "}
+                <span className="hsx__nowrap">
+                  <em>di</em> <strong>essere cura.</strong>
+                </span>
               </span>
             </>
           </LineReveal>

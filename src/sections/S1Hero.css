@@ -113,12 +113,12 @@
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.08), 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 
-/* Riga 2 — sfalsata a destra: Cormorant corsivo oro + "ESSERE CURA"
-   nel Bauhaus maiuscolo, spaziato, con alone dorato */
+/* Riga 2 — UNA sola riga, centrata: Cormorant corsivo oro + "ESSERE
+   CURA" nel Bauhaus maiuscolo, spaziato, con alone dorato */
 .hsx__title-b {
   display: block;
   margin-top: clamp(12px, 2.2vh, 24px);
-  font-size: clamp(1.6rem, min(0.8rem + 2.4vw, 5.6vh), 3rem);
+  font-size: clamp(1.5rem, min(0.6rem + 2.2vw, 5.4vh), 2.7rem);
   line-height: 1.2;
   text-wrap: balance;
 }
@@ -134,7 +134,7 @@
 .hsx__title-b strong {
   font-family: "Bauhaus 93", "Baumans", "Futura", sans-serif;
   font-weight: 400;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--accent-gold);
@@ -143,11 +143,15 @@
     0 2px 14px rgba(0, 0, 0, 0.5);
 }
 
-/* sfalsata: rientro a sinistra (padding, non transform: la riga resta
-   dentro la maschera della LineReveal e non viene tagliata) */
+/* "di ESSERE CURA." resta sempre insieme */
+.hsx__nowrap {
+  white-space: nowrap;
+}
+
+/* da desktop la seconda riga non va mai a capo */
 @media (min-width: 1024px) {
   .hsx__title-b {
-    padding-left: clamp(80px, 12vw, 220px);
+    white-space: nowrap;
   }
 }
 
