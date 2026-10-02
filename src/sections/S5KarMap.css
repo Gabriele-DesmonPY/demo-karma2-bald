@@ -846,29 +846,3 @@
     stroke-dashoffset: 0;
   }
 }
-
-/* ═══════════ Stacking & scale (motion/react) ═══════════
-   La KarMAP è sticky con top = altezza schermo − altezza sezione (JS,
-   --s5-stick): si ferma quando il suo fondo tocca il fondo dello
-   schermo, quindi si legge tutta a qualunque altezza di finestra; poi lo
-   strato successivo — oggi il footer, domani la Sezione 06 — le scorre
-   sopra con un'ombra profonda. Scala/opacità/blur: motion (inline). */
-.s5-root {
-  position: relative;
-  background: #070a11;
-}
-
-.s5-root .s5 {
-  position: sticky;
-  top: var(--s5-stick, 0px);
-  z-index: 1;
-  transform-origin: 50% 40%;
-}
-
-/* lo strato che sale sopra la KarMAP */
-.s5-next {
-  position: relative;
-  z-index: 2;
-  background: #070a11;
-  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.8);
-}

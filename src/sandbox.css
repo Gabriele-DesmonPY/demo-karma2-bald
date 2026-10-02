@@ -61,10 +61,11 @@
   contain: layout paint;
 }
 
-/* ── Slide impilate sulla tela: cross-fade invece di scorrimento ──
-   La slide in scena sta sopra; quella in uscita resta visibile sotto
-   mentre si dissolve (animazione WAAPI in App.jsx); le altre sono
-   parcheggiate fuori scena e nascoste. */
+/* ── Slide impilate sulla tela: "stacking & scale" sezione per sezione ──
+   Scendendo, la slide in scena sale sopra quella in uscita (che arretra
+   sotto: scala, opacità, blur — animazione WAAPI in App.jsx); risalendo,
+   quella in uscita sta sopra e scende via. Le altre sono parcheggiate
+   fuori scena e nascoste. */
 .sandbox-slide.is-active {
   z-index: 2;
 }
@@ -72,6 +73,17 @@
 .sandbox-slide.is-leaving {
   z-index: 1;
   pointer-events: none;
+}
+
+.sandbox-slide.is-leaving--top {
+  z-index: 3;
+}
+
+/* la slide che sta sopra durante il passaggio proietta un'ombra profonda
+   su quella sotto: profondità a strati */
+.sandbox-slide.is-active,
+.sandbox-slide.is-leaving--top {
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.8);
 }
 
 .sandbox-slide.is-before,

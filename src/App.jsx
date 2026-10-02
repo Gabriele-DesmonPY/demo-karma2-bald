@@ -38,15 +38,15 @@ const SECTIONS = [
   { n: 11, id: "mappa-cta", nome: "Mappa Karma + CTA", alta: true },
 ];
 
-// Durata del passaggio tra slide: breve e reattiva (prima 1100 ms → effetto
-// "PowerPoint").
-const DECK_MS = 600;
-// Passaggio "etereo" (cross-fade, niente tagli): le slide sono impilate sulla
-// stessa tela e si dissolvono l'una nell'altra invece di scorrere come
-// pagine. Uscita: opacità ↓, scale 0.98, blur 4px. Entrata: da opacità 0 e
-// 30px di scarto verticale (dal basso scendendo, dall'alto risalendo).
-const DECK_EASE = "cubic-bezier(0.25, 1, 0.5, 1)";
-const ENTER_DELAY = 90; // l'entrata parte appena dopo l'uscita: dissolvenza incrociata
+// Passaggio tra sezioni "stacking & scale", sezione per sezione:
+// scendendo, la sezione nuova SALE dal basso e copre quella attuale, che
+// intanto si allontana (scala 1 → 0.92, opacità 1 → 0.3, blur 0 → 8px).
+// Risalendo, il contrario: la sezione attuale scende via e quella sotto
+// torna avanti. Le slide sono impilate sulla stessa tela (sandbox.css).
+const DECK_MS = 750;
+const DECK_EASE = "cubic-bezier(0.33, 1, 0.68, 1)"; // ease-out morbido: si vede salire
+const BACK = { transform: "scale(0.92)", opacity: 0.3, filter: "blur(8px)" };
+const FRONT = { transform: "scale(1)", opacity: 1, filter: "blur(0px)" };
 // Una "gesture" di rotella/trackpad = un flusso di eventi wheel senza pause
 // più lunghe di così. Ogni gesture sposta il deck al massimo di UNA slide:
 // l'inerzia del trackpad non fa saltare due sezioni, ma un nuovo colpo di
@@ -79,6 +79,8 @@ export default function App() {
   const activeIndexRef = useRef(0);
   // slide in uscita: resta visibile (sotto) finché la sua dissolvenza finisce
   const [leavingIndex, setLeavingIndex] = useState(null);
+  // risalendo, la slide uscente sta SOPRA (scende via scoprendo l'altra)
+  const [leavingOnTop, setLeavingOnTop] = useState(false);
   const isTransitioningRef = useRef(false);
   const slideRefs = useRef([]);
   const touchStartYRef = useRef(0);
@@ -100,8 +102,9 @@ export default function App() {
     const from = activeIndexRef.current;
     if (from !== targetIndex) {
       transitionRef.current = { from, to: targetIndex };
-      // nello stesso render: la slide uscente resta in scena (sotto)
+      // nello stesso render: la slide uscente resta in scena
       setLeavingIndex(from);
+      setLeavingOnTop(targetIndex < from);
     }
     activeIndexRef.current = targetIndex;
     setActiveIndex(targetIndex);
@@ -110,10 +113,9 @@ export default function App() {
     const target = slideRefs.current[targetIndex];
     if (target) target.scrollTop = fromBelow ? target.scrollHeight : 0;
 
-    // durata allineata al cross-fade del deck
     setTimeout(() => {
       isTransitioningRef.current = false;
-    }, DECK_MS + ENTER_DELAY);
+    }, DECK_MS);
   }, []);
 
   // ── Passo avanti/indietro consapevole dello scroll interno ──
@@ -219,48 +221,44 @@ export default function App() {
     };
   }, [activeIndex]);
 
-  // ── Cross-fade del deck (Web Animations API: transform/opacity/filter,
-  // tutto sul compositor; nessun re-render React durante l'animazione).
-  // useLayoutEffect: le animazioni partono prima del primo paint del nuovo
-  // stato, quindi nessun fotogramma "scoperto" (niente flash).
+  // ── Animazione del deck (Web Animations API: transform/opacity/filter,
+  // sul compositor; nessun re-render React durante l'animazione).
+  // useLayoutEffect: parte prima del primo paint del nuovo stato (niente flash).
   useLayoutEffect(() => {
     const t = transitionRef.current;
     if (!t) return;
     transitionRef.current = null;
     const out = slideRefs.current[t.from];
     const inn = slideRefs.current[t.to];
-    const dir = t.to > t.from ? 1 : -1;
+    const forward = t.to > t.from;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timing = { duration: reduced ? 200 : DECK_MS, easing: DECK_EASE };
 
     [out, inn].forEach((el) => el?.getAnimations().forEach((a) => a.cancel()));
 
-    inn?.animate(
-      reduced
-        ? [{ opacity: 0 }, { opacity: 1 }]
-        : [
-            { opacity: 0, transform: `translate3d(0, ${dir * 30}px, 0)` },
-            { opacity: 1, transform: "translate3d(0, 0, 0)" },
-          ],
-      { ...timing, delay: reduced ? 0 : ENTER_DELAY, fill: "backwards" }
-    );
-
-    if (out) {
-      const outAnim = out.animate(
-        reduced
-          ? [{ opacity: 1 }, { opacity: 0 }]
-          : [
-              { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", filter: "blur(0px)" },
-              { opacity: 0.2, offset: 0.55 },
-              { opacity: 0, transform: `translate3d(0, ${dir * -18}px, 0) scale(0.98)`, filter: "blur(4px)" },
-            ],
-        { ...timing, fill: "forwards" }
-      );
-      // a dissolvenza finita la slide torna "parcheggiata" fuori scena
-      outAnim.finished
-        .then(() => setLeavingIndex((cur) => (cur === t.from ? null : cur)))
-        .catch(() => {});
+    let outAnim;
+    if (reduced) {
+      inn?.animate([{ opacity: 0 }, { opacity: 1 }], { ...timing, fill: "backwards" });
+      outAnim = out?.animate([{ opacity: 1 }, { opacity: 0 }], { ...timing, fill: "forwards" });
+    } else if (forward) {
+      // la nuova sale dal basso e copre; la vecchia arretra sotto
+      inn?.animate([{ transform: "translate3d(0, 100%, 0)" }, { transform: "translate3d(0, 0, 0)" }], {
+        ...timing,
+        fill: "backwards",
+      });
+      outAnim = out?.animate([FRONT, BACK], { ...timing, fill: "forwards" });
+    } else {
+      // risalendo: l'attuale scende via, la precedente torna avanti
+      inn?.animate([BACK, FRONT], { ...timing, fill: "backwards" });
+      outAnim = out?.animate([{ transform: "translate3d(0, 0, 0)" }, { transform: "translate3d(0, 100%, 0)" }], {
+        ...timing,
+        fill: "forwards",
+      });
     }
+    // a fine animazione la slide uscente torna "parcheggiata" fuori scena
+    outAnim?.finished
+      .then(() => setLeavingIndex((cur) => (cur === t.from ? null : cur)))
+      .catch(() => {});
   }, [activeIndex]);
 
   // Le slide tornate a riposo perdono lo stato congelato dell'uscita, nello
@@ -328,11 +326,14 @@ export default function App() {
   // Gestione Wheel (rotella del mouse / touchpad)
   // - Dentro una slide più alta della viewport la rotella scorre il
   //   contenuto (Lenis); il deck passa alla slide vicina solo quando si è
-  //   già al bordo E parte un nuovo gesto: arrivare in fondo scorrendo non
-  //   fa "volare" via di colpo alla sezione dopo.
-  // - Un solo passaggio per gesto: la coda d'inerzia del trackpad viene
-  //   ignorata finché non c'è una pausa (o un nuovo impulso più forte).
-  const lastWheelRef = useRef({ t: 0, abs: 0, consumed: false });
+  //   già al bordo E parte un nuovo gesto.
+  // - Un solo passaggio per gesto. E la coda d'inerzia del gesto che ha
+  //   cambiato sezione viene ASSORBITA: la sezione appena arrivata si apre
+  //   dalla cima e resta lì (prima l'inerzia la faceva scorrere subito fino
+  //   ai contatti). Il gesto successivo scorre normalmente.
+  // Listener in cattura e non passivo: deve poter fermare l'evento prima
+  // che arrivi a Lenis e allo scroll nativo.
+  const lastWheelRef = useRef({ t: 0, abs: 0, consumed: false, swallow: false, until: 0 });
   useEffect(() => {
     const handleWheel = (e) => {
       const now = performance.now();
@@ -341,14 +342,26 @@ export default function App() {
       const sameGesture = now - w.t < WHEEL_GESTURE_GAP && abs <= w.abs * 1.6 + 4;
       w.t = now;
       w.abs = abs;
-      if (!sameGesture) w.consumed = false;
+      if (!sameGesture) {
+        w.consumed = false;
+        w.swallow = false;
+      }
 
-      if (abs < 4) return;
-      if (isTransitioningRef.current || lockedRef.current) {
-        w.consumed = true;
+      // dopo un cambio di sezione la rotella resta "assorbita" almeno per
+      // la durata del passaggio + un margine, anche se il gesto ha pause
+      if (now < w.until) w.swallow = true;
+      const busy = isTransitioningRef.current || lockedRef.current;
+      if (busy || w.swallow) {
+        if (busy) w.consumed = true;
+        // durante il passaggio (e per il resto del gesto che l'ha causato)
+        // niente scroll: né Lenis né nativo
+        if (isTransitioningRef.current || w.swallow) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         return;
       }
-      if (w.consumed) return;
+      if (abs < 4 || w.consumed) return;
 
       const dir = e.deltaY > 0 ? 1 : -1;
       const scroller = slideRefs.current[activeIndex];
@@ -365,10 +378,17 @@ export default function App() {
       }
       if (abs < 12) return; // micro-tocchi del trackpad
       w.consumed = true;
+      const before = activeIndexRef.current;
       stepSlide(dir);
+      if (activeIndexRef.current !== before) {
+        w.swallow = true;
+        w.until = now + DECK_MS + 350;
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    return () => window.removeEventListener("wheel", handleWheel);
+    window.addEventListener("wheel", handleWheel, { passive: false, capture: true });
+    return () => window.removeEventListener("wheel", handleWheel, { capture: true });
   }, [activeIndex, stepSlide]);
 
   // Gestione Touch (swipe su mobile)
@@ -423,7 +443,7 @@ export default function App() {
   }, [activeIndex]);
 
   // Stato di ogni slide sulla tela comune:
-  // is-active (in scena) · is-leaving (si sta dissolvendo) ·
+  // is-active (in scena) · is-leaving (sta uscendo; --top se risalendo) ·
   // is-before / is-after (parcheggiate fuori scena, sopra o sotto: così gli
   // IntersectionObserver delle sezioni scattano solo quando entrano davvero)
   const slideClass = (i) =>
@@ -431,7 +451,7 @@ export default function App() {
     (activeIndex === i
       ? " is-active"
       : leavingIndex === i
-        ? " is-leaving"
+        ? " is-leaving" + (leavingOnTop ? " is-leaving--top" : "")
         : i < activeIndex
           ? " is-before"
           : " is-after");

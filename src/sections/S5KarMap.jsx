@@ -1,14 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import SiteFooter from "../components/SiteFooter";
 import "./S5KarMap.css";
 
-// Impilamento "stacking & scale": la KarMAP si ferma quando il suo FONDO
-// tocca il fondo dello schermo (così si legge sempre tutta, a qualunque
-// altezza di finestra) e si allontana — scala 1 → 0.92, opacità 1 → 0.3,
-// blur 0 → 8px — mentre lo strato successivo le scorre sopra.
-// Il blur solo su schermi larghi (sui telefoni costa troppo).
-const BLUR_MQ = "(min-width: 1024px)";
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 05 — KarMAP: CIÒ CHE TI RESTITUIAMO
@@ -171,56 +164,6 @@ export default function S5KarMap() {
     return () => ro.disconnect();
   }, []);
 
-  // ── Scroll "stacking & scale" (motion/react) ──
-  // Nel deck la finestra non scorre: scorre la slide (.sandbox-slide),
-  // quindi useScroll la usa come container. Il ref va valorizzato PRIMA
-  // che useScroll si agganci: layout effect dichiarato prima dell'hook.
-  const rootRef = useRef(null);
-  const scrollerRef = useRef(null);
-  useLayoutEffect(() => {
-    scrollerRef.current = rootRef.current?.closest(".sandbox-slide") ?? null;
-  }, []);
-  const nextRef = useRef(null);
-  const [blurOn, setBlurOn] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(BLUR_MQ).matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(BLUR_MQ);
-    const on = () => setBlurOn(mq.matches);
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-
-  // Punto di aggancio dello sticky: top = altezza visibile − altezza sezione
-  // (negativo se la sezione è più alta dello schermo). Variabile CSS.
-  useEffect(() => {
-    const section = sectionRef.current;
-    const scroller = scrollerRef.current;
-    if (!section || !scroller) return;
-    const set = () => {
-      const top = Math.min(0, scroller.clientHeight - section.offsetHeight);
-      section.style.setProperty("--s5-stick", `${top}px`);
-    };
-    set();
-    const ro = new ResizeObserver(set);
-    ro.observe(section);
-    ro.observe(scroller);
-    return () => ro.disconnect();
-  }, []);
-  const reduceMotion = useReducedMotion();
-
-  // 0 = lo strato successivo affaccia dal fondo, 1 = è entrato tutto
-  const { scrollYProgress } = useScroll({
-    container: scrollerRef,
-    target: nextRef,
-    offset: ["start end", "end end"],
-  });
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.3]);
-  const blurPx = useTransform(scrollYProgress, [0, 0.8], [0, 8]);
-  // a riposo "none" (nessun livello di filtro)
-  const filter = useTransform(blurPx, (v) => (v < 0.05 ? "none" : `blur(${v.toFixed(2)}px)`));
-  const stackStyle = reduceMotion ? undefined : { scale, opacity, ...(blurOn ? { filter } : null) };
 
 
   // Props condivise da etichette e voci di legenda
@@ -235,10 +178,9 @@ export default function S5KarMap() {
   });
 
   return (
-    <div className="s5-root" ref={rootRef}>
-      <motion.section
+    <div className="s5-root">
+      <section
         ref={sectionRef}
-        style={stackStyle}
         className={"s5" + (drawn ? " is-drawn" : "") + (active !== null ? " has-active" : "")}
         id="karmap"
         data-n="5"
@@ -477,10 +419,10 @@ export default function S5KarMap() {
             </article>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* Footer & contatti in coda all'ultima slide del deck */}
-      <div className="s5-next" ref={nextRef}>
+      <div className="s5-next">
         <SiteFooter />
       </div>
     </div>
