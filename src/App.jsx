@@ -38,8 +38,14 @@ const SECTIONS = [
   { n: 11, id: "mappa-cta", nome: "Mappa Karma + CTA", alta: true },
 ];
 
-// Durata del passaggio tra slide: lunga e morbida, inerzia "preziosa"
-const DECK_MS = 1100;
+// Durata del passaggio tra slide: breve e reattiva (prima 1100 ms → effetto
+// "PowerPoint"). Deve coincidere con la transizione di .sandbox-track.
+const DECK_MS = 600;
+// Una "gesture" di rotella/trackpad = un flusso di eventi wheel senza pause
+// più lunghe di così. Ogni gesture sposta il deck al massimo di UNA slide:
+// l'inerzia del trackpad non fa saltare due sezioni, ma un nuovo colpo di
+// rotella dopo la pausa risponde subito, senza aspettare animazioni.
+const WHEEL_GESTURE_GAP = 180;
 
 // Voci del menu → slide del deck.
 // "contatti" punta alla sezione finale (Mappa Karma + CTA, n.11); finché non
@@ -174,9 +180,10 @@ export default function App() {
     const lenis = new Lenis({
       wrapper,
       content: wrapper.firstElementChild || wrapper,
-      duration: 1.2,
+      duration: 0.7, // prima 1.2: lo scroll interno segue subito la rotella
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
+      wheelMultiplier: 1.1,
       syncTouch: false, // sul touch resta lo scroll nativo (ex smoothTouch: false)
     });
     lenisRef.current = lenis;
@@ -248,14 +255,50 @@ export default function App() {
   }, [goToSlide]);
 
   // Gestione Wheel (rotella del mouse / touchpad)
+  // - Dentro una slide più alta della viewport la rotella scorre il
+  //   contenuto (Lenis); il deck passa alla slide vicina solo quando si è
+  //   già al bordo E parte un nuovo gesto: arrivare in fondo scorrendo non
+  //   fa "volare" via di colpo alla sezione dopo.
+  // - Un solo passaggio per gesto: la coda d'inerzia del trackpad viene
+  //   ignorata finché non c'è una pausa (o un nuovo impulso più forte).
+  const lastWheelRef = useRef({ t: 0, abs: 0, consumed: false });
   useEffect(() => {
     const handleWheel = (e) => {
-      if (Math.abs(e.deltaY) < 25) return;
-      stepSlide(e.deltaY > 0 ? 1 : -1);
+      const now = performance.now();
+      const w = lastWheelRef.current;
+      const abs = Math.abs(e.deltaY);
+      const sameGesture = now - w.t < WHEEL_GESTURE_GAP && abs <= w.abs * 1.6 + 4;
+      w.t = now;
+      w.abs = abs;
+      if (!sameGesture) w.consumed = false;
+
+      if (abs < 4) return;
+      if (isTransitioningRef.current || lockedRef.current) {
+        w.consumed = true;
+        return;
+      }
+      if (w.consumed) return;
+
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const scroller = slideRefs.current[activeIndex];
+      const scrollable = scroller && scroller.scrollHeight - scroller.clientHeight > 10;
+      const atEdge =
+        !scrollable ||
+        (dir > 0
+          ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 10
+          : scroller.scrollTop <= 10);
+      // gesto usato per scorrere dentro la slide: non cambia sezione
+      if (!atEdge) {
+        w.consumed = true;
+        return;
+      }
+      if (abs < 12) return; // micro-tocchi del trackpad
+      w.consumed = true;
+      stepSlide(dir);
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [stepSlide]);
+  }, [activeIndex, stepSlide]);
 
   // Gestione Touch (swipe su mobile)
   useEffect(() => {
