@@ -234,16 +234,22 @@ export default function S5KarMap() {
             </figcaption>
 
             <div className="s5-map__stage" ref={mapRef}>
-              <div className="s5-map__halo" aria-hidden="true" />
+              {/* bagliore del seme: l'involucro entra in dissolvenza, il cuore pulsa */}
+              <div className="s5-map__halo" aria-hidden="true">
+                <span className="s5-map__pulse" />
+              </div>
 
-              {/* fili gemelli: ruotano piano, su un livello a parte (compositor) */}
+              {/* Bracci della spirale in rotazione eterea (50 s / giro).
+                  Ruota l'intero <svg> come livello composito: solo transform,
+                  60 fps senza ridisegnare i tracciati. Nodi, etichette e IL
+                  SEME stanno su livelli separati e restano fermi e orizzontali. */}
               <svg className="s5-map__echo" viewBox="-500 -500 1000 1000" aria-hidden="true">
                 <defs>
                   <radialGradient id="s5-echo-fade" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="480">
                     <stop offset="0%" stopColor="#d4af37" stopOpacity="0" />
                     <stop offset="22%" stopColor="#d4af37" stopOpacity="0" />
-                    <stop offset="60%" stopColor="#d4af37" stopOpacity="0.55" />
-                    <stop offset="100%" stopColor="#d4af37" stopOpacity="0.2" />
+                    <stop offset="55%" stopColor="#d4af37" stopOpacity="0.75" />
+                    <stop offset="100%" stopColor="#d4af37" stopOpacity="0.3" />
                   </radialGradient>
                 </defs>
                 {ECHO_PATHS.map((d, i) => (
@@ -309,24 +315,30 @@ export default function S5KarMap() {
                 <circle r={R_CORE} className="s5-seed__ring" />
                 <circle r={R_CORE - 10} className="s5-seed__ring s5-seed__ring--in" />
 
-                {/* nodi delle tappe */}
-                {NODES.map((n, i) => (
-                  <g
-                    key={n.label}
-                    className={"s5-node" + (active === i ? " is-on" : "")}
-                    transform={`translate(${n.x.toFixed(1)} ${n.y.toFixed(1)})`}
-                    style={{ "--i": i }}
-                  >
-                    <circle r="13" className="s5-node__ring" />
-                    <circle r="4.5" className="s5-node__dot" />
-                  </g>
-                ))}
               </svg>
 
               {/* IL SEME */}
               <p className="s5-seed__label">
                 <span>Il seme</span>
               </p>
+
+              {/* Micro-punti luminosi delle tappe (HTML: scala + glow composti) */}
+              {!compact &&
+                NODES.map((n, i) => (
+                  <span
+                    key={"dot" + n.label}
+                    className={"s5-dot" + (active === i ? " is-on" : "")}
+                    style={{
+                      left: `${((n.x + 500) / 10).toFixed(2)}%`,
+                      top: `${((n.y + 500) / 10).toFixed(2)}%`,
+                      "--i": i,
+                    }}
+                    aria-hidden="true"
+                    onMouseEnter={() => setActive(i)}
+                    onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
+                    onClick={() => setActive((cur) => (cur === i ? null : i))}
+                  />
+                ))}
 
               {/* Etichette (o numeri, in modalità compatta) */}
               {NODES.map((n, i) =>
