@@ -22,6 +22,9 @@ import "./S5KarMap.css";
 const QUESTIONARIO_URL = "#questionario";
 const CALENDARIO_URL = "#prenota";
 
+// Sfondo della sezione e posizione del suo punto luce (in frazioni)
+const BG = { jpg: "/karmap-bg.jpg", webp: "/karmap-bg.webp", ratio: 832 / 1248, fx: 0.468, fy: 0.46 };
+
 const TAPPE = [
   "Dove siamo",
   "Cosa si sta muovendo",
@@ -95,6 +98,7 @@ const ECHO_PATHS = [(2 * Math.PI) / 3, (4 * Math.PI) / 3].map((ph) => trace(0, P
 const pad = (n) => String(n).padStart(2, "0");
 
 export default function S5KarMap() {
+  const sectionRef = useRef(null);
   const mapRef = useRef(null);
   const [active, setActive] = useState(null);
   // con movimento ridotto la spirale nasce già disegnata
@@ -131,6 +135,32 @@ export default function S5KarMap() {
     return () => ro.disconnect();
   }, []);
 
+  // Sfondo fotografico: il punto luce dorato dell'immagine (46.8% / 46%
+  // del fotogramma) viene agganciato al centro esatto della spirale, a
+  // qualunque larghezza. Solo variabili CSS: nessun re-render React.
+  useEffect(() => {
+    const section = sectionRef.current;
+    const stage = mapRef.current;
+    if (!section || !stage) return;
+    const place = () => {
+      const sr = section.getBoundingClientRect();
+      const mr = stage.getBoundingClientRect();
+      const cx = mr.left + mr.width / 2 - sr.left;
+      const cy = mr.top + mr.height / 2 - sr.top;
+      const w = Math.max(sr.width * 1.25, mr.width * 2.6, 1200);
+      const h = w * BG.ratio;
+      section.style.setProperty("--s5-bgw", `${w.toFixed(0)}px`);
+      section.style.setProperty("--s5-bgx", `${(cx - w * BG.fx).toFixed(0)}px`);
+      section.style.setProperty("--s5-bgy", `${(cy - h * BG.fy).toFixed(0)}px`);
+      section.style.setProperty("--s5-bgt", "none");
+    };
+    place();
+    const ro = new ResizeObserver(place);
+    ro.observe(section);
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, []);
+
   // Props condivise da etichette e voci di legenda
   const bind = (i) => ({
     onMouseEnter: () => setActive(i),
@@ -145,12 +175,20 @@ export default function S5KarMap() {
   return (
     <div className="s5-root">
       <section
+        ref={sectionRef}
         className={"s5" + (drawn ? " is-drawn" : "") + (active !== null ? " has-active" : "")}
         id="karmap"
         data-n="5"
         aria-labelledby="s5-title"
       >
-        <div className="s5__bg" aria-hidden="true" />
+        <div className="s5__bg" aria-hidden="true">
+          {/* scia di fili dorati, sfocata e attenuata: accompagna la spirale */}
+          <picture className="s5__photo">
+            <source srcSet={BG.webp} type="image/webp" />
+            <img src={BG.jpg} alt="" width="1248" height="832" decoding="async" />
+          </picture>
+          <div className="s5__veil" />
+        </div>
 
         <div className="s5__inner">
           {/* ── Colonna sinistra: intestazione + Fase 01 ── */}
@@ -358,7 +396,7 @@ export default function S5KarMap() {
                 sperimentare un primo modo di lavorare come team.
               </p>
               <a className="s5-btn s5-btn--ghost" href={CALENDARIO_URL}>
-                <span>Prenota l’incontro</span>
+                <span>Prenota un incontro</span>
               </a>
               <p className="s5-phase__note">Non serve preparare nulla. Partiamo da ciò che c’è.</p>
             </article>
