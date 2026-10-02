@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import SiteFooter from "../components/SiteFooter";
 import "./S4Seme.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -71,15 +70,14 @@ export default function S4Seme() {
   const magnetRef = useRef(null);
   const btnRef = useRef(null);
 
-  // Il bottone della CTA porta ai contatti: scorrimento morbido fino al
-  // footer, dentro la slide (la finestra non scorre).
-  const toFooter = (e) => {
-    const footer = document.getElementById("contatti");
-    const scroller = footer?.closest(".sandbox-slide");
-    if (!footer || !scroller) return;
+  // Il bottone della CTA porta alla sezione successiva (05 · KarMAP),
+  // con la stessa transizione del deck. Footer e contatti ora chiudono la 05.
+  const toNext = (e) => {
+    const scroller = sectionRef.current?.closest(".sandbox-slide");
+    if (!scroller) return;
     e.preventDefault();
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    scroller.scrollTo({ top: footer.offsetTop, behavior: reduced ? "auto" : "smooth" });
+    const index = Number(scroller.dataset.slide) + 1;
+    window.dispatchEvent(new CustomEvent("deck:goto", { detail: { index } }));
   };
 
   // Bottone "magnetico": segue il puntatore di pochi px (solo transform),
@@ -408,17 +406,13 @@ export default function S4Seme() {
           </h3>
           {/* area del magnete: un po' più ampia del bottone */}
           <div ref={magnetRef} className="s4-cta__item s4-cta__action">
-            <a ref={btnRef} href="#contatti" className="s4-cta__btn" onClick={toFooter}>
+            <a ref={btnRef} href="#karmap" className="s4-cta__btn" onClick={toNext}>
               <span className="s4-cta__btn-label">Poi la scelta comincia a vivere.</span>
             </a>
           </div>
         </div>
       </div>
     </section>
-
-    {/* Footer & contatti: in coda alla slide, dentro lo stesso contenuto
-        scorrevole (Lenis usa il primo figlio della slide come contenuto) */}
-    <SiteFooter />
     </div>
   );
 }

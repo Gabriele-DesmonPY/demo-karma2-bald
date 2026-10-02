@@ -9,6 +9,7 @@ import S1Hero from "./sections/S1Hero";
 import S2Origine from "./sections/S2Origine";
 import S3Realta from "./sections/S3Realta";
 import S4Seme from "./sections/S4Seme";
+import S5KarMap from "./sections/S5KarMap";
 import SiteHeader from "./components/SiteHeader";
 
 // Sandbox Karma 2 — navigazione a swipe cinematografico a pieno schermo.
@@ -28,7 +29,7 @@ const SECTIONS = [
   { n: 2, id: "complessita", nome: "Origine e contesto", alta: true, fatto: true },
   { n: 3, id: "frammentazione", nome: "La realtà non è frammentata", alta: false, fatto: true },
   { n: 4, id: "seme", nome: "I concetti che germogliano dal seme", alta: true, fatto: true },
-  { n: 5, id: "domanda", nome: "La domanda", alta: false },
+  { n: 5, id: "karmap", nome: "KarMAP · Ciò che ti restituiamo", alta: true, fatto: true },
   { n: 6, id: "spirale-tappe", nome: "Entrare nella spirale", alta: true },
   { n: 7, id: "ecologia", nome: "Ecologia della decisione", alta: false },
   { n: 8, id: "seme", nome: "Il centro / Il seme", alta: true },
@@ -57,7 +58,7 @@ const navActive = (index) => {
   return "karmaround";
 };
 
-const AVAILABLE_COUNT = 4; // sezioni 1–4 pronte
+const AVAILABLE_COUNT = 5; // sezioni 1–5 pronte
 
 export default function App() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -383,6 +384,15 @@ export default function App() {
           data-slide="3"
         >
           <S4Seme />
+        </div>
+
+        {/* Slide 4: Sezione 5 — KarMAP: spirale + Questionario / Calendario (+ footer) */}
+        <div
+          className={slideClass(4)}
+          ref={(el) => (slideRefs.current[4] = el)}
+          data-slide="4"
+        >
+          <S5KarMap />
         </div>
       </div>
 

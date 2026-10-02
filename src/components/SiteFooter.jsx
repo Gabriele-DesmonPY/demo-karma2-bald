@@ -16,6 +16,7 @@ const CHAPTERS = [
   { n: "02", label: "Origine e contesto", index: 1 },
   { n: "03", label: "La realtà", index: 2 },
   { n: "04", label: "La scelta", index: 3 },
+  { n: "05", label: "KarMAP", index: 4 },
 ];
 
 // Icone social: tratto sottile, stesso linguaggio delle linee d'oro
