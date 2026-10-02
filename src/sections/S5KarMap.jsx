@@ -1,14 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react";
 import SiteFooter from "../components/SiteFooter";
+import BookingDemo from "../components/BookingDemo";
 import "./S5KarMap.css";
+
+// Due step sequenziali con la stessa tela (desktop con altezza sufficiente):
+// la sezione resta ferma (sticky) per ~1.1 schermate di scroll; in quel
+// tratto lo Step 1 (Diagnosi) si dissolve, la spirale arretra sfocata e
+// lo Step 2 (Calendario) entra in primo piano. Altrove i due step sono
+// semplicemente uno sotto l'altro.
+const STACK_MQ = "(min-width: 1280px) and (min-height: 620px)";
 
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 05 — KarMAP: CIÒ CHE TI RESTITUIAMO
-   Impianto editoriale a tre colonne, senza card: a sinistra titolo +
-   Fase 01 (Questionario), al centro la "Spirale Identitaria" in SVG
-   (stessa famiglia logaritmica r = a·e^(bθ) di Spiral.jsx), a destra
-   la Fase 02 (Calendario). Tutto respira sul navy, niente scatole.
+   In DUE STEP per dare respiro (feedback cliente):
+   · Step 1 — Diagnosi: titolo + Fase 01 (Questionario) a sinistra, la
+     "Spirale Identitaria" al centro, cosa si riceve a destra.
+   · Step 2 — Calendario: la spirale arretra sfocata, entra la Fase 02
+     con il calendario (per ora in versione dimostrativa).
+   Spirale: stessa famiglia logaritmica r = a·e^(bθ) di Spiral.jsx.
 
    - Il filo parte dall'esterno e scende verso IL SEME: è diviso in 7
      tratti, uno per tappa. Ogni tappa ha il suo tratto: passando sopra
@@ -19,9 +30,8 @@ import "./S5KarMap.css";
      sul filo restano i numeri, il testo va in una legenda sotto.
    ═══════════════════════════════════════════════════════════════ */
 
-// TODO: inserire i link reali (Google Form del questionario, Calendly/Cal…)
+// TODO: inserire il link reale del questionario (es. Google Form)
 const QUESTIONARIO_URL = "#questionario";
-const CALENDARIO_URL = "#prenota";
 
 // Sfondo della sezione e posizione del suo punto luce (in frazioni)
 const BG = { jpg: "/karmap-bg.jpg", webp: "/karmap-bg.webp", ratio: 832 / 1248, fx: 0.468, fy: 0.46 };
@@ -166,6 +176,61 @@ export default function S5KarMap() {
 
 
 
+  // ── Due step a scroll (motion/react) ──
+  // Nel deck scorre la slide, non la finestra: è lei il container.
+  const trackRef = useRef(null);
+  const scrollerRef = useRef(null);
+  useLayoutEffect(() => {
+    scrollerRef.current = trackRef.current?.closest(".sandbox-slide") ?? null;
+  }, []);
+  const [stacked, setStacked] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(STACK_MQ).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(STACK_MQ);
+    const on = () => setStacked(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const reduce = useReducedMotion();
+  const { scrollYProgress: p } = useScroll({
+    container: scrollerRef,
+    target: trackRef,
+    offset: ["start start", "end end"],
+  });
+  // Step 1 esce
+  const oneOpacity = useTransform(p, [0, 0.38], [1, 0]);
+  const oneY = useTransform(p, [0, 0.38], [0, -40]);
+  // la spirale arretra
+  const mapScale = useTransform(p, [0.12, 0.7], [1, 0.86]);
+  const mapOpacity = useTransform(p, [0.12, 0.7], [1, 0.28]);
+  const mapBlurPx = useTransform(p, [0.12, 0.7], [0, 6]);
+  const mapFilter = useTransform(mapBlurPx, (v) => (v < 0.05 ? "none" : `blur(${v.toFixed(2)}px)`));
+  // Step 2 entra (si sovrappone all'uscita dello Step 1: nessun vuoto a metà)
+  const twoOpacity = useTransform(p, [0.26, 0.66], [0, 1]);
+  const twoY = useTransform(p, [0.26, 0.66], [40, 0]);
+  // quale step è "vivo" (focus, clic, lettori di schermo)
+  const [step, setStep] = useState(1);
+  useMotionValueEvent(p, "change", (v) => setStep(v > 0.45 ? 2 : 1));
+  const motionOn = stacked && !reduce;
+  const live1 = !motionOn || step === 1;
+  const live2 = !motionOn || step === 2;
+
+  // "Prosegui al calendario" / "Torna alla diagnosi": scroll morbido nella slide
+  const scrollToStep = (n) => {
+    const scroller = scrollerRef.current;
+    const track = trackRef.current;
+    if (!scroller || !track) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const top =
+      n === 1
+        ? track.offsetTop
+        : motionOn
+          ? track.offsetTop + track.offsetHeight - scroller.clientHeight
+          : track.querySelector(".s5-step2")?.offsetTop ?? 0;
+    scroller.scrollTo({ top, behavior: reduced ? "auto" : "smooth" });
+  };
+
   // Props condivise da etichette e voci di legenda
   const bind = (i) => ({
     onMouseEnter: () => setActive(i),
@@ -178,7 +243,8 @@ export default function S5KarMap() {
   });
 
   return (
-    <div className="s5-root">
+    <div className={"s5-root" + (motionOn ? " is-stacked" : "")}>
+      <div className="s5-track" ref={trackRef}>
       <section
         ref={sectionRef}
         className={"s5" + (drawn ? " is-drawn" : "") + (active !== null ? " has-active" : "")}
@@ -196,8 +262,12 @@ export default function S5KarMap() {
         </div>
 
         <div className="s5__inner">
-          {/* ── Colonna sinistra: intestazione + Fase 01 ── */}
-          <div className="s5__left">
+          {/* ── STEP 1 · colonna sinistra: intestazione + Fase 01 ── */}
+          <motion.div
+            className="s5__left"
+            style={motionOn ? { opacity: oneOpacity, y: oneY } : undefined}
+            inert={!live1}
+          >
             <header className="s5__head s5-in" style={{ "--d": "0ms" }}>
               <p className="s5__eyebrow">Ciò che ti restituiamo</p>
               <h2 id="s5-title" className="s5__title">
@@ -222,6 +292,7 @@ export default function S5KarMap() {
               </h3>
               <p className="s5-phase__text">
                 Rispondi a poche domande e raccontaci il momento che la tua impresa sta attraversando.
+                Da qui prenderà forma la tua prima KarMAP.
               </p>
               <a className="s5-btn s5-btn--solid" href={QUESTIONARIO_URL}>
                 <span>Compila il questionario</span>
@@ -230,10 +301,14 @@ export default function S5KarMap() {
                 </span>
               </a>
             </article>
-          </div>
+          </motion.div>
 
           {/* ── La spirale KarMAP ── */}
-          <figure className={"s5-map" + (compact ? " is-compact" : "")} aria-labelledby="s5-map-cap">
+          <motion.figure
+            className={"s5-map" + (compact ? " is-compact" : "")}
+            aria-labelledby="s5-map-cap"
+            style={motionOn ? { scale: mapScale, opacity: mapOpacity, filter: mapFilter } : undefined}
+          >
             <figcaption id="s5-map-cap" className="sr-only">
               La spirale KarMAP: sette tappe lungo un unico filo che scende verso il seme — {TAPPE.join(", ")}.
             </figcaption>
@@ -395,31 +470,62 @@ export default function S5KarMap() {
                 ))}
               </ol>
             )}
-          </figure>
+          </motion.figure>
 
-          {/* ── Colonna destra: Fase 02 ── */}
-          <div className="s5__right">
-            <article className="s5-phase s5-phase--two s5-in" style={{ "--d": "260ms" }} aria-labelledby="s5-f2-title">
-              <p className="s5-phase__badge">
-                <span>Fase 02</span>
-                <span className="s5-phase__slash" aria-hidden="true">/</span>
-                <span>Calendario</span>
+          {/* ── STEP 1 · colonna destra: cosa ricevi ── */}
+          <motion.div
+            className="s5__right"
+            style={motionOn ? { opacity: oneOpacity, y: oneY } : undefined}
+            inert={!live1}
+          >
+            <aside className="s5-gain s5-in" style={{ "--d": "260ms" }} aria-labelledby="s5-gain-title">
+              <p className="s5-phase__badge" id="s5-gain-title">
+                <span>Cosa ricevi</span>
               </p>
-              <h3 id="s5-f2-title" className="s5-phase__title">
-                Incontriamoci
-              </h3>
-              <p className="s5-phase__text">
-                La tua evoluzione comincia da dove sei. 30 minuti per leggere insieme la tua KarMAP e
-                sperimentare un primo modo di lavorare come team.
-              </p>
-              <a className="s5-btn s5-btn--ghost" href={CALENDARIO_URL}>
-                <span>Prenota un incontro</span>
-              </a>
-              <p className="s5-phase__note">Non serve preparare nulla. Partiamo da ciò che c’è.</p>
-            </article>
-          </div>
+              <ul className="s5-gain__list">
+                <li>Una prima lettura di dove siete.</li>
+                <li>Ciò che si sta muovendo e i nodi da attraversare.</li>
+                <li>Le connessioni che meritano attenzione.</li>
+              </ul>
+              <button type="button" className="s5-link" onClick={() => scrollToStep(2)}>
+                Prosegui al calendario
+                <span aria-hidden="true">↓</span>
+              </button>
+            </aside>
+          </motion.div>
         </div>
+
+        {/* ── STEP 2 · Calendario: entra in primo piano sopra la spirale ── */}
+        <motion.div
+          className="s5-step2"
+          style={motionOn ? { opacity: twoOpacity, y: twoY } : undefined}
+          inert={!live2}
+          aria-labelledby="s5-f2-title"
+          role="region"
+        >
+          <div className="s5-step2__text">
+            <p className="s5-phase__badge">
+              <span>Fase 02</span>
+              <span className="s5-phase__slash" aria-hidden="true">/</span>
+              <span>Calendario</span>
+            </p>
+            <h3 id="s5-f2-title" className="s5-phase__title s5-step2__title">
+              Pianifica il tuo incontro
+            </h3>
+            <p className="s5-phase__text">
+              La tua evoluzione comincia da dove sei. 30 minuti per leggere insieme la tua KarMAP e
+              sperimentare un primo modo di lavorare come team.
+            </p>
+            <p className="s5-phase__note">Non serve preparare nulla. Partiamo da ciò che c’è.</p>
+            <button type="button" className="s5-link s5-link--back" onClick={() => scrollToStep(1)}>
+              <span aria-hidden="true">↑</span>
+              Torna alla diagnosi
+            </button>
+          </div>
+          <BookingDemo />
+        </motion.div>
       </section>
+      </div>
 
       {/* Footer & contatti in coda all'ultima slide del deck */}
       <div className="s5-next">
