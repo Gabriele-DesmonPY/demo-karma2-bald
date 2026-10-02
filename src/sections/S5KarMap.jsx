@@ -3,11 +3,12 @@ import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
 import SiteFooter from "../components/SiteFooter";
 import "./S5KarMap.css";
 
-// Impilamento "stacking & scale": la KarMAP resta ferma (sticky) e si
-// allontana — scala 1 → 0.92, opacità 1 → 0.3, blur 0 → 8px — mentre lo
-// strato successivo le scorre sopra. Solo dove la sezione sta tutta in
-// una schermata (desktop): altrove scorre normale, con scala/opacità lievi.
-const STACK_MQ = "(min-width: 1280px) and (min-height: 720px)";
+// Impilamento "stacking & scale": la KarMAP si ferma quando il suo FONDO
+// tocca il fondo dello schermo (così si legge sempre tutta, a qualunque
+// altezza di finestra) e si allontana — scala 1 → 0.92, opacità 1 → 0.3,
+// blur 0 → 8px — mentre lo strato successivo le scorre sopra.
+// Il blur solo su schermi larghi (sui telefoni costa troppo).
+const BLUR_MQ = "(min-width: 1024px)";
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 05 — KarMAP: CIÒ CHE TI RESTITUIAMO
@@ -179,28 +180,48 @@ export default function S5KarMap() {
   useLayoutEffect(() => {
     scrollerRef.current = rootRef.current?.closest(".sandbox-slide") ?? null;
   }, []);
-  const [stack, setStack] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(STACK_MQ).matches
+  const nextRef = useRef(null);
+  const [blurOn, setBlurOn] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(BLUR_MQ).matches
   );
   useEffect(() => {
-    const mq = window.matchMedia(STACK_MQ);
-    const on = () => setStack(mq.matches);
+    const mq = window.matchMedia(BLUR_MQ);
+    const on = () => setBlurOn(mq.matches);
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
+
+  // Punto di aggancio dello sticky: top = altezza visibile − altezza sezione
+  // (negativo se la sezione è più alta dello schermo). Variabile CSS.
+  useEffect(() => {
+    const section = sectionRef.current;
+    const scroller = scrollerRef.current;
+    if (!section || !scroller) return;
+    const set = () => {
+      const top = Math.min(0, scroller.clientHeight - section.offsetHeight);
+      section.style.setProperty("--s5-stick", `${top}px`);
+    };
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(section);
+    ro.observe(scroller);
+    return () => ro.disconnect();
+  }, []);
   const reduceMotion = useReducedMotion();
 
+  // 0 = lo strato successivo affaccia dal fondo, 1 = è entrato tutto
   const { scrollYProgress } = useScroll({
     container: scrollerRef,
-    target: rootRef,
-    offset: ["start start", "end end"],
+    target: nextRef,
+    offset: ["start end", "end end"],
   });
-  const scale = useTransform(scrollYProgress, [0, 1], [1, stack ? 0.92 : 0.97]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, stack ? 0.3 : 0.5]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.3]);
   const blurPx = useTransform(scrollYProgress, [0, 0.8], [0, 8]);
-  // a riposo "none" (nessun livello di filtro); il blur solo in modalità stack
+  // a riposo "none" (nessun livello di filtro)
   const filter = useTransform(blurPx, (v) => (v < 0.05 ? "none" : `blur(${v.toFixed(2)}px)`));
-  const stackStyle = reduceMotion ? undefined : { scale, opacity, ...(stack ? { filter } : null) };
+  const stackStyle = reduceMotion ? undefined : { scale, opacity, ...(blurOn ? { filter } : null) };
+
 
   // Props condivise da etichette e voci di legenda
   const bind = (i) => ({
@@ -214,7 +235,7 @@ export default function S5KarMap() {
   });
 
   return (
-    <div className={"s5-root" + (stack ? " is-stacked" : "")} ref={rootRef}>
+    <div className="s5-root" ref={rootRef}>
       <motion.section
         ref={sectionRef}
         style={stackStyle}
@@ -459,7 +480,7 @@ export default function S5KarMap() {
       </motion.section>
 
       {/* Footer & contatti in coda all'ultima slide del deck */}
-      <div className="s5-next">
+      <div className="s5-next" ref={nextRef}>
         <SiteFooter />
       </div>
     </div>
