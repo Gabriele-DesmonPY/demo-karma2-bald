@@ -4,6 +4,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 100vh;
   min-height: 100svh;
   overflow: clip;
@@ -55,24 +56,27 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* layout centrato: un alone radiale scuro dietro al blocco di testo
+     (leggibilità), un velo leggero uniforme e una sfumatura in basso
+     verso la citazione; ai bordi la trama d'oro resta piena */
   background:
-    linear-gradient(180deg, rgba(16, 26, 45, 0) 70%, rgba(11, 15, 25, 0.55) 100%),
-    linear-gradient(
-      90deg,
-      rgba(16, 26, 45, 0.85) 0%,
-      rgba(16, 26, 45, 0.75) 30%,
-      rgba(16, 26, 45, 0.55) 60%,
-      rgba(16, 26, 45, 0.4) 100%
-    );
+    radial-gradient(ellipse 62% 58% at 50% 52%, rgba(16, 26, 45, 0.85) 0%, rgba(16, 26, 45, 0.3) 70%, rgba(16, 26, 45, 0) 100%),
+    linear-gradient(180deg, rgba(16, 26, 45, 0) 72%, rgba(11, 15, 25, 0.6) 100%),
+    rgba(16, 26, 45, 0.28);
 }
 
 /* Contenitore fluido a sinistra (max-w-2xl, pl-12 → lg:pl-24) */
 .hsx__content {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
-  max-width: calc(42rem + clamp(48px, 6.7vw, 96px));
-  padding: calc(72px + clamp(16px, 4vh, 56px)) 24px clamp(72px, 10vh, 110px) clamp(48px, 6.7vw, 96px);
+  max-width: 56rem; /* max-w-4xl */
+  margin-inline: auto;
+  padding: calc(72px + clamp(16px, 4vh, 56px)) 24px clamp(72px, 10vh, 110px);
+  text-align: center;
 }
 
 .hsx__eyebrow {
@@ -87,7 +91,9 @@
 
 /* Titolo: Bauhaus 93 (text-5xl → lg:text-7xl, amber-100, tracking-wide) */
 .hsx__title em {
-  /* parola chiave: Cormorant corsivo minuscolo dentro il Bauhaus maiuscolo */
+  /* parola chiave: Cormorant corsivo minuscolo dentro il Bauhaus maiuscolo,
+     sulla sua riga (titolo bilanciato su 2 righe) */
+  display: block;
   font-family: var(--font-accent);
   font-style: italic;
   font-weight: 500;
@@ -101,8 +107,10 @@
   margin: 22px 0 0;
   font-family: "Bauhaus 93", "Baumans", "Futura", sans-serif;
   font-weight: 400;
-  font-size: clamp(2.6rem, min(1.6rem + 3.6vw, 7.8vh), 4.5rem);
-  line-height: 1.1;
+  /* "EVOLVIAMO VERSO CIÒ CHE" su una riga, "scegliamo di essere." sotto */
+  font-size: clamp(2.3rem, min(1rem + 3.6vw, 7.6vh), 4.1rem);
+  line-height: 1.12;
+  text-wrap: balance;
   letter-spacing: 0.025em;
   text-transform: uppercase;
   color: #fef3c7;
@@ -113,8 +121,8 @@
    Playfair), poi la frase chiave in Cormorant corsivo oro, con
    "ESSERE CURA" in maiuscolo spaziato e un leggero alone dorato. */
 .hsx__lede {
-  margin: clamp(18px, 3vh, 28px) 0 0;
-  max-width: 34ch;
+  margin: clamp(24px, 4vh, 32px) auto 0; /* my-8 */
+  max-width: 42rem; /* max-w-2xl */
   font-family: var(--font-body);
   font-style: normal;
   font-weight: 400;
@@ -125,8 +133,10 @@
 }
 
 .hsx__lede-key {
+  /* sempre su una riga sua: centrato, "Noi abbiamo scelto di" non si
+     spezza a metà frase come accadeva in linea con la prima frase */
   display: block;
-  margin-top: 0.35em;
+  margin-top: 0.4em;
   font-family: var(--font-title);
   font-style: italic;
   font-weight: 500;
@@ -151,6 +161,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 14px 18px;
   margin-top: clamp(24px, 4.5vh, 48px);
 }
@@ -267,12 +278,10 @@
 /* ═══════════ Responsive ═══════════ */
 /* Schermi stretti: la foto copre tutto, la sfumatura sale dal basso */
 @media (max-width: 767px) {
-  .hsx {
-    align-items: flex-end;
-  }
-
   .hsx__shade {
-    background: linear-gradient(0deg, rgba(16, 26, 45, 0.92) 0%, rgba(16, 26, 45, 0.7) 55%, rgba(16, 26, 45, 0.4) 100%);
+    background:
+      radial-gradient(ellipse 90% 60% at 50% 55%, rgba(16, 26, 45, 0.88) 0%, rgba(16, 26, 45, 0.45) 75%, rgba(16, 26, 45, 0.2) 100%),
+      rgba(16, 26, 45, 0.3);
   }
 
   .hsx__content {
