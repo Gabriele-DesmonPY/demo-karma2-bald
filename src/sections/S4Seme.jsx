@@ -285,7 +285,7 @@ export default function S4Seme() {
               autoAlpha: 1,
               y: 0,
               ease: "power2.out",
-              scrollTrigger: { trigger: el, scroller, start: "top 92%", end: "top 64%", scrub: 1 },
+              scrollTrigger: { trigger: el, scroller, start: "top 92%", end: "top 64%", scrub: 0.5 },
             }
           );
         });

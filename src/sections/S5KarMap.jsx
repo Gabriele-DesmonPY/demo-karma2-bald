@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import SiteFooter from "../components/SiteFooter";
 import "./S5KarMap.css";
+
+gsap.registerPlugin(ScrollTrigger);
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 05 — KarMAP: CIÒ CHE TI RESTITUIAMO
@@ -159,6 +163,41 @@ export default function S5KarMap() {
     ro.observe(section);
     ro.observe(stage);
     return () => ro.disconnect();
+  }, []);
+
+  // Dissolvenza legata allo scroll (scrub 0.5 → segue le dita, con un
+  // filo di morbidezza): scendendo verso il footer la KarMAP si fa eterea
+  // (opacità 0.2, scale 0.98, sale appena) e il footer emerge dal basso.
+  // Solo transform/opacity: niente blur in scrub, che costerebbe un
+  // ridisegno della spirale a ogni fotogramma di scroll.
+  useEffect(() => {
+    const section = sectionRef.current;
+    const scroller = section?.closest(".sandbox-slide");
+    if (!section || !scroller) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const footer = section.parentElement?.querySelector(".site-footer__grid");
+    const ctx = gsap.context(() => {
+      gsap.to(section.querySelector(".s5__inner"), {
+        opacity: 0.2,
+        scale: 0.98,
+        y: -30,
+        ease: "none",
+        scrollTrigger: { trigger: section, scroller, start: "bottom 85%", end: "bottom 20%", scrub: 0.5 },
+      });
+      if (footer) {
+        gsap.fromTo(
+          footer,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            ease: "none",
+            scrollTrigger: { trigger: footer, scroller, start: "top 98%", end: "top 55%", scrub: 0.5 },
+          }
+        );
+      }
+    }, section);
+    return () => ctx.revert();
   }, []);
 
   // Props condivise da etichette e voci di legenda

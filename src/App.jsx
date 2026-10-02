@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import { gsap } from "gsap";
@@ -39,8 +39,14 @@ const SECTIONS = [
 ];
 
 // Durata del passaggio tra slide: breve e reattiva (prima 1100 ms → effetto
-// "PowerPoint"). Deve coincidere con la transizione di .sandbox-track.
+// "PowerPoint").
 const DECK_MS = 600;
+// Passaggio "etereo" (cross-fade, niente tagli): le slide sono impilate sulla
+// stessa tela e si dissolvono l'una nell'altra invece di scorrere come
+// pagine. Uscita: opacità ↓, scale 0.98, blur 4px. Entrata: da opacità 0 e
+// 30px di scarto verticale (dal basso scendendo, dall'alto risalendo).
+const DECK_EASE = "cubic-bezier(0.25, 1, 0.5, 1)";
+const ENTER_DELAY = 90; // l'entrata parte appena dopo l'uscita: dissolvenza incrociata
 // Una "gesture" di rotella/trackpad = un flusso di eventi wheel senza pause
 // più lunghe di così. Ogni gesture sposta il deck al massimo di UNA slide:
 // l'inerzia del trackpad non fa saltare due sezioni, ma un nuovo colpo di
@@ -68,6 +74,11 @@ const AVAILABLE_COUNT = 5; // sezioni 1–5 pronte
 
 export default function App() {
   const [activeIndex, setActiveIndex] = useState(0);
+  // ultimo passaggio richiesto (da → a): lo legge l'effetto che anima il deck
+  const transitionRef = useRef(null);
+  const activeIndexRef = useRef(0);
+  // slide in uscita: resta visibile (sotto) finché la sua dissolvenza finisce
+  const [leavingIndex, setLeavingIndex] = useState(null);
   const isTransitioningRef = useRef(false);
   const slideRefs = useRef([]);
   const touchStartYRef = useRef(0);
@@ -86,16 +97,23 @@ export default function App() {
     if (isTransitioningRef.current || lockedRef.current) return;
 
     isTransitioningRef.current = true;
+    const from = activeIndexRef.current;
+    if (from !== targetIndex) {
+      transitionRef.current = { from, to: targetIndex };
+      // nello stesso render: la slide uscente resta in scena (sotto)
+      setLeavingIndex(from);
+    }
+    activeIndexRef.current = targetIndex;
     setActiveIndex(targetIndex);
 
     // La slide di destinazione riparte sempre dal suo inizio
     const target = slideRefs.current[targetIndex];
     if (target) target.scrollTop = fromBelow ? target.scrollHeight : 0;
 
-    // durata allineata alla transizione "pesante" del deck (sandbox.css)
+    // durata allineata al cross-fade del deck
     setTimeout(() => {
       isTransitioningRef.current = false;
-    }, DECK_MS);
+    }, DECK_MS + ENTER_DELAY);
   }, []);
 
   // ── Passo avanti/indietro consapevole dello scroll interno ──
@@ -180,7 +198,7 @@ export default function App() {
     const lenis = new Lenis({
       wrapper,
       content: wrapper.firstElementChild || wrapper,
-      duration: 0.7, // prima 1.2: lo scroll interno segue subito la rotella
+      duration: 0.6, // prima 1.2: lo scroll interno segue subito la rotella
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       wheelMultiplier: 1.1,
@@ -200,6 +218,59 @@ export default function App() {
       if (lenisRef.current === lenis) lenisRef.current = null;
     };
   }, [activeIndex]);
+
+  // ── Cross-fade del deck (Web Animations API: transform/opacity/filter,
+  // tutto sul compositor; nessun re-render React durante l'animazione).
+  // useLayoutEffect: le animazioni partono prima del primo paint del nuovo
+  // stato, quindi nessun fotogramma "scoperto" (niente flash).
+  useLayoutEffect(() => {
+    const t = transitionRef.current;
+    if (!t) return;
+    transitionRef.current = null;
+    const out = slideRefs.current[t.from];
+    const inn = slideRefs.current[t.to];
+    const dir = t.to > t.from ? 1 : -1;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timing = { duration: reduced ? 200 : DECK_MS, easing: DECK_EASE };
+
+    [out, inn].forEach((el) => el?.getAnimations().forEach((a) => a.cancel()));
+
+    inn?.animate(
+      reduced
+        ? [{ opacity: 0 }, { opacity: 1 }]
+        : [
+            { opacity: 0, transform: `translate3d(0, ${dir * 30}px, 0)` },
+            { opacity: 1, transform: "translate3d(0, 0, 0)" },
+          ],
+      { ...timing, delay: reduced ? 0 : ENTER_DELAY, fill: "backwards" }
+    );
+
+    if (out) {
+      const outAnim = out.animate(
+        reduced
+          ? [{ opacity: 1 }, { opacity: 0 }]
+          : [
+              { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", filter: "blur(0px)" },
+              { opacity: 0.2, offset: 0.55 },
+              { opacity: 0, transform: `translate3d(0, ${dir * -18}px, 0) scale(0.98)`, filter: "blur(4px)" },
+            ],
+        { ...timing, fill: "forwards" }
+      );
+      // a dissolvenza finita la slide torna "parcheggiata" fuori scena
+      outAnim.finished
+        .then(() => setLeavingIndex((cur) => (cur === t.from ? null : cur)))
+        .catch(() => {});
+    }
+  }, [activeIndex]);
+
+  // Le slide tornate a riposo perdono lo stato congelato dell'uscita, nello
+  // stesso fotogramma in cui ricevono la classe che le nasconde.
+  useLayoutEffect(() => {
+    slideRefs.current.forEach((el, i) => {
+      if (!el || i === activeIndex || i === leavingIndex) return;
+      el.getAnimations().forEach((a) => a.cancel());
+    });
+  }, [activeIndex, leavingIndex]);
 
   // Avvisa le sezioni quale slide è attiva (per avviare/riavvolgere
   // le sequenze a tempo, es. Sezione 04)
@@ -351,7 +422,19 @@ export default function App() {
     });
   }, [activeIndex]);
 
-  const slideClass = (i) => "sandbox-slide" + (activeIndex === i ? " is-active" : "");
+  // Stato di ogni slide sulla tela comune:
+  // is-active (in scena) · is-leaving (si sta dissolvendo) ·
+  // is-before / is-after (parcheggiate fuori scena, sopra o sotto: così gli
+  // IntersectionObserver delle sezioni scattano solo quando entrano davvero)
+  const slideClass = (i) =>
+    "sandbox-slide" +
+    (activeIndex === i
+      ? " is-active"
+      : leavingIndex === i
+        ? " is-leaving"
+        : i < activeIndex
+          ? " is-before"
+          : " is-after");
 
   return (
     <div className="sandbox-viewport" data-tone={activeIndex === 1 ? "light" : "dark"}>
@@ -386,12 +469,12 @@ export default function App() {
       </nav>
 
       {/* Traccia di swipe a sezioni (fullpage deck) */}
-      <div
-        className="sandbox-track"
-        style={{
-          transform: `translate3d(0, -${activeIndex * 100}vh, 0)`,
-        }}
-      >
+      {/* Tela unica: navy + trama d'oro, ferma dietro a tutte le slide.
+          Si intravede solo durante le dissolvenze, così il passaggio non
+          "salta" mai da un fondo all'altro. */}
+      <div className="sandbox-backdrop" aria-hidden="true" />
+
+      <div className="sandbox-track">
         {/* Slide 0: Sezione 1 — Hero */}
         <div
           className={slideClass(0)}
