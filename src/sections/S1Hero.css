@@ -109,17 +109,42 @@
   text-shadow: 0 4px 3px rgba(0, 0, 0, 0.07), 0 2px 2px rgba(0, 0, 0, 0.06), 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 
-/* Payoff: serif corsivo, arioso, ben leggibile sulla sfumatura */
+/* Payoff: frase identitaria. Prima parte nel serif del corpo (Bell MT →
+   Playfair), poi la frase chiave in Cormorant corsivo oro, con
+   "ESSERE CURA" in maiuscolo spaziato e un leggero alone dorato. */
 .hsx__lede {
   margin: clamp(18px, 3vh, 28px) 0 0;
-  max-width: 46ch;
-  font-family: var(--font-accent);
-  font-style: italic;
-  font-size: clamp(1.3rem, 1.5vw, 1.6rem); /* Cormorant: occhio piccolo, serve un corpo più grande */
-  line-height: 1.65;
-  letter-spacing: 0.012em;
-  color: rgba(243, 229, 171, 0.9);
+  max-width: 34ch;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-weight: 400;
+  font-size: clamp(1.15rem, 1.35vw, 1.45rem);
+  line-height: var(--leading-body);
+  color: rgba(250, 244, 230, 0.86);
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+}
+
+.hsx__lede-key {
+  display: block;
+  margin-top: 0.35em;
+  font-family: var(--font-title);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.3em;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--accent-gold);
+}
+
+.hsx__lede-key strong {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap; /* "ESSERE CURA" non si spezza mai */
+  color: #fef3c7;
+  text-shadow:
+    0 0 18px rgba(212, 175, 55, 0.55),
+    0 1px 10px rgba(0, 0, 0, 0.5);
 }
 
 .hsx__actions {

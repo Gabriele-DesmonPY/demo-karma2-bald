@@ -56,9 +56,10 @@ function HeroInner() {
             </>
           </LineReveal>
           <Reveal as="p" className="hsx__lede" delay={80}>
-            Dal filo alla trama, accompagniamo la tua impresa nella sua evoluzione: incontrare ciò
-            che cambia, riconoscere ciò che conta, scegliere ciò che vuole diventare continuando a
-            riconoscersi.
+            Ci sono diversi modi di essere al servizio delle imprese.{" "}
+            <span className="hsx__lede-key">
+              Noi abbiamo scelto di <strong>essere cura</strong>.
+            </span>
           </Reveal>
           <Reveal as="div" className="hsx__actions" delay={160}>
             <a href="#contatti" className="hsx__btn hsx__btn--primary" onClick={toContacts}>
