@@ -292,7 +292,7 @@ export default function S5KarMap() {
               </h3>
               <p className="s5-phase__text">
                 Rispondi a poche domande e raccontaci il momento che la tua impresa sta attraversando.
-                Da qui prenderà forma la tua prima KarMAP.
+                Da qui prenderà forma <em className="text-highlight">la tua prima KarMAP</em>.
               </p>
               <a className="s5-btn s5-btn--solid" href={QUESTIONARIO_URL}>
                 <span>Compila il questionario</span>
@@ -510,11 +510,11 @@ export default function S5KarMap() {
               <span>Calendario</span>
             </p>
             <h3 id="s5-f2-title" className="s5-phase__title s5-step2__title">
-              Pianifica il tuo incontro
+              Pianifica il tuo <em>incontro</em>
             </h3>
             <p className="s5-phase__text">
-              La tua evoluzione comincia da dove sei. 30 minuti per leggere insieme la tua KarMAP e
-              sperimentare un primo modo di lavorare come team.
+              La tua evoluzione comincia <em className="text-highlight">da dove sei</em>. 30 minuti per
+              leggere insieme la tua KarMAP e sperimentare un primo modo di lavorare come team.
             </p>
             <p className="s5-phase__note">Non serve preparare nulla. Partiamo da ciò che c’è.</p>
             <button type="button" className="s5-link s5-link--back" onClick={() => scrollToStep(1)}>

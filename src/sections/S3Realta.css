@@ -16,8 +16,9 @@
   --s3-gold-ink: #86602a;            /* oro leggibile su chiaro */
   --s3-gold-soft: #9a7036;
   --s3-gold-light: #d9b377;          /* oro leggibile su navy */
-  --s3-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
-  --s3-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+  --s3-serif: var(--font-title);
+  --s3-sans: var(--font-label);
+  --s3-body: var(--font-body);
 
   position: relative;
   isolation: isolate;
@@ -314,10 +315,10 @@
 .s3 .s3__thesis {
   margin: clamp(20px, 3.4vh, 32px) auto 0;
   max-width: 44ch;
-  font-family: var(--s3-sans);
+  font-family: var(--s3-body);
   font-size: clamp(0.95rem, 1.1vw, 1.08rem);
   font-weight: 500;
-  line-height: 1.7;
+  line-height: var(--leading-body);
   color: rgba(253, 251, 247, 0.82);
 }
 
@@ -520,10 +521,10 @@
   margin: 0;
   max-width: 20rem;
   padding-left: 28px;
-  font-family: var(--s3-sans);
+  font-family: var(--s3-body);
   font-size: clamp(0.92rem, 1.05vw, 1.05rem);
   font-weight: 300;
-  line-height: 1.65;
+  line-height: var(--leading-body);
   color: rgba(214, 216, 222, 0.85);
   transition: color 400ms ease;
 }

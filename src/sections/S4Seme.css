@@ -12,8 +12,8 @@
   --s4-cream: #f3e6c4;              /* avorio dorato per le frasi */
   --s4-gold: #d9b377;
   --s4-gold-bright: #e2c974;
-  --s4-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
-  --s4-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+  --s4-serif: var(--font-title);
+  --s4-sans: var(--font-label);
 
   position: relative;
   background: var(--s4-bg);
@@ -125,7 +125,7 @@
 .s4 .s4__title {
   margin: 0;
   font-family: var(--s4-serif);
-  font-style: italic;
+  font-style: normal;
   font-weight: 500;
   font-size: clamp(1.8rem, min(3.3vw, 5.4vh), 3.2rem);
   line-height: 1.12;
@@ -133,6 +133,12 @@
   color: var(--s4-ivory);
   text-wrap: balance;
   text-shadow: 0 2px 30px rgba(6, 10, 20, 0.7);
+}
+
+/* parola chiave in corsivo oro (sistema tipografico globale) */
+.s4 .s4__title em {
+  font-style: italic;
+  color: #e2c37e;
 }
 
 /* ═══════════ Frasi-germoglio (fasi 2 e 3) ═══════════ */

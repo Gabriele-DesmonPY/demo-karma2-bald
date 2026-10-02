@@ -389,7 +389,7 @@ export default function S4Seme() {
               <span>Mettere ordine e trovare coerenza</span>
             </p>
             <h2 id="s4-title" className="s4__title s4-anim">
-              Tenere insieme significa riconoscere ciò che conta.
+              Tenere insieme significa riconoscere <em>ciò che conta</em>.
             </h2>
           </header>
       </div>

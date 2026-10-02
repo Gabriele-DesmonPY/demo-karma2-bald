@@ -18,8 +18,9 @@
   --s5-label: rgba(222, 190, 92, 0.92);
   --s5-line: rgba(212, 175, 55, 0.22);
   --s5-display: "Bauhaus 93", "Baumans", var(--font-display, sans-serif);
-  --s5-serif: "Cormorant Garamond", "Cormorant", "Instrument Serif", Georgia, serif;
-  --s5-sans: var(--font-label, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+  --s5-serif: var(--font-title);
+  --s5-body: var(--font-body);
+  --s5-sans: var(--font-label);
   --s5-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   position: relative;
@@ -614,10 +615,10 @@
 
 .s5-phase__text {
   margin: 14px 0 26px;
-  font-family: var(--s5-sans);
+  font-family: var(--s5-body);
   font-weight: 500;
   font-size: 16px;
-  line-height: 1.65;
+  line-height: var(--leading-body);
   color: var(--s5-text);
   text-wrap: pretty;
 }
@@ -1057,9 +1058,9 @@
   gap: 4px;
   min-height: 1px;
   margin: 0;
-  font-family: var(--s5-sans);
+  font-family: var(--s5-body);
   font-size: 13.5px;
-  line-height: 1.5;
+  line-height: var(--leading-body);
   color: rgba(250, 248, 244, 0.72);
 }
 

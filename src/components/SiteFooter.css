@@ -9,8 +9,8 @@
   --sf-text: rgba(243, 229, 171, 0.7);
   --sf-soft: rgba(243, 229, 171, 0.6);
   --sf-gold: #e2c974;
-  --sf-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
-  --sf-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+  --sf-serif: var(--font-title);
+  --sf-sans: var(--font-label);
 
   position: relative;
   background: var(--sf-bg);

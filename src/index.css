@@ -31,12 +31,20 @@
   --kh-gold-deep: var(--gold-deep);
   --kh-line: rgba(198, 154, 87, 0.25);
 
-  /* ── Typography ── */
-  --font-display: "Plus Jakarta Sans", -apple-system, "Segoe UI", sans-serif;
-  --font-heading: var(--font-display);
-  --font-body: "Manrope", -apple-system, "Segoe UI", sans-serif;
-  --font-label: "Manrope", -apple-system, "Segoe UI", sans-serif;
-  --font-accent: "Instrument Serif", Georgia, serif;
+  /* ── Typography — sistema editoriale dark luxury ──
+     Titoli: serif alto (Cormorant Garamond) con parole chiave in corsivo.
+     Corpo: Bell MT (se installato) → Playfair Display → Georgia, interlinea 1.7.
+     Etichette, bottoni, metadati: Inter maiuscolo spaziato.
+     Accenti nel testo: Cormorant corsivo oro (.text-highlight / <em>).
+     Eccezione di brand: titoli Bauhaus 93 della Hero e della KarMAP. */
+  --font-title: "Cormorant Garamond", "Cinzel", Georgia, serif;
+  --font-body: "Bell MT", "Playfair Display", Georgia, serif;
+  --font-label: "Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-accent: "Cormorant Garamond", Georgia, serif;
+  --font-display: var(--font-title);
+  --font-heading: var(--font-title);
+  --accent-gold: #e2c37e;
+  --leading-body: 1.7;
 
   /* ── Type Scale (4 livelli + label) ── */
   --text-display: clamp(2.4rem, 6vw, 5.8rem);
@@ -112,7 +120,7 @@ body {
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 16px;
-  line-height: 1.7;
+  line-height: var(--leading-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -367,6 +375,46 @@ button {
   .brand-spiral {
     display: none;
   }
+}
+
+/* ── Tipografia: classi di utilità (usabili in tutte le sezioni) ── */
+.font-title {
+  font-family: var(--font-title);
+}
+
+.font-body {
+  font-family: var(--font-body);
+  line-height: var(--leading-body);
+}
+
+.font-sans-clean {
+  font-family: var(--font-label);
+}
+
+/* etichetta: Inter maiuscolo, spaziatura ampia */
+.t-label {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* parola chiave in corsivo dentro un titolo, o frase d'impatto nel testo */
+h1 em,
+h2 em,
+h3 em,
+.text-highlight {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent-gold);
+}
+
+/* in un paragrafo l'accento è un filo più grande: il Cormorant è "piccolo" */
+p .text-highlight {
+  font-size: 1.12em;
+  line-height: 1;
 }
 
 /* ── Screen Reader Only ── */

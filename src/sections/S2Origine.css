@@ -16,8 +16,9 @@
   --s2o-gold-ink: #86602a;                     /* oro leggibile per testi piccoli (≈ 5.3:1) */
   --s2o-gold-soft: #9a7036;                    /* oro morbido per il sottotitolo corsivo */
   --s2o-rule: rgba(134, 96, 42, 0.26);         /* filetto sottile */
-  --s2o-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
-  --s2o-sans: var(--font-body, "Manrope"), -apple-system, "Segoe UI", sans-serif;
+  --s2o-serif: var(--font-title);
+  --s2o-sans: var(--font-label);
+  --s2o-body: var(--font-body);
   --s2o-ease: var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1));
 
   /* Atmosfera: larghezza del livello (sborda un poco oltre la metà
@@ -177,10 +178,10 @@
 .s2o .s2o__body {
   margin: clamp(18px, 3.2vh, 32px) 0 0;
   max-width: 52ch;
-  font-family: var(--s2o-sans);
+  font-family: var(--s2o-body);
   font-size: clamp(0.95rem, min(1.08vw, 2.05vh), 1.075rem);
   font-weight: 500;
-  line-height: 1.72;
+  line-height: var(--leading-body);
   letter-spacing: 0.002em;
   color: var(--s2o-text);
   text-wrap: pretty;

@@ -51,7 +51,9 @@ function HeroInner() {
             Karma · Let’s work together
           </Reveal>
           <LineReveal as="h1" className="hsx__title" delay={120}>
-            Evolviamo verso ciò che scegliamo di essere.
+            <>
+              Evolviamo verso ciò che <em>scegliamo di essere</em>.
+            </>
           </LineReveal>
           <Reveal as="p" className="hsx__lede" delay={80}>
             Dal filo alla trama, accompagniamo la tua impresa nella sua evoluzione: incontrare ciò

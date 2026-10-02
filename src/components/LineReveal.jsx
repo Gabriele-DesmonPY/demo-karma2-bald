@@ -36,17 +36,13 @@ export default function LineReveal({
   const text = typeof children === "string" ? children : "";
   const isHeading = /^h[1-6]$/i.test(Tag);
 
-  const lines = isHeading
-    ? text.split(/\n|<br\s*\/?>/i).filter(Boolean)
-    : [text];
-
-  if (!text) {
-    return (
-      <Tag ref={ref} className={className}>
-        {children}
-      </Tag>
-    );
-  }
+  // testo semplice: una riga per "a capo"; contenuto JSX (es. con <em>
+  // per le parole chiave in corsivo): un'unica riga animata
+  const lines = !text
+    ? [children]
+    : isHeading
+      ? text.split(/\n|<br\s*\/?>/i).filter(Boolean)
+      : [text];
 
   return (
     <Tag
@@ -61,7 +57,7 @@ export default function LineReveal({
               visible ? "line-reveal__inner--visible" : ""
             }`}
           >
-            {line.trim()}
+            {typeof line === "string" ? line.trim() : line}
           </span>
         </span>
       ))}
