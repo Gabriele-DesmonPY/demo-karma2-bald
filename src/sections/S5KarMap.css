@@ -1,13 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 05 — KarMAP
-   Midnight Navy #101a2d + Oro #d4af37. Spirale SVG con glow dorato,
-   etichette HTML interattive, due card "vetro" con le azioni.
+   Midnight Navy #101a2d + Oro #d4af37. Impianto editoriale a tre
+   colonne (desktop): titolo + Fase 01 | spirale | Fase 02.
+   Nessuna card: i blocchi respirano direttamente sul navy, separati
+   solo da tipografia, spazio e micro-linee d'oro.
    Selettori prefissati `.s5` / `.s5-`.
-
-   Nota prestazioni (come nel resto del deck): niente backdrop-filter.
-   Dietro le card c'è solo il gradiente di fondo, quindi il "vetro" è
-   reso con trasparenza + bordo + riflesso: identico a vista, zero blur
-   ricalcolato a ogni frame di scroll.
    ═══════════════════════════════════════════════════════════════ */
 
 .s5 {
@@ -43,7 +40,7 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(48% 44% at 70% 46%, rgba(212, 175, 55, 0.085), transparent 72%),
+    radial-gradient(40% 46% at 50% 50%, rgba(212, 175, 55, 0.09), transparent 72%),
     radial-gradient(55% 45% at 8% 0%, rgba(38, 60, 102, 0.55), transparent 70%),
     radial-gradient(40% 35% at 100% 100%, rgba(28, 44, 78, 0.5), transparent 70%),
     linear-gradient(180deg, var(--s5-bg) 0%, var(--s5-bg) 72%, #070a11 100%);
@@ -51,20 +48,44 @@
 
 .s5__inner {
   width: 100%;
-  max-width: 1360px;
+  max-width: 1600px;
   margin-inline: auto;
   padding-inline: clamp(20px, 5vw, 72px);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     "head"
     "map"
-    "actions";
-  row-gap: clamp(36px, 6vh, 64px);
+    "one"
+    "two";
+  row-gap: clamp(40px, 6vh, 64px);
+}
+
+/* Le colonne laterali si "sciolgono" sotto il desktop: i loro blocchi
+   entrano direttamente nella griglia (testata · spirale · fasi) */
+.s5__left,
+.s5__right {
+  display: contents;
+}
+
+.s5__head {
+  grid-area: head;
+}
+
+.s5__rule {
+  display: none;
+}
+
+.s5-phase--one {
+  grid-area: one;
+}
+
+.s5-phase--two {
+  grid-area: two;
 }
 
 /* ── Intestazione ── */
 .s5__head {
-  grid-area: head;
   max-width: 34rem;
 }
 
@@ -78,6 +99,7 @@
   font-size: 12px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--s5-gold);
 }
 
@@ -89,10 +111,14 @@
 }
 
 .s5__title {
+  display: inline-block;
+  /* il gradiente dorato copre esattamente la parola (niente tagli) */
+  width: max-content;
+  max-width: 100%;
   margin: 0;
   font-family: var(--s5-display);
   font-weight: 400;
-  font-size: clamp(3.6rem, 8.4vw, 7.25rem);
+  font-size: clamp(3.6rem, 2rem + 4.6vw, 6.4rem);
   line-height: 0.95;
   letter-spacing: 0.01em;
   /* oro "fuso": luce in alto, metallo in basso */
@@ -108,8 +134,8 @@
   font-family: var(--s5-serif);
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(1.25rem, 1rem + 0.7vw, 1.6rem);
-  line-height: 1.42;
+  font-size: clamp(1.2rem, 1rem + 0.45vw, 1.42rem);
+  line-height: 1.45;
   color: var(--s5-text);
   text-wrap: pretty;
 }
@@ -124,7 +150,7 @@
 .s5-map__stage {
   position: relative;
   /* le etichette sporgono un poco oltre il quadrato: margine per loro */
-  width: min(100%, 660px);
+  width: min(100%, 640px);
   aspect-ratio: 1;
   margin-inline: auto;
 }
@@ -168,10 +194,17 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 34%;
+  width: 46%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(254, 243, 199, 0.2) 0%, rgba(212, 175, 55, 0.1) 40%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(254, 243, 199, 0.42) 0%,
+    rgba(232, 200, 90, 0.24) 18%,
+    rgba(212, 175, 55, 0.12) 38%,
+    rgba(212, 175, 55, 0.04) 56%,
+    transparent 70%
+  );
   transform: translate(-50%, -50%) scale(0.94);
   opacity: 0;
   transition: opacity 1.6s var(--s5-ease) 2s;
@@ -446,7 +479,7 @@
   padding: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 4px 20px;
 }
 
 .s5-legend__item {
@@ -455,10 +488,11 @@
   gap: 10px;
   width: 100%;
   min-height: 48px;
-  padding: 8px 12px;
-  border: 1px solid var(--s5-line);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+  border-radius: 0;
+  background: none;
   font-family: var(--s5-sans);
   font-weight: 700;
   font-size: 11px;
@@ -485,120 +519,74 @@
 
 .s5 .s5-legend__item.is-on {
   border-color: rgba(212, 175, 55, 0.7);
-  background: rgba(212, 175, 55, 0.08);
   color: var(--s5-glow);
 }
 
-/* ═══════════ Le due azioni ═══════════ */
-.s5-actions {
-  grid-area: actions;
-  display: grid;
-  gap: 20px;
-}
-
-@media (min-width: 720px) {
-  .s5-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.s5-card {
-  position: relative;
+/* ═══════════ Le due fasi: tipografia aperta, nessuna scatola ═══════════ */
+.s5-phase {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: clamp(24px, 2.4vw, 34px);
-  border: 1px solid var(--s5-line);
-  border-radius: 20px;
-  /* vetro: riflesso in diagonale su un fondo appena velato */
-  background:
-    linear-gradient(150deg, rgba(254, 243, 199, 0.07) 0%, rgba(254, 243, 199, 0.015) 45%, rgba(255, 255, 255, 0.02) 100%),
-    rgba(16, 26, 45, 0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(254, 243, 199, 0.09),
-    0 30px 60px -32px rgba(0, 0, 0, 0.7);
-  transition:
-    border-color 0.4s ease,
-    transform 0.5s var(--s5-ease),
-    box-shadow 0.5s ease;
+  align-items: flex-start;
+  max-width: 26rem;
 }
 
-/* filo d'oro sul bordo alto */
-.s5-card::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: 24px;
-  right: 24px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.8), transparent);
-}
-
-.s5-card:hover,
-.s5-card:focus-within {
-  border-color: rgba(212, 175, 55, 0.45);
-  transform: translateY(-3px);
-  box-shadow:
-    inset 0 1px 0 rgba(254, 243, 199, 0.12),
-    0 36px 70px -32px rgba(0, 0, 0, 0.75),
-    0 0 40px -18px rgba(212, 175, 55, 0.35);
-}
-
-.s5-card__top {
-  display: flex;
+.s5-phase__badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.s5-card__tag {
-  padding: 5px 11px;
-  border: 1px solid rgba(212, 175, 55, 0.5);
-  border-radius: 999px;
+  gap: 10px;
+  margin: 0 0 14px;
   font-family: var(--s5-sans);
   font-weight: 800;
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--s5-gold);
 }
 
-.s5-card__kind {
-  font-family: var(--s5-sans);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(250, 248, 244, 0.6);
+.s5-phase__slash {
+  font-weight: 400;
+  color: rgba(212, 175, 55, 0.45);
 }
 
-.s5-card__title {
-  margin: 4px 0 0;
+.s5-phase__badge span:last-child {
+  color: rgba(250, 248, 244, 0.62);
+}
+
+.s5-phase__title {
+  margin: 0;
   font-family: var(--s5-serif);
   font-weight: 500;
-  font-size: clamp(1.9rem, 1.4rem + 1vw, 2.4rem);
-  line-height: 1.05;
+  font-size: clamp(2rem, 1.5rem + 1.1vw, 2.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.005em;
   color: var(--s5-ivory);
 }
 
-.s5-card__text {
-  margin: 0;
+.s5-phase__text {
+  margin: 14px 0 26px;
   font-family: var(--s5-sans);
   font-weight: 500;
   font-size: 16px;
   line-height: 1.65;
   color: var(--s5-text);
+  text-wrap: pretty;
 }
 
-.s5-card__note {
-  margin: 0;
-  padding-left: 14px;
-  border-left: 1px solid rgba(212, 175, 55, 0.5);
+.s5-phase__note {
+  margin: 16px 0 0;
   font-family: var(--s5-serif);
   font-style: italic;
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   line-height: 1.4;
-  color: rgba(254, 243, 199, 0.82);
+  color: rgba(254, 243, 199, 0.78);
+  text-wrap: balance;
+}
+
+/* micro-linea d'oro fra testata e Fase 01 */
+.s5__rule {
+  width: 56px;
+  height: 1px;
+  background: rgba(212, 175, 55, 0.3);
 }
 
 /* ── Bottoni ── */
@@ -608,10 +596,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  align-self: flex-start;
   min-height: 52px;
-  /* scende in fondo alla card: i due bottoni restano allineati */
-  margin-top: auto;
   padding: 0 28px;
   border-radius: 999px;
   overflow: hidden;
@@ -620,6 +605,7 @@
   font-size: 13px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   touch-action: manipulation;
@@ -706,46 +692,74 @@
   transform: translate3d(0, 24px, 0);
 }
 
-/* la card mantiene il suo hover anche dopo l'entrata */
-.s5-card.s5-in {
-  transition:
-    opacity 0.9s var(--s5-ease) var(--d, 0ms),
-    transform 0.5s var(--s5-ease),
-    border-color 0.4s ease,
-    box-shadow 0.5s ease;
-}
-
-/* ═══════════ Desktop: testo + azioni a sinistra, spirale a destra ═══════════ */
-@media (min-width: 1080px) {
+/* ═══════════ Tablet: testata, spirale, poi le due fasi affiancate ═══════════ */
+@media (min-width: 760px) {
   .s5__inner {
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas:
-      "head map"
-      "actions map";
-    grid-template-rows: auto 1fr;
-    column-gap: clamp(40px, 5vw, 96px);
-    row-gap: 44px;
-    align-items: start;
-  }
-
-  .s5-map {
-    align-self: start;
-    margin-top: 8px;
-  }
-
-  .s5-actions {
-    grid-template-columns: 1fr;
-    gap: 18px;
+      "head head"
+      "map  map"
+      "one  two";
+    column-gap: clamp(32px, 6vw, 80px);
   }
 }
 
-/* Mobile: la spirale prende tutta la larghezza disponibile */
+/* ═══════════ Desktop: tre colonne — testo + Fase 01 | spirale | Fase 02 ═══════════ */
+@media (min-width: 1280px) {
+  .s5 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .s5__inner {
+    grid-template-columns: minmax(240px, 1fr) minmax(560px, 2.1fr) minmax(240px, 1fr);
+    grid-template-areas: "left map right";
+    column-gap: clamp(28px, 2.6vw, 52px);
+    align-items: center;
+  }
+
+  /* le colonne laterali tornano blocchi veri, centrati in verticale */
+  .s5__left,
+  .s5__right {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .s5__left {
+    grid-area: left;
+    gap: 34px;
+  }
+
+  .s5__right {
+    grid-area: right;
+  }
+
+  .s5__rule {
+    display: block;
+  }
+
+  /* il titolo si misura sulla colonna, non sulla finestra */
+  .s5__title {
+    font-size: clamp(3.4rem, 1.6rem + 3vw, 5.4rem);
+  }
+
+  .s5__right {
+    padding-left: clamp(0px, 1vw, 16px);
+  }
+
+  .s5-map__stage {
+    width: min(100%, 700px);
+  }
+}
+
+/* Mobile */
 @media (max-width: 560px) {
   .s5__inner {
     padding-inline: 16px;
   }
 
-  .s5-card__text {
+  .s5-phase__text {
     font-size: 15.5px;
   }
 

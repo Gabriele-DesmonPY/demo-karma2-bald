@@ -4,9 +4,10 @@ import "./S5KarMap.css";
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 05 — KarMAP: CIÒ CHE TI RESTITUIAMO
-   La "Spirale Identitaria" disegnata in SVG (stessa famiglia
-   logaritmica r = a·e^(bθ) di Spiral.jsx) + le due azioni:
-   Questionario (Fase 01) e Calendario (Fase 02).
+   Impianto editoriale a tre colonne, senza card: a sinistra titolo +
+   Fase 01 (Questionario), al centro la "Spirale Identitaria" in SVG
+   (stessa famiglia logaritmica r = a·e^(bθ) di Spiral.jsx), a destra
+   la Fase 02 (Calendario). Tutto respira sul navy, niente scatole.
 
    - Il filo parte dall'esterno e scende verso IL SEME: è diviso in 7
      tratti, uno per tappa. Ogni tappa ha il suo tratto: passando sopra
@@ -152,17 +153,41 @@ export default function S5KarMap() {
         <div className="s5__bg" aria-hidden="true" />
 
         <div className="s5__inner">
-          {/* ── Intestazione ── */}
-          <header className="s5__head s5-in" style={{ "--d": "0ms" }}>
-            <p className="s5__eyebrow">Ciò che ti restituiamo</p>
-            <h2 id="s5-title" className="s5__title">
-              KarMAP
-            </h2>
-            <p className="s5__lede">
-              Una spirale identitaria e decisionale che restituisce una prima lettura di dove siete,
-              che cosa si sta muovendo e quali connessioni meritano attenzione.
-            </p>
-          </header>
+          {/* ── Colonna sinistra: intestazione + Fase 01 ── */}
+          <div className="s5__left">
+            <header className="s5__head s5-in" style={{ "--d": "0ms" }}>
+              <p className="s5__eyebrow">Ciò che ti restituiamo</p>
+              <h2 id="s5-title" className="s5__title">
+                KarMAP
+              </h2>
+              <p className="s5__lede">
+                Una spirale identitaria e decisionale che restituisce una prima lettura di dove siete,
+                che cosa si sta muovendo e quali connessioni meritano attenzione.
+              </p>
+            </header>
+
+            <span className="s5__rule s5-in" style={{ "--d": "90ms" }} aria-hidden="true" />
+
+            <article className="s5-phase s5-phase--one s5-in" style={{ "--d": "160ms" }} aria-labelledby="s5-f1-title">
+              <p className="s5-phase__badge">
+                <span>Fase 01</span>
+                <span className="s5-phase__slash" aria-hidden="true">/</span>
+                <span>Questionario</span>
+              </p>
+              <h3 id="s5-f1-title" className="s5-phase__title">
+                Diagnosi
+              </h3>
+              <p className="s5-phase__text">
+                Rispondi a poche domande e raccontaci il momento che la tua impresa sta attraversando.
+              </p>
+              <a className="s5-btn s5-btn--solid" href={QUESTIONARIO_URL}>
+                <span>Compila il questionario</span>
+                <span className="s5-btn__arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </article>
+          </div>
 
           {/* ── La spirale KarMAP ── */}
           <figure className={"s5-map" + (compact ? " is-compact" : "")} aria-labelledby="s5-map-cap">
@@ -317,44 +342,25 @@ export default function S5KarMap() {
             )}
           </figure>
 
-          {/* ── Le due azioni ── */}
-          <div className="s5-actions">
-            <article className="s5-card s5-in" style={{ "--d": "120ms" }} aria-labelledby="s5-card1-title">
-              <div className="s5-card__top">
-                <span className="s5-card__tag">Fase 01</span>
-                <span className="s5-card__kind">Questionario</span>
-              </div>
-              <h3 id="s5-card1-title" className="s5-card__title">
-                Diagnosi
-              </h3>
-              <p className="s5-card__text">
-                Rispondi a poche domande e raccontaci il momento che la tua impresa sta attraversando. Da
-                qui prenderà forma la tua prima KarMAP.
+          {/* ── Colonna destra: Fase 02 ── */}
+          <div className="s5__right">
+            <article className="s5-phase s5-phase--two s5-in" style={{ "--d": "260ms" }} aria-labelledby="s5-f2-title">
+              <p className="s5-phase__badge">
+                <span>Fase 02</span>
+                <span className="s5-phase__slash" aria-hidden="true">/</span>
+                <span>Calendario</span>
               </p>
-              <a className="s5-btn s5-btn--solid" href={QUESTIONARIO_URL}>
-                <span>Compila il questionario</span>
-                <span className="s5-btn__arrow" aria-hidden="true">
-                  →
-                </span>
-              </a>
-            </article>
-
-            <article className="s5-card s5-in" style={{ "--d": "220ms" }} aria-labelledby="s5-card2-title">
-              <div className="s5-card__top">
-                <span className="s5-card__tag">Fase 02</span>
-                <span className="s5-card__kind">Calendario</span>
-              </div>
-              <h3 id="s5-card2-title" className="s5-card__title">
-                Dialogo
+              <h3 id="s5-f2-title" className="s5-phase__title">
+                Incontriamoci
               </h3>
-              <p className="s5-card__text">
+              <p className="s5-phase__text">
                 La tua evoluzione comincia da dove sei. 30 minuti per leggere insieme la tua KarMAP e
-                sperimentare un primo modo di lavorare come team sulla soluzione.
+                sperimentare un primo modo di lavorare come team.
               </p>
-              <p className="s5-card__note">Non serve preparare nulla. Partiamo da ciò che c’è.</p>
               <a className="s5-btn s5-btn--ghost" href={CALENDARIO_URL}>
-                <span>Prenota un incontro</span>
+                <span>Prenota l’incontro</span>
               </a>
+              <p className="s5-phase__note">Non serve preparare nulla. Partiamo da ciò che c’è.</p>
             </article>
           </div>
         </div>
