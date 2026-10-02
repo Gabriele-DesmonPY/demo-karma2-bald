@@ -1,4 +1,4 @@
-/* ═══ SEZIONE 01 — HERO · SPLIT SCREEN SULLA TRAMA D'ORO ═══ */
+/* ═══ SEZIONE 01 — HERO · TRAMA D'ORO A TUTTO SCHERMO + OVERLAY BLU ═══ */
 
 .hsx {
   position: relative;
@@ -12,8 +12,11 @@
   color: #f6efe0;
 }
 
-/* Foto a tutto schermo, poco zoomata: ancorata a destra a piena altezza,
-   la trama si vede intera; il bordo sinistro si scioglie nel buio */
+/* Foto a tutto schermo (100vw × 100vh, object-fit: cover): niente più
+   blocco pieno a sinistra, la trama si vede ovunque sotto l'overlay.
+   Resa fredda e corporate: brightness 0.85 + contrast 1.05 (+ un filo
+   di desaturazione) come filtro sull'immagine — stesso effetto di un
+   backdrop-filter sull'overlay, ma calcolato una volta sola. */
 .hsx__media {
   position: absolute;
   inset: 0;
@@ -23,25 +26,14 @@
 
 .hsx__img {
   position: absolute;
-  top: 0;
-  right: 0;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  width: auto;
   max-width: none;
-  aspect-ratio: 1;
   object-fit: cover;
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 26%);
-  mask-image: linear-gradient(to right, transparent 0%, #000 26%);
+  object-position: 60% 50%;
+  filter: brightness(0.85) contrast(1.05) saturate(0.9);
   animation: hsx-bg-in 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* quando lo schermo è più "quadrato" della foto, la foto lo copre tutto */
-@media (max-aspect-ratio: 5/4) {
-  .hsx__img {
-    width: 100%;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
 }
 
 @keyframes hsx-bg-in {
@@ -55,21 +47,25 @@
   }
 }
 
-/* Sfumatura graduale: from-[#0B0F19] via-[#0B0F19]/80 to-transparent */
+/* Overlay blu trasparente su TUTTA l'immagine (stile Spearhead):
+   più denso a sinistra dove sta il testo, leggero a destra dove la
+   trama respira. In basso scurisce appena verso la citazione. */
 .hsx__shade {
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: -1 !important;
-  pointer-events: none !important;
-  
-  background: linear-gradient(
-    90deg, 
-    #162540 0%,            /* Navy chiaro e visibile */
-    #162540 38%, 
-    rgba(22, 37, 64, 0.7) 52%, 
-    rgba(22, 37, 64, 0) 70%
-  ) !important;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(16, 26, 45, 0) 70%, rgba(11, 15, 25, 0.55) 100%),
+    linear-gradient(
+      90deg,
+      rgba(16, 26, 45, 0.85) 0%,
+      rgba(16, 26, 45, 0.75) 30%,
+      rgba(16, 26, 45, 0.55) 60%,
+      rgba(16, 26, 45, 0.4) 100%
+    );
 }
+
 /* Contenitore fluido a sinistra (max-w-2xl, pl-12 → lg:pl-24) */
 .hsx__content {
   position: relative;
@@ -240,7 +236,7 @@
   }
 
   .hsx__shade {
-    background: linear-gradient(0deg, rgba(11, 15, 25, 0.92) 0%, rgba(11, 15, 25, 0.65) 55%, rgba(11, 15, 25, 0.15) 100%);
+    background: linear-gradient(0deg, rgba(16, 26, 45, 0.92) 0%, rgba(16, 26, 45, 0.7) 55%, rgba(16, 26, 45, 0.4) 100%);
   }
 
   .hsx__content {

@@ -5,10 +5,9 @@ import "./S1Hero.css";
 
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 01 — HERO · TRAMA D'ORO A TUTTO SCHERMO
-   - La foto dei fili d'oro occupa tutto lo schermo, poco zoomata: è
-     ancorata a destra a piena altezza, così la trama si vede intera.
-   - Nessun box: una sfumatura da sinistra (#0B0F19 → trasparente) fa da
-     fondo al testo e si scioglie nella trama, senza divisioni verticali.
+   - La foto dei fili d'oro copre tutto lo schermo (100vw × 100vh).
+   - Sopra, un overlay blu trasparente (#101a2d: 0.85 a sinistra → 0.4 a
+     destra) tiene leggibile il testo senza nessun blocco pieno.
    - Titolo in Bauhaus 93 (se installato sul dispositivo; altrimenti
      Baumans, la sua controparte libera di ispirazione Bauhaus).
    ═══════════════════════════════════════════════════════════════ */
