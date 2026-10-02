@@ -8,6 +8,7 @@ export default function LineReveal({
   className = "",
   lineClassName = "",
   style,
+  id,
 }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -47,6 +48,7 @@ export default function LineReveal({
   return (
     <Tag
       ref={ref}
+      id={id}
       className={`line-reveal ${className}`}
       style={{ "--line-reveal-delay": `${delay}ms`, ...style }}
     >

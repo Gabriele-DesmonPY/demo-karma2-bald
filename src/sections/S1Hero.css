@@ -73,14 +73,14 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 56rem; /* max-w-4xl */
+  max-width: 64rem; /* max-w-5xl */
   margin-inline: auto;
   padding: calc(72px + clamp(16px, 4vh, 56px)) 24px clamp(72px, 10vh, 110px);
   text-align: center;
 }
 
 .hsx__eyebrow {
-  margin: 0;
+  margin: 0 0 clamp(24px, 4vh, 36px);
   font-family: var(--font-label), sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -90,71 +90,65 @@
 }
 
 /* Titolo: Bauhaus 93 (text-5xl → lg:text-7xl, amber-100, tracking-wide) */
-.hsx__title em {
-  /* parola chiave: Cormorant corsivo minuscolo dentro il Bauhaus maiuscolo,
-     sulla sua riga (titolo bilanciato su 2 righe) */
+.hsx__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(14px, 2.4vh, 26px);
+  margin: 0;
+  font-weight: 400;
+  text-align: center;
+}
+
+/* Riga 1 — Bauhaus 93 (→ Baumans) maiuscolo, avorio */
+.hsx__title-a {
   display: block;
+  font-family: "Bauhaus 93", "Baumans", "Futura", sans-serif;
+  font-size: clamp(1.9rem, min(0.9rem + 2.9vw, 7vh), 3.75rem);
+  line-height: 1.14;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: #fef3c7;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.08), 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Riga 2 — sfalsata a destra: Cormorant corsivo oro + "ESSERE CURA"
+   nel Bauhaus maiuscolo, spaziato, con alone dorato */
+.hsx__title-b {
+  display: block;
+  margin-top: clamp(12px, 2.2vh, 24px);
+  font-size: clamp(1.6rem, min(0.8rem + 2.4vw, 5.6vh), 3rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.hsx__title-b em {
   font-family: var(--font-accent);
   font-style: italic;
   font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 1.08em;
+  font-size: 1.12em;
   color: var(--accent-gold);
 }
 
-.hsx__title {
-  margin: 22px 0 0;
+.hsx__title-b strong {
   font-family: "Bauhaus 93", "Baumans", "Futura", sans-serif;
   font-weight: 400;
-  /* "EVOLVIAMO VERSO CIÒ CHE" su una riga, "scegliamo di essere." sotto */
-  font-size: clamp(2.3rem, min(1rem + 3.6vw, 7.6vh), 4.1rem);
-  line-height: 1.12;
-  text-wrap: balance;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #fef3c7;
-  text-shadow: 0 4px 3px rgba(0, 0, 0, 0.07), 0 2px 2px rgba(0, 0, 0, 0.06), 0 6px 24px rgba(0, 0, 0, 0.45);
-}
-
-/* Payoff: frase identitaria. Prima parte nel serif del corpo (Bell MT →
-   Playfair), poi la frase chiave in Cormorant corsivo oro, con
-   "ESSERE CURA" in maiuscolo spaziato e un leggero alone dorato. */
-.hsx__lede {
-  margin: clamp(24px, 4vh, 32px) auto 0; /* my-8 */
-  max-width: 42rem; /* max-w-2xl */
-  font-family: var(--font-body);
-  font-style: normal;
-  font-weight: 400;
-  font-size: clamp(1.15rem, 1.35vw, 1.45rem);
-  line-height: var(--leading-body);
-  color: rgba(250, 244, 230, 0.86);
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
-}
-
-.hsx__lede-key {
-  /* sempre su una riga sua: centrato, "Noi abbiamo scelto di" non si
-     spezza a metà frase come accadeva in linea con la prima frase */
-  display: block;
-  margin-top: 0.4em;
-  font-family: var(--font-title);
-  font-style: italic;
-  font-weight: 500;
-  font-size: 1.3em;
-  line-height: 1.25;
-  letter-spacing: 0.01em;
+  white-space: nowrap;
   color: var(--accent-gold);
+  text-shadow:
+    0 0 22px rgba(212, 175, 55, 0.45),
+    0 2px 14px rgba(0, 0, 0, 0.5);
 }
 
-.hsx__lede-key strong {
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  white-space: nowrap; /* "ESSERE CURA" non si spezza mai */
-  color: #fef3c7;
-  text-shadow:
-    0 0 18px rgba(212, 175, 55, 0.55),
-    0 1px 10px rgba(0, 0, 0, 0.5);
+/* sfalsata: rientro a sinistra (padding, non transform: la riga resta
+   dentro la maschera della LineReveal e non viene tagliata) */
+@media (min-width: 1024px) {
+  .hsx__title-b {
+    padding-left: clamp(80px, 12vw, 220px);
+  }
 }
 
 .hsx__actions {
@@ -163,7 +157,7 @@
   align-items: center;
   justify-content: center;
   gap: 14px 18px;
-  margin-top: clamp(24px, 4.5vh, 48px);
+  margin-top: clamp(36px, 6vh, 56px);
 }
 
 .hsx__btn {
@@ -183,25 +177,18 @@
   transition: background-color 400ms ease, border-color 400ms ease, color 400ms ease, box-shadow 400ms ease;
 }
 
-.hsx__btn--primary {
-  background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 55%, #b89343 100%);
-  color: #0b0f19;
-  box-shadow: 0 10px 30px -12px rgba(212, 175, 55, 0.55);
-}
-
-.hsx__btn--primary:hover {
-  box-shadow: 0 12px 36px -10px rgba(212, 175, 55, 0.8);
-}
-
 .hsx__btn--ghost {
-  border: 1px solid rgba(226, 201, 116, 0.45);
-  color: #f3e5ab;
-  background: rgba(11, 15, 25, 0.25);
+  padding: 14px 32px;
+  border: 1px solid rgba(226, 195, 126, 0.4);
+  color: var(--accent-gold);
+  background: rgba(16, 26, 45, 0.5);
+  box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.7);
 }
 
 .hsx__btn--ghost:hover {
-  border-color: #e2c974;
-  background: rgba(226, 201, 116, 0.08);
+  border-color: var(--accent-gold);
+  background: rgba(16, 26, 45, 0.92);
+  color: #fef3c7;
 }
 
 .hsx__btn span {
@@ -288,8 +275,12 @@
     padding: calc(68px + 24px) 20px 96px;
   }
 
-  .hsx__title {
-    font-size: clamp(2.3rem, 10.5vw, 3rem);
+  .hsx__title-a {
+    font-size: clamp(1.6rem, 7.4vw, 2.2rem);
+  }
+
+  .hsx__title-b {
+    font-size: clamp(1.35rem, 6.2vw, 1.9rem);
   }
 
   .hsx__btn {

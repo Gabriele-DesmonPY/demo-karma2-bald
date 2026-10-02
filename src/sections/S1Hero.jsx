@@ -6,8 +6,9 @@ import "./S1Hero.css";
 /* ═══════════════════════════════════════════════════════════════
    SEZIONE 01 — HERO · TRAMA D'ORO A TUTTO SCHERMO
    - La foto dei fili d'oro copre tutto lo schermo (100vw × 100vh).
-   - Sopra, un overlay blu trasparente (#101a2d: 0.85 a sinistra → 0.4 a
-     destra) tiene leggibile il testo senza nessun blocco pieno.
+   - Sopra, un alone radiale scuro al centro tiene leggibile il testo.
+   - Un solo H1 su due righe sfalsate (Bauhaus maiuscolo + Cormorant
+     corsivo oro con "ESSERE CURA") e un solo bottone.
    - Titolo in Bauhaus 93 (se installato sul dispositivo; altrimenti
      Baumans, la sua controparte libera di ispirazione Bauhaus).
    ═══════════════════════════════════════════════════════════════ */
@@ -15,11 +16,6 @@ import "./S1Hero.css";
 const goTo = (index) => window.dispatchEvent(new CustomEvent("deck:goto", { detail: { index } }));
 
 function HeroInner() {
-  // "Inizia ora" → contatti (il deck porta all'ultima slide, dal fondo)
-  const toContacts = (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent("deck:goto", { detail: { index: 3, fromBelow: true } }));
-  };
   const toPath = (e) => {
     e.preventDefault();
     goTo(1);
@@ -42,29 +38,25 @@ function HeroInner() {
             draggable="false"
           />
         </picture>
-        {/* Sfumatura graduale da sinistra: protegge il testo, nessun box */}
+        {/* Alone radiale scuro al centro: protegge il testo, nessun box */}
         <div className="hsx__shade" aria-hidden="true" />
 
-        {/* Contenuti: blocco fluido a sinistra */}
+        {/* Contenuti centrati: un solo titolo, un solo bottone */}
         <div className="hsx__content">
           <Reveal as="p" className="hsx__eyebrow">
             Karma · Let’s work together
           </Reveal>
-          <LineReveal as="h1" className="hsx__title" delay={120}>
+          <LineReveal as="h1" id="hsx-title" className="hsx__title" delay={120}>
             <>
-              Evolviamo verso ciò che <em>scegliamo di essere.</em>
+              <span className="hsx__title-a">
+                Ci sono diversi modi di essere al servizio delle imprese.
+              </span>
+              <span className="hsx__title-b">
+                <em>Noi abbiamo scelto di</em> <strong>essere cura.</strong>
+              </span>
             </>
           </LineReveal>
-          <Reveal as="p" className="hsx__lede" delay={80}>
-            Ci sono diversi modi di essere al servizio delle imprese.{" "}
-            <span className="hsx__lede-key">
-              Noi abbiamo scelto di <strong>essere cura</strong>.
-            </span>
-          </Reveal>
-          <Reveal as="div" className="hsx__actions" delay={160}>
-            <a href="#contatti" className="hsx__btn hsx__btn--primary" onClick={toContacts}>
-              Inizia ora
-            </a>
+          <Reveal as="div" className="hsx__actions" delay={200}>
             <a href="#karmaround" className="hsx__btn hsx__btn--ghost" onClick={toPath}>
               Scopri il percorso
               <span aria-hidden="true">→</span>
